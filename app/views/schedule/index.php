@@ -467,7 +467,7 @@ let selectedDays = new Set();
 
 // Date helpers
 function mondayOf(dateStr) {
-  const d = new Date(dateStr);
+  const d = new Date(dateStr + 'T12:00:00'); // Add time to avoid timezone issues
   const dayOfWeek = d.getDay();
   const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
   d.setDate(d.getDate() - daysFromMonday);
@@ -475,26 +475,37 @@ function mondayOf(dateStr) {
 }
 
 function formatWeekDisplay(mondayStr) {
-  const monday = new Date(mondayStr);
+  const monday = new Date(mondayStr + 'T12:00:00');
   const sunday = new Date(monday);
   sunday.setDate(sunday.getDate() + 6);
   
   const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
                       'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   
-  return `Week of ${monday.toLocaleDateString('en-US', {weekday: 'short'})}, ${monday.getDate()} - ${sunday.toLocaleDateString('en-US', {weekday: 'short'})}, ${sunday.getDate()}`;
+  const mondayMonth = monthNames[monday.getMonth()];
+  const sundayMonth = monthNames[sunday.getMonth()];
+  
+  if (monday.getMonth() === sunday.getMonth()) {
+    return `Week of ${monday.toLocaleDateString('en-US', {weekday: 'short'})}, ${mondayMonth} ${monday.getDate()} - ${sunday.toLocaleDateString('en-US', {weekday: 'short'})}, ${sunday.getDate()}`;
+  } else {
+    return `Week of ${monday.toLocaleDateString('en-US', {weekday: 'short'})}, ${mondayMonth} ${monday.getDate()} - ${sunday.toLocaleDateString('en-US', {weekday: 'short'})}, ${sundayMonth} ${sunday.getDate()}`;
+  }
 }
 
 function getWeekDays(mondayStr) {
-  const monday = new Date(mondayStr);
+  const monday = new Date(mondayStr + 'T12:00:00');
   const days = [];
   
   for (let i = 0; i < 7; i++) {
     const day = new Date(monday);
     day.setDate(day.getDate() + i);
+    
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    
     days.push({
       date: day.toISOString().slice(0, 10),
-      display: day.toLocaleDateString('en-US', {weekday: 'short', day: 'numeric'})
+      display: `${day.toLocaleDateString('en-US', {weekday: 'short'})}, ${monthNames[day.getMonth()]} ${day.getDate()}`
     });
   }
   
@@ -503,15 +514,27 @@ function getWeekDays(mondayStr) {
 
 // Initialize
 document.addEventListener('DOMContentLoaded', async () => {
+  console.log('[schedule] Initializing...');
+  
   shiftModal = new bootstrap.Modal(document.getElementById('shiftModal'));
   
   // Set initial week to current week
-  const today = new Date().toISOString().slice(0, 10);
-  currentWeekStart = mondayOf(today);
+  const today = new Date();
+  const todayStr = today.toISOString().slice(0, 10);
+  currentWeekStart = mondayOf(todayStr);
+  
+  console.log('Today:', todayStr);
+  console.log('Current week start:', currentWeekStart);
   
   // Event listeners
-  document.getElementById('prevWeekBtn').addEventListener('click', () => changeWeek(-7));
-  document.getElementById('nextWeekBtn').addEventListener('click', () => changeWeek(7));
+  document.getElementById('prevWeekBtn').addEventListener('click', () => {
+    console.log('Previous week clicked');
+    changeWeek(-7);
+  });
+  document.getElementById('nextWeekBtn').addEventListener('click', () => {
+    console.log('Next week clicked');
+    changeWeek(7);
+  });
   document.getElementById('publishBtn').addEventListener('click', togglePublish);
   document.getElementById('saveShiftBtn').addEventListener('click', saveShift);
   
@@ -532,14 +555,19 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
   
   // Load initial data
+  console.log('Loading employees...');
   await loadEmployees();
+  console.log('Loading week data...');
   await loadWeek();
+  
+  console.log('[schedule] Initialization complete');
 });
 
 function changeWeek(days) {
-  const current = new Date(currentWeekStart);
+  const current = new Date(currentWeekStart + 'T12:00:00');
   current.setDate(current.getDate() + days);
   currentWeekStart = current.toISOString().slice(0, 10);
+  console.log('Changing to week:', currentWeekStart);
   loadWeek();
 }
 
@@ -568,20 +596,29 @@ async function loadWeek() {
 }
 
 function updateWeekDisplay() {
-  document.getElementById('weekDisplay').textContent = formatWeekDisplay(currentWeekStart);
+  console.log('Updating week display for:', currentWeekStart);
+  
+  const weekDisplay = document.getElementById('weekDisplay');
+  weekDisplay.textContent = formatWeekDisplay(currentWeekStart);
   
   const days = getWeekDays(currentWeekStart);
+  console.log('Week days:', days);
+  
   const headerCells = document.querySelectorAll('.grid-header-cell[data-day]');
   
   headerCells.forEach((cell, index) => {
     if (days[index]) {
       cell.textContent = days[index].display;
+      console.log(`Day ${index}: ${days[index].display}`);
     }
   });
   
   // Update team members count
-  const activeEmployees = employees.filter(emp => emp.is_active);
-  document.querySelector('.grid-header-cell:first-child').textContent = `Team members (${activeEmployees.length})`;
+  const activeEmployees = employees.filter(emp => emp.is_active !== false);
+  const teamHeader = document.querySelector('.grid-header-cell:first-child');
+  if (teamHeader) {
+    teamHeader.textContent = `Team members (${activeEmployees.length})`;
+  }
 }
 
 function renderScheduleGrid() {
