@@ -2,88 +2,89 @@
 <?php require 'app/views/templates/header.php'; ?>
 
 <style>
-/* Homebase-inspired styling */
+/* Homebase exact styling */
 .schedule-container {
   background: #f8fafc;
   min-height: 100vh;
-  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 .schedule-header {
   background: white;
-  border-bottom: 1px solid #e2e8f0;
-  padding: 1.5rem 0;
-  margin-bottom: 0;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 1rem 0;
 }
 
-.schedule-nav {
-  background: white;
-  border-bottom: 1px solid #e2e8f0;
-  padding: 0;
-}
-
-.schedule-nav .nav-tabs {
-  border-bottom: none;
+.schedule-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #111827;
   margin: 0;
 }
 
-.schedule-nav .nav-link {
-  border: none;
-  border-radius: 0;
-  padding: 1rem 1.5rem;
-  color: #64748b;
-  font-weight: 500;
-  background: transparent;
-  transition: all 0.2s;
-}
-
-.schedule-nav .nav-link.active {
-  background: white;
-  color: #1e293b;
-  border-bottom: 3px solid #3b82f6;
-}
-
-.schedule-nav .nav-link:hover {
-  color: #1e293b;
-  background: #f8fafc;
-}
-
-.schedule-content {
-  background: white;
+.schedule-subtitle {
+  color: #6b7280;
+  font-size: 0.875rem;
   margin: 0;
-  padding: 0;
 }
 
 .week-controls {
-  background: #f8fafc;
-  padding: 1rem 1.5rem;
-  border-bottom: 1px solid #e2e8f0;
   display: flex;
   align-items: center;
   gap: 1rem;
 }
 
-.week-picker {
+.week-navigation {
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
 
-.week-picker input {
+.week-nav-btn {
+  background: #f9fafb;
   border: 1px solid #d1d5db;
   border-radius: 0.375rem;
-  padding: 0.5rem 0.75rem;
-  font-size: 0.875rem;
+  padding: 0.5rem;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.2s;
 }
 
-.publish-controls {
+.week-nav-btn:hover {
+  background: #e5e7eb;
+}
+
+.week-display {
+  font-weight: 500;
+  color: #111827;
+  min-width: 200px;
+  text-align: center;
+}
+
+.publish-section {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  margin-left: auto;
 }
 
-.btn-homebase {
+.status-indicator {
+  padding: 0.375rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.status-draft {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.status-published {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.btn-primary {
   background: #3b82f6;
   color: white;
   border: none;
@@ -91,74 +92,87 @@
   padding: 0.5rem 1rem;
   font-weight: 500;
   font-size: 0.875rem;
+  cursor: pointer;
   transition: all 0.2s;
 }
 
-.btn-homebase:hover {
+.btn-primary:hover {
   background: #2563eb;
-  color: white;
 }
 
-.btn-homebase-outline {
-  background: transparent;
-  color: #3b82f6;
-  border: 1px solid #3b82f6;
-  border-radius: 0.375rem;
-  padding: 0.5rem 1rem;
-  font-weight: 500;
-  font-size: 0.875rem;
-  transition: all 0.2s;
+.schedule-grid {
+  background: white;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  margin: 1rem;
 }
 
-.btn-homebase-outline:hover {
-  background: #3b82f6;
-  color: white;
+.grid-header {
+  display: grid;
+  grid-template-columns: 200px repeat(7, 1fr);
+  background: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
 }
 
-.schedule-table {
-  table-layout: fixed;
-  width: 100%;
-  margin: 0;
-}
-
-.schedule-table th {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+.grid-header-cell {
   padding: 1rem 0.75rem;
   font-weight: 600;
   color: #374151;
-  text-align: center;
   font-size: 0.875rem;
+  text-align: center;
+  border-right: 1px solid #e5e7eb;
 }
 
-.schedule-table td {
-  border: 1px solid #e2e8f0;
-  padding: 0.5rem;
-  vertical-align: top;
-  min-height: 100px;
-  background: white;
+.grid-header-cell:first-child {
+  text-align: left;
+  background: #f3f4f6;
+}
+
+.grid-body {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.grid-row {
+  display: grid;
+  grid-template-columns: 200px repeat(7, 1fr);
+  border-bottom: 1px solid #e5e7eb;
+  min-height: 120px;
 }
 
 .employee-cell {
-  background: #f8fafc !important;
-  position: sticky;
-  left: 0;
-  z-index: 10;
-  width: 200px;
-  min-width: 200px;
-  max-width: 200px;
+  background: #f9fafb;
+  padding: 1rem 0.75rem;
+  border-right: 1px solid #e5e7eb;
+  display: flex;
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 0.25rem;
 }
 
 .employee-name {
   font-weight: 600;
-  color: #1e293b;
+  color: #111827;
   font-size: 0.875rem;
-  margin-bottom: 0.25rem;
 }
 
 .employee-role {
-  color: #64748b;
+  color: #6b7280;
   font-size: 0.75rem;
+}
+
+.employee-hours {
+  color: #6b7280;
+  font-size: 0.75rem;
+  margin-top: auto;
+}
+
+.day-cell {
+  padding: 0.5rem;
+  border-right: 1px solid #e5e7eb;
+  position: relative;
+  background: white;
 }
 
 .shift-block {
@@ -166,9 +180,17 @@
   color: white;
   border-radius: 0.375rem;
   padding: 0.5rem;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.25rem;
   font-size: 0.75rem;
   position: relative;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.shift-block:hover {
+  background: #2563eb;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .shift-time {
@@ -176,7 +198,7 @@
   margin-bottom: 0.25rem;
 }
 
-.shift-notes {
+.shift-role {
   opacity: 0.9;
   font-size: 0.7rem;
 }
@@ -185,31 +207,46 @@
   position: absolute;
   top: 0.25rem;
   right: 0.25rem;
-  background: rgba(255,255,255,0.2);
+  background: rgba(255, 255, 255, 0.2);
   border: none;
   color: white;
-  border-radius: 0.25rem;
-  padding: 0.125rem 0.25rem;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
   font-size: 0.7rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   opacity: 0;
   transition: opacity 0.2s;
+  cursor: pointer;
 }
 
 .shift-block:hover .shift-delete {
   opacity: 1;
 }
 
+.add-shift-area {
+  position: absolute;
+  bottom: 0.5rem;
+  left: 0.5rem;
+  right: 0.5rem;
+}
+
 .add-shift-btn {
-  background: #f8fafc;
-  border: 2px dashed #d1d5db;
-  color: #64748b;
-  border-radius: 0.375rem;
-  padding: 0.75rem;
   width: 100%;
+  background: transparent;
+  border: 2px dashed #d1d5db;
+  color: #6b7280;
+  border-radius: 0.375rem;
+  padding: 0.5rem;
   font-size: 0.75rem;
-  font-weight: 500;
-  transition: all 0.2s;
   cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
 }
 
 .add-shift-btn:hover {
@@ -218,66 +255,88 @@
   background: #eff6ff;
 }
 
-.team-roster {
-  padding: 1.5rem;
-}
-
-.add-employee-form {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 0.5rem;
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
-}
-
-.employee-card {
-  background: white;
-  border: 1px solid #e2e8f0;
-  border-radius: 0.5rem;
-  padding: 1rem;
-  margin-bottom: 0.75rem;
-  transition: all 0.2s;
-}
-
-.employee-card:hover {
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-}
-
-.status-badge {
-  font-size: 0.75rem;
-  padding: 0.25rem 0.5rem;
-  border-radius: 9999px;
-  font-weight: 500;
-}
-
-.status-published {
-  background: #dcfce7;
-  color: #166534;
-}
-
-.status-draft {
-  background: #fef3c7;
-  color: #92400e;
-}
-
-.modal-homebase .modal-content {
+.modal-content {
   border: none;
   border-radius: 0.75rem;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
 }
 
-.modal-homebase .modal-header {
-  border-bottom: 1px solid #e2e8f0;
+.modal-header {
+  border-bottom: 1px solid #e5e7eb;
   padding: 1.5rem;
 }
 
-.modal-homebase .modal-body {
+.modal-body {
   padding: 1.5rem;
 }
 
-.modal-homebase .modal-footer {
-  border-top: 1px solid #e2e8f0;
+.modal-footer {
+  border-top: 1px solid #e5e7eb;
   padding: 1.5rem;
+  gap: 0.75rem;
+}
+
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 0.5rem;
+}
+
+.form-control {
+  width: 100%;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  transition: border-color 0.2s;
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.btn-secondary {
+  background: #f9fafb;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  padding: 0.5rem 1rem;
+  font-weight: 500;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-secondary:hover {
+  background: #e5e7eb;
+}
+
+.time-input-group {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.time-separator {
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.role-select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 0.5rem center;
+  background-repeat: no-repeat;
+  background-size: 1.5em 1.5em;
+  padding-right: 2.5rem;
 }
 </style>
 
@@ -287,105 +346,50 @@
     <div class="container-fluid px-4">
       <div class="d-flex align-items-center justify-content-between">
         <div>
-          <h1 class="h3 mb-1 fw-bold text-gray-900">Schedule</h1>
-          <p class="text-muted mb-0">Manage your team's work schedule</p>
+          <h1 class="schedule-title">Schedule</h1>
+          <p class="schedule-subtitle">Manage your team's work schedule</p>
         </div>
         <div class="week-controls">
-          <div class="week-picker">
-            <label class="text-sm fw-medium text-gray-700">Week of:</label>
-            <input id="weekInput" type="date" class="form-control form-control-sm">
-          </div>
-          <div class="publish-controls">
-            <span id="pubStatus" class="status-badge status-draft">Draft</span>
-            <button id="publishBtn" class="btn btn-homebase btn-sm">Publish Schedule</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Navigation -->
-  <div class="schedule-nav">
-    <div class="container-fluid px-4">
-      <ul class="nav nav-tabs" role="tablist">
-        <li class="nav-item">
-          <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#pane-schedule" type="button">
-            <i class="fas fa-calendar-alt me-2"></i>Schedule
-          </button>
-        </li>
-        <li class="nav-item">
-          <button class="nav-link" data-bs-toggle="tab" data-bs-target="#pane-team" type="button">
-            <i class="fas fa-users me-2"></i>Team Roster
-          </button>
-        </li>
-        <li class="nav-item">
-          <button class="nav-link" data-bs-toggle="tab" data-bs-target="#pane-admin" type="button">
-            <i class="fas fa-cog me-2"></i>Settings
-          </button>
-        </li>
-      </ul>
-    </div>
-  </div>
-
-  <!-- Content -->
-  <div class="schedule-content">
-    <div class="tab-content">
-      
-      <!-- Schedule Tab -->
-      <div class="tab-pane fade show active" id="pane-schedule">
-        <div class="table-responsive">
-          <table class="schedule-table" id="schedTable">
-            <thead></thead>
-            <tbody></tbody>
-          </table>
-        </div>
-        <div class="alert alert-info m-4 d-none" id="roNote">
-          <i class="fas fa-info-circle me-2"></i>
-          You're viewing in read-only mode. Only administrators can modify schedules.
-        </div>
-      </div>
-
-      <!-- Team Roster Tab -->
-      <div class="tab-pane fade" id="pane-team">
-        <div class="team-roster">
-          <div class="add-employee-form admin-only">
-            <h5 class="mb-3">Add Team Member</h5>
-            <div class="row g-3">
-              <div class="col-md-4">
-                <input id="empName" class="form-control" placeholder="Full name" required>
-              </div>
-              <div class="col-md-4">
-                <input id="empEmail" class="form-control" placeholder="Email address">
-              </div>
-              <div class="col-md-3">
-                <input id="empRole" class="form-control" placeholder="Role/Position">
-              </div>
-              <div class="col-md-1">
-                <button id="addEmpBtn" class="btn btn-homebase w-100">Add</button>
-              </div>
+          <div class="week-navigation">
+            <button class="week-nav-btn" id="prevWeekBtn">
+              <i class="fas fa-chevron-left"></i>
+            </button>
+            <div class="week-display" id="weekDisplay">
+              Week of Mon, 28 - Sun, 4
             </div>
+            <button class="week-nav-btn" id="nextWeekBtn">
+              <i class="fas fa-chevron-right"></i>
+            </button>
           </div>
-          <div id="empList"></div>
+          <div class="publish-section">
+            <span class="status-indicator status-draft" id="statusIndicator">Draft</span>
+            <button class="btn-primary" id="publishBtn">Publish (0)</button>
+          </div>
         </div>
       </div>
+    </div>
+  </div>
 
-      <!-- Admin Settings Tab -->
-      <div class="tab-pane fade" id="pane-admin">
-        <div class="team-roster">
-          <div class="alert alert-warning">
-            <i class="fas fa-shield-alt me-2"></i>
-            Only administrators can modify user permissions.
-          </div>
-          <div id="adminList"></div>
-        </div>
-      </div>
-
+  <!-- Schedule Grid -->
+  <div class="schedule-grid">
+    <div class="grid-header">
+      <div class="grid-header-cell">Team members (0)</div>
+      <div class="grid-header-cell" data-day="0">Mon, 28</div>
+      <div class="grid-header-cell" data-day="1">Tue, 29</div>
+      <div class="grid-header-cell" data-day="2">Wed, 30</div>
+      <div class="grid-header-cell" data-day="3">Thu, 1</div>
+      <div class="grid-header-cell" data-day="4">Fri, 2</div>
+      <div class="grid-header-cell" data-day="5">Sat, 3</div>
+      <div class="grid-header-cell" data-day="6">Sun, 4</div>
+    </div>
+    <div class="grid-body" id="scheduleGridBody">
+      <!-- Employees and shifts will be rendered here -->
     </div>
   </div>
 </div>
 
 <!-- Add Shift Modal -->
-<div class="modal modal-homebase" id="shiftModal" tabindex="-1">
+<div class="modal fade" id="shiftModal" tabindex="-1">
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
@@ -393,22 +397,43 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
-        <div class="mb-3">
-          <label class="form-label">Start Time</label>
-          <input id="startDt" type="datetime-local" class="form-control">
+        <div class="form-group">
+          <label class="form-label">Time</label>
+          <div class="time-input-group">
+            <input type="time" id="startTime" class="form-control" value="09:00">
+            <span class="time-separator">-</span>
+            <input type="time" id="endTime" class="form-control" value="17:00">
+          </div>
         </div>
-        <div class="mb-3">
-          <label class="form-label">End Time</label>
-          <input id="endDt" type="datetime-local" class="form-control">
+        <div class="form-group">
+          <label class="form-label">Role</label>
+          <select id="shiftRole" class="form-control role-select">
+            <option>Support Worker</option>
+            <option>Coordinator</option>
+            <option>Manager</option>
+            <option>Supervisor</option>
+          </select>
         </div>
-        <div class="mb-3">
-          <label class="form-label">Notes (optional)</label>
-          <textarea id="notes" class="form-control" rows="3" placeholder="Add any notes about this shift..."></textarea>
+        <div class="form-group">
+          <label class="form-label">Apply to:</label>
+          <div class="d-flex gap-2 flex-wrap mt-2">
+            <button type="button" class="btn btn-secondary btn-sm day-selector" data-day="1">Mon</button>
+            <button type="button" class="btn btn-secondary btn-sm day-selector" data-day="2">Tue</button>
+            <button type="button" class="btn btn-secondary btn-sm day-selector" data-day="3">Wed</button>
+            <button type="button" class="btn btn-secondary btn-sm day-selector" data-day="4">Thu</button>
+            <button type="button" class="btn btn-secondary btn-sm day-selector" data-day="5">Fri</button>
+            <button type="button" class="btn btn-secondary btn-sm day-selector" data-day="6">Sat</button>
+            <button type="button" class="btn btn-secondary btn-sm day-selector" data-day="0">Sun</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Shift Notes:</label>
+          <textarea id="shiftNotes" class="form-control" rows="3" placeholder="Leave a note for your employee, like the address of a job site, and they'll see it when they clock in."></textarea>
         </div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-        <button id="saveShiftBtn" class="btn btn-homebase" onclick="saveShift()">Save Shift</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" id="saveShiftBtn">Add</button>
       </div>
     </div>
   </div>
@@ -417,270 +442,369 @@
 <?php require_once 'app/views/templates/footer.php'; ?>
 
 <script>
-console.log('[schedule] script loaded');
-const api=(a,o={})=>fetch(`/schedule/api?a=${encodeURIComponent(a)}`,{headers:{'Content-Type':'application/json'},...o}).then(r=>r.json());
-const $=s=>document.querySelector(s), $$=s=>Array.from(document.querySelectorAll(s));
-let employees=[],shifts=[],currentWeekStart=null,is_admin=0,shiftModal,currentShiftEmp=0,currentShiftDate='';
+console.log('[schedule] Homebase-style script loaded');
 
-function iso(d){return d.toISOString().slice(0,10)}
-function mondayOf(s){const d=new Date(s);const k=(d.getDay()+6)%7;d.setDate(d.getDate()-k);return iso(d)}
-function daysOfWeek(){const s=new Date(currentWeekStart);return[...Array(7)].map((_,i)=>{const d=new Date(s);d.setDate(d.getDate()+i);return{iso:iso(d),label:d.toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'})}})}
-function EH(s){return (s??'').toString().replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+// API helper
+const api = (action, options = {}) => {
+  return fetch(`/schedule/api?a=${encodeURIComponent(action)}`, {
+    headers: {'Content-Type': 'application/json'},
+    ...options
+  }).then(r => {
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    return r.json();
+  });
+};
 
-document.addEventListener('DOMContentLoaded', async ()=>{
-  const today=new Date().toISOString().slice(0,10);
-  $('#weekInput').value=today;
-  shiftModal = new bootstrap.Modal($('#shiftModal'));
-  await loadEmployees(); await loadWeek();
-  $('#addEmpBtn').onclick=addEmployee;
-  $('#weekInput').onchange=loadWeek;
-  $('#publishBtn').onclick=togglePublish;
-  document.querySelector('[data-bs-target="#pane-admin"]').addEventListener('shown.bs.tab', loadAdmins, {once:true});
+// Global state
+let employees = [];
+let shifts = [];
+let currentWeekStart = null;
+let isAdmin = false;
+let shiftModal;
+let currentEmployee = null;
+let currentDate = null;
+let selectedDays = new Set();
+
+// Date helpers
+function mondayOf(dateStr) {
+  const d = new Date(dateStr);
+  const dayOfWeek = d.getDay();
+  const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+  d.setDate(d.getDate() - daysFromMonday);
+  return d.toISOString().slice(0, 10);
+}
+
+function formatWeekDisplay(mondayStr) {
+  const monday = new Date(mondayStr);
+  const sunday = new Date(monday);
+  sunday.setDate(sunday.getDate() + 6);
+  
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  
+  return `Week of ${monday.toLocaleDateString('en-US', {weekday: 'short'})}, ${monday.getDate()} - ${sunday.toLocaleDateString('en-US', {weekday: 'short'})}, ${sunday.getDate()}`;
+}
+
+function getWeekDays(mondayStr) {
+  const monday = new Date(mondayStr);
+  const days = [];
+  
+  for (let i = 0; i < 7; i++) {
+    const day = new Date(monday);
+    day.setDate(day.getDate() + i);
+    days.push({
+      date: day.toISOString().slice(0, 10),
+      display: day.toLocaleDateString('en-US', {weekday: 'short', day: 'numeric'})
+    });
+  }
+  
+  return days;
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', async () => {
+  shiftModal = new bootstrap.Modal(document.getElementById('shiftModal'));
+  
+  // Set initial week to current week
+  const today = new Date().toISOString().slice(0, 10);
+  currentWeekStart = mondayOf(today);
+  
+  // Event listeners
+  document.getElementById('prevWeekBtn').addEventListener('click', () => changeWeek(-7));
+  document.getElementById('nextWeekBtn').addEventListener('click', () => changeWeek(7));
+  document.getElementById('publishBtn').addEventListener('click', togglePublish);
+  document.getElementById('saveShiftBtn').addEventListener('click', saveShift);
+  
+  // Day selector buttons
+  document.querySelectorAll('.day-selector').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const day = e.target.dataset.day;
+      if (selectedDays.has(day)) {
+        selectedDays.delete(day);
+        e.target.classList.remove('btn-primary');
+        e.target.classList.add('btn-secondary');
+      } else {
+        selectedDays.add(day);
+        e.target.classList.remove('btn-secondary');
+        e.target.classList.add('btn-primary');
+      }
+    });
+  });
+  
+  // Load initial data
+  await loadEmployees();
+  await loadWeek();
 });
 
-// Employees
-async function loadEmployees(){ 
+function changeWeek(days) {
+  const current = new Date(currentWeekStart);
+  current.setDate(current.getDate() + days);
+  currentWeekStart = current.toISOString().slice(0, 10);
+  loadWeek();
+}
+
+async function loadEmployees() {
   try {
-    employees=await api('employees.list'); 
-    renderEmployees(); 
-  } catch(e) {
+    employees = await api('employees.list');
+    console.log('Loaded employees:', employees);
+  } catch (e) {
     console.error('Error loading employees:', e);
     employees = [];
   }
 }
 
-function renderEmployees(){
-  const wrap=$('#empList'); wrap.innerHTML='';
-  employees.forEach(e=>{
-    const card=document.createElement('div'); card.className='employee-card';
-    card.innerHTML=`
-      <div class="d-flex align-items-center justify-content-between">
-        <div class="flex-grow-1">
-          <div class="employee-name">${EH(e.name)}</div>
-          <div class="employee-role">${EH(e.role)}</div>
-          ${e.email?`<div class="text-muted" style="font-size:0.75rem">${EH(e.email)}</div>`:''}
-        </div>
-        <div class="d-flex align-items-center gap-2">
-          <span class="status-badge ${e.is_active ? 'status-published' : 'status-draft'}">
-            ${e.is_active ? 'Active' : 'Inactive'}
-          </span>
-          <div class="form-check form-switch admin-only">
-            <input class="form-check-input emp-active" type="checkbox" data-id="${e.id}" ${e.is_active?'checked':''}>
-          </div>
-          <button class="btn btn-outline-danger btn-sm emp-del admin-only" data-id="${e.id}">
-            <i class="fas fa-trash"></i>
-          </button>
-        </div>
-      </div>
-    `;
-    wrap.appendChild(card);
-  });
-  
-  wrap.onclick=async ev=>{
-    const del=ev.target.closest('.emp-del'); 
-    if(del){ 
-      if(!confirm('Delete employee and all their shifts?'))return; 
-      await fetch(`/schedule/api?a=employees.delete&id=${del.dataset.id}`); 
-      await loadEmployees(); 
-      await loadWeek(); 
-      return; 
-    }
-    const sw=ev.target.closest('.emp-active'); 
-    if(sw){ 
-      await fetch('/schedule/api?a=employees.update',{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({id:+sw.dataset.id,is_active: sw.checked?1:0})
-      }); 
-      await loadEmployees();
-    }
-  };
-}
-
-async function addEmployee(){
-  if(!is_admin) return alert('Admin access required');
-  const name=$('#empName').value.trim(); 
-  if(!name) return alert('Name is required');
-  const email=$('#empEmail').value.trim()||null; 
-  const role=$('#empRole').value.trim()||'Staff';
-  
+async function loadWeek() {
   try {
-    await fetch('/schedule/api?a=employees.create',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({name,email,role})
-    });
-    $('#empName').value=''; $('#empEmail').value=''; $('#empRole').value='';
-    await loadEmployees();
-  } catch(e) {
-    alert('Error adding employee: ' + e.message);
+    const data = await api(`shifts.week&week=${currentWeekStart}`);
+    shifts = data.shifts || [];
+    isAdmin = data.is_admin || false;
+    
+    updateWeekDisplay();
+    renderScheduleGrid();
+    await loadPublishStatus();
+  } catch (e) {
+    console.error('Error loading week:', e);
   }
 }
 
-// Week schedule
-async function loadWeek(){
-  currentWeekStart=mondayOf($('#weekInput').value || new Date().toISOString().slice(0,10));
-  const j=await api('shifts.week&week='+currentWeekStart);
-  shifts=j.shifts||[]; is_admin=+j.is_admin||0;
-  $$('.admin-only').forEach(el=> el.style.display = is_admin ? '' : 'none');
-  document.getElementById('roNote').classList.toggle('d-none', !!is_admin);
-  renderSchedule(); await loadPublishStatus();
-}
-
-function renderSchedule(){
-  const thead=$('#schedTable thead'), tbody=$('#schedTable tbody'), days=daysOfWeek();
-  thead.innerHTML=`<tr>
-    <th class="employee-cell">Employee</th>
-    ${days.map(d=>`<th style="width:calc((100% - 200px)/7)">${d.label}</th>`).join('')}
-  </tr>`;
-  tbody.innerHTML='';
+function updateWeekDisplay() {
+  document.getElementById('weekDisplay').textContent = formatWeekDisplay(currentWeekStart);
   
-  employees.filter(e=>e.is_active).sort((a,b)=>a.name.localeCompare(b.name)).forEach(emp=>{
-    const tr=document.createElement('tr');
-    const nameTd=document.createElement('td'); 
-    nameTd.className='employee-cell';
-    nameTd.innerHTML=`<div class="employee-name">${EH(emp.name)}</div><div class="employee-role">${EH(emp.role)}</div>`;
-    tr.appendChild(nameTd);
-    
-    days.forEach(d=>{
-      const td=document.createElement('td');
-      const empShifts=shifts.filter(s=> s.employee_id===emp.id && s.start_dt.slice(0,10)===d.iso);
-      
-      empShifts.forEach(s=>{
-        const div=document.createElement('div'); 
-        div.className='shift-block';
-        const t1=s.start_dt.slice(11,16), t2=s.end_dt.slice(11,16);
-        div.innerHTML=`
-          <div class="shift-time">${t1} - ${t2}</div>
-          ${s.notes?`<div class="shift-notes">${EH(s.notes)}</div>`:''}
-          ${is_admin?`<button class="shift-delete del-shift" data-id="${s.id}">×</button>`:''}
-        `;
-        td.appendChild(div);
-      });
-      
-      if(is_admin){ 
-        const b=document.createElement('button'); 
-        b.className='add-shift-btn'; 
-        b.innerHTML='<i class="fas fa-plus me-1"></i>Add Shift'; 
-        b.onclick=()=>openModal(emp.id,d.iso); 
-        td.appendChild(b); 
-      }
-      tr.appendChild(td);
-    });
-    tbody.appendChild(tr);
+  const days = getWeekDays(currentWeekStart);
+  const headerCells = document.querySelectorAll('.grid-header-cell[data-day]');
+  
+  headerCells.forEach((cell, index) => {
+    if (days[index]) {
+      cell.textContent = days[index].display;
+    }
   });
   
-  tbody.onclick=async ev=>{ 
-    const b=ev.target.closest('.del-shift'); 
-    if(!b) return; 
-    if(!confirm('Delete this shift?')) return; 
-    await fetch(`/schedule/api?a=shifts.delete&id=${b.dataset.id}`); 
-    await loadWeek(); 
-  };
+  // Update team members count
+  const activeEmployees = employees.filter(emp => emp.is_active);
+  document.querySelector('.grid-header-cell:first-child').textContent = `Team members (${activeEmployees.length})`;
 }
 
-function openModal(empId, date) {
-  currentShiftEmp = empId;
-  currentShiftDate = date;
-  $('#startDt').value = date + 'T09:00';
-  $('#endDt').value = date + 'T17:00';
-  $('#notes').value = '';
+function renderScheduleGrid() {
+  const gridBody = document.getElementById('scheduleGridBody');
+  gridBody.innerHTML = '';
+  
+  const activeEmployees = employees.filter(emp => emp.is_active);
+  const days = getWeekDays(currentWeekStart);
+  
+  activeEmployees.forEach(employee => {
+    const row = document.createElement('div');
+    row.className = 'grid-row';
+    
+    // Employee cell
+    const employeeCell = document.createElement('div');
+    employeeCell.className = 'employee-cell';
+    
+    const employeeShifts = shifts.filter(s => s.employee_id === employee.id);
+    const totalHours = calculateTotalHours(employeeShifts);
+    
+    employeeCell.innerHTML = `
+      <div class="employee-name">${escapeHtml(employee.name)}</div>
+      <div class="employee-role">${escapeHtml(employee.role)}</div>
+      <div class="employee-hours">${totalHours.toFixed(2)} hrs / $${(totalHours * (employee.wage || 0)).toFixed(2)}</div>
+    `;
+    
+    row.appendChild(employeeCell);
+    
+    // Day cells
+    days.forEach((day, dayIndex) => {
+      const dayCell = document.createElement('div');
+      dayCell.className = 'day-cell';
+      
+      const dayShifts = employeeShifts.filter(s => s.start_dt.slice(0, 10) === day.date);
+      
+      // Render existing shifts
+      dayShifts.forEach(shift => {
+        const shiftBlock = createShiftBlock(shift);
+        dayCell.appendChild(shiftBlock);
+      });
+      
+      // Add shift button (admin only)
+      if (isAdmin) {
+        const addArea = document.createElement('div');
+        addArea.className = 'add-shift-area';
+        
+        const addBtn = document.createElement('button');
+        addBtn.className = 'add-shift-btn';
+        addBtn.innerHTML = '<i class="fas fa-plus"></i>';
+        addBtn.addEventListener('click', () => openShiftModal(employee, day.date));
+        
+        addArea.appendChild(addBtn);
+        dayCell.appendChild(addArea);
+      }
+      
+      row.appendChild(dayCell);
+    });
+    
+    gridBody.appendChild(row);
+  });
+}
+
+function createShiftBlock(shift) {
+  const block = document.createElement('div');
+  block.className = 'shift-block';
+  
+  const startTime = shift.start_dt.slice(11, 16);
+  const endTime = shift.end_dt.slice(11, 16);
+  
+  block.innerHTML = `
+    <div class="shift-time">${startTime}-${endTime}</div>
+    <div class="shift-role">${escapeHtml(shift.notes || shift.employee_role)}</div>
+    ${isAdmin ? `<button class="shift-delete" onclick="deleteShift(${shift.id})">×</button>` : ''}
+  `;
+  
+  return block;
+}
+
+function calculateTotalHours(shifts) {
+  return shifts.reduce((total, shift) => {
+    const start = new Date(shift.start_dt);
+    const end = new Date(shift.end_dt);
+    const hours = (end - start) / (1000 * 60 * 60);
+    return total + hours;
+  }, 0);
+}
+
+function openShiftModal(employee, date) {
+  if (!isAdmin) return;
+  
+  currentEmployee = employee;
+  currentDate = date;
+  selectedDays.clear();
+  
+  // Reset day selector buttons
+  document.querySelectorAll('.day-selector').forEach(btn => {
+    btn.classList.remove('btn-primary');
+    btn.classList.add('btn-secondary');
+  });
+  
+  // Pre-select the clicked day
+  const dayOfWeek = new Date(date).getDay();
+  const dayBtn = document.querySelector(`[data-day="${dayOfWeek}"]`);
+  if (dayBtn) {
+    selectedDays.add(dayOfWeek.toString());
+    dayBtn.classList.remove('btn-secondary');
+    dayBtn.classList.add('btn-primary');
+  }
+  
+  // Reset form
+  document.getElementById('startTime').value = '09:00';
+  document.getElementById('endTime').value = '17:00';
+  document.getElementById('shiftRole').value = employee.role || 'Support Worker';
+  document.getElementById('shiftNotes').value = '';
+  
   shiftModal.show();
 }
 
 async function saveShift() {
-  const start = $('#startDt').value;
-  const end = $('#endDt').value;
-  const notes = $('#notes').value;
+  if (!currentEmployee || selectedDays.size === 0) return;
   
-  if (!start || !end) return alert('Start and end times are required');
-  if (new Date(start) >= new Date(end)) return alert('End time must be after start time');
+  const startTime = document.getElementById('startTime').value;
+  const endTime = document.getElementById('endTime').value;
+  const role = document.getElementById('shiftRole').value;
+  const notes = document.getElementById('shiftNotes').value;
+  
+  if (!startTime || !endTime) {
+    alert('Please select start and end times');
+    return;
+  }
   
   try {
-    await fetch('/schedule/api?a=shifts.create', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({
-        employee_id: currentShiftEmp,
-        start_dt: start,
-        end_dt: end,
-        notes: notes
-      })
-    });
+    const baseDate = new Date(currentWeekStart);
+    
+    for (const dayStr of selectedDays) {
+      const day = parseInt(dayStr);
+      const shiftDate = new Date(baseDate);
+      shiftDate.setDate(shiftDate.getDate() + day);
+      
+      const startDt = `${shiftDate.toISOString().slice(0, 10)} ${startTime}:00`;
+      const endDt = `${shiftDate.toISOString().slice(0, 10)} ${endTime}:00`;
+      
+      await api('shifts.create', {
+        method: 'POST',
+        body: JSON.stringify({
+          employee_id: currentEmployee.id,
+          start_dt: startDt,
+          end_dt: endDt,
+          notes: notes || role
+        })
+      });
+    }
+    
     shiftModal.hide();
     await loadWeek();
-  } catch(e) {
+  } catch (e) {
+    console.error('Error saving shift:', e);
     alert('Error saving shift: ' + e.message);
   }
 }
 
-async function loadPublishStatus(){
-  const j=await api('publish.status&week='+currentWeekStart);
-  const status = $('#pubStatus');
-  const btn = $('#publishBtn');
+async function deleteShift(shiftId) {
+  if (!isAdmin || !confirm('Delete this shift?')) return;
   
-  if(j.published) {
-    status.textContent = 'Published';
-    status.className = 'status-badge status-published';
-    btn.textContent = 'Unpublish Schedule';
-  } else {
-    status.textContent = 'Draft';
-    status.className = 'status-badge status-draft';
-    btn.textContent = 'Publish Schedule';
+  try {
+    await api(`shifts.delete&id=${shiftId}`);
+    await loadWeek();
+  } catch (e) {
+    console.error('Error deleting shift:', e);
+    alert('Error deleting shift: ' + e.message);
   }
-  
-  btn.dataset.pub = j.published ? '1':'0';
-  btn.style.display = (j.is_admin ? '' : 'none');
 }
 
-async function togglePublish(){
-  if(!is_admin) return alert('Admin access required');
-  const next = $('#publishBtn').dataset.pub==='1' ? 0 : 1;
-  await fetch('/schedule/api?a=publish.set',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({week:currentWeekStart,published:!!next})
-  });
-  await loadPublishStatus();
+async function loadPublishStatus() {
+  try {
+    const status = await api(`publish.status&week=${currentWeekStart}`);
+    const indicator = document.getElementById('statusIndicator');
+    const publishBtn = document.getElementById('publishBtn');
+    
+    if (status.published) {
+      indicator.textContent = 'Published';
+      indicator.className = 'status-indicator status-published';
+      publishBtn.textContent = 'Unpublish (0)';
+    } else {
+      indicator.textContent = 'Draft';
+      indicator.className = 'status-indicator status-draft';
+      publishBtn.textContent = 'Publish (0)';
+    }
+    
+    publishBtn.style.display = isAdmin ? 'block' : 'none';
+  } catch (e) {
+    console.error('Error loading publish status:', e);
+  }
 }
 
-// Admins tab
-async function loadAdmins(){
-  const list=await api('users.list'); 
-  const wrap=$('#adminList'); 
-  wrap.innerHTML='';
+async function togglePublish() {
+  if (!isAdmin) return;
   
-  list.forEach(u=>{
-    const card=document.createElement('div'); 
-    card.className='employee-card';
-    card.innerHTML=`
-      <div class="d-flex align-items-center justify-content-between">
-        <div>
-          <div class="employee-name">${EH(u.username)}</div>
-          ${u.full_name?`<div class="employee-role">${EH(u.full_name)}</div>`:''}
-        </div>
-        <div class="d-flex align-items-center gap-2">
-          <span class="status-badge ${u.is_admin ? 'status-published' : 'status-draft'}">
-            ${u.is_admin ? 'Admin' : 'User'}
-          </span>
-          <div class="form-check form-switch">
-            <input class="form-check-input toggle-admin" type="checkbox" data-id="${u.id}" ${u.is_admin?'checked':''}>
-          </div>
-        </div>
-      </div>
-    `;
-    wrap.appendChild(card);
-  });
-  
-  wrap.onclick=async ev=>{ 
-    const sw=ev.target.closest('.toggle-admin'); 
-    if(!sw) return;
-    await fetch('/schedule/api?a=users.setAdmin',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({id:+sw.dataset.id,is_admin: sw.checked?1:0})
+  try {
+    const status = await api(`publish.status&week=${currentWeekStart}`);
+    const newStatus = !status.published;
+    
+    await api('publish.set', {
+      method: 'POST',
+      body: JSON.stringify({
+        week: currentWeekStart,
+        published: newStatus
+      })
     });
-    await loadAdmins();
-  };
+    
+    await loadPublishStatus();
+  } catch (e) {
+    console.error('Error toggling publish status:', e);
+    alert('Error updating publish status: ' + e.message);
+  }
 }
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+// Make deleteShift globally available
+window.deleteShift = deleteShift;
 </script>

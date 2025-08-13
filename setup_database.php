@@ -24,13 +24,12 @@ try {
         CREATE TABLE IF NOT EXISTS shifts (
             id INT AUTO_INCREMENT PRIMARY KEY,
             employee_id INT NOT NULL,
-            date DATE NOT NULL,
-            start_time TIME NOT NULL,
-            end_time TIME NOT NULL,
+            start_dt DATETIME NOT NULL,
+            end_dt DATETIME NOT NULL,
+            notes TEXT NULL,
             status VARCHAR(20) DEFAULT 'scheduled',
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE,
-            UNIQUE KEY unique_employee_date (employee_id, date)
+            FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE
         )
     ");
 
@@ -42,6 +41,17 @@ try {
             is_active TINYINT(1) DEFAULT 1,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             UNIQUE KEY unique_name (name)
+        )
+    ");
+
+    // Create schedule weeks table for publishing
+    $db->exec("
+        CREATE TABLE IF NOT EXISTS schedule_weeks (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            week_start DATE NOT NULL,
+            published TINYINT(1) DEFAULT 0,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE KEY unique_week (week_start)
         )
     ");
 
