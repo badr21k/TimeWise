@@ -48,8 +48,8 @@ class User {
           exit;
       }
 
-      //FETCH USER RECORD
-      $stmt = $db->prepare("SELECT id, password FROM users WHERE username = :u");
+      //FETCH USER RECORD INCLUDING is_admin
+      $stmt = $db->prepare("SELECT id, password, is_admin, full_name FROM users WHERE username = :u");
       $stmt->bindValue(':u', $username);
       $stmt->execute();
       $row = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -71,7 +71,7 @@ class User {
           $_SESSION['auth']     = 1;
           $_SESSION['username'] = ucwords($username);
           $_SESSION['user_id'] = $row['id'];
-          $_SESSION['is_admin']  = (int)($row['is_admin'] ?? 0);
+          $_SESSION['is_admin']  = (int)$row['is_admin'];
           $_SESSION['full_name'] = $row['full_name'] ?? null;  
 
           // Set success toast

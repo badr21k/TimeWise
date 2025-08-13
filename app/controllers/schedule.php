@@ -1,4 +1,3 @@
-
 <?php
 
 class Schedule extends Controller
@@ -17,35 +16,40 @@ class Schedule extends Controller
     }
 
     private function isAdmin(): bool {
-        return !empty($_SESSION['auth']['is_admin']);
+        // Check if 'auth' key exists and if 'is_admin' within it is true (or 1)
+        return isset($_SESSION['auth']['is_admin']) && $_SESSION['auth']['is_admin'] == 1;
     }
-    
+
     private function guardAdmin(): void {
-        if (!$this->isAdmin()) { 
-            http_response_code(403); 
-            echo json_encode(['error' => 'Admin access required']); 
-            exit; 
+        // This method checks if the user is authenticated and if they are an admin.
+        // If not authenticated, it throws an 'Authentication required.' error.
+        // If authenticated but not an admin, it throws 'Only admins can modify admin privileges.'
+        if (!isset($_SESSION['auth']) || !$_SESSION['auth']) {
+            throw new Exception('Authentication required.');
+        }
+        if (!isset($_SESSION['auth']['is_admin']) || (int)$_SESSION['auth']['is_admin'] !== 1) {
+            throw new Exception('Only admins can modify admin privileges.');
         }
     }
 
     public function index() {
-        if (empty($_SESSION['auth'])) { 
-            header('Location: /login'); 
-            exit; 
+        if (empty($_SESSION['auth'])) {
+            header('Location: /login');
+            exit;
         }
         $this->view('schedule/index');
     }
 
     public function api() {
-        if (empty($_SESSION['auth'])) { 
-            http_response_code(401); 
-            echo json_encode(['error' => 'Authentication required']); 
-            return; 
+        if (empty($_SESSION['auth'])) {
+            http_response_code(401);
+            echo json_encode(['error' => 'Authentication required']);
+            return;
         }
-        
+
         header('Content-Type: application/json; charset=utf-8');
         $action = $_GET['a'] ?? '';
-        
+
         try {
             switch ($action) {
                 // Employee Management
@@ -56,15 +60,15 @@ class Schedule extends Controller
                 case 'employees.create':
                     $this->guardAdmin();
                     $data = $this->json();
-                    
+
                     // Validate required fields
                     if (empty(trim($data['name'] ?? ''))) {
                         throw new Exception('Name is required');
                     }
-                    
+
                     $id = $this->Employee->create(
-                        trim($data['name']), 
-                        !empty($data['email']) ? trim($data['email']) : null, 
+                        trim($data['name']),
+                        !empty($data['email']) ? trim($data['email']) : null,
                         !empty($data['role']) ? trim($data['role']) : 'Staff',
                         !empty($data['department']) ? trim($data['department']) : null,
                         !empty($data['wage']) ? (float)$data['wage'] : null
@@ -89,8 +93,8 @@ class Schedule extends Controller
                     $this->guardAdmin();
                     $data = $this->json();
                     $this->Employee->assignToDepartment(
-                        (int)$data['employee_id'], 
-                        $data['department'], 
+                        (int)$data['employee_id'],
+                        $data['department'],
                         $data['is_manager'] ?? false
                     );
                     echo json_encode(['success' => true]);
@@ -114,9 +118,9 @@ class Schedule extends Controller
                     $this->guardAdmin();
                     $data = $this->json();
                     $id = $this->Shift->create(
-                        (int)$data['employee_id'], 
-                        $data['start_dt'], 
-                        $data['end_dt'], 
+                        (int)$data['employee_id'],
+                        $data['start_dt'],
+                        $data['end_dt'],
                         $data['notes'] ?? null
                     );
                     echo json_encode(['success' => true, 'id' => $id]);
@@ -155,7 +159,7 @@ class Schedule extends Controller
                     $this->guardAdmin();
                     $data = $this->json();
                     $id = $this->Department->create(
-                        $data['name'], 
+                        $data['name'],
                         $data['roles'] ?? []
                     );
                     echo json_encode(['success' => true, 'id' => $id]);

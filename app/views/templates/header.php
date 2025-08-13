@@ -260,7 +260,7 @@ if (!isset($_SESSION['auth'])) {
                             </a></li>
                         </ul>
                     </li>
-                    <?php if (isset($_SESSION['username']) && strtolower($_SESSION['username']) === 'admin'): ?>
+                    <?php if (isset($_SESSION['is_admin']) && (int)$_SESSION['is_admin'] === 1): ?>
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="fas fa-chart-bar me-1"></i>Reports
@@ -317,7 +317,7 @@ if (!isset($_SESSION['auth'])) {
                             <i class="fas fa-plus me-1"></i>Create New
                         </a>
                     </li>
-                    <?php if (isset($_SESSION['username']) && strtolower($_SESSION['username']) === 'admin'): ?>
+                    <?php if (isset($_SESSION['is_admin']) && (int)$_SESSION['is_admin'] === 1): ?>
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="mobileAdminDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="fas fa-chart-bar me-1"></i>Admin Reports

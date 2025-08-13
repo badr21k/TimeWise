@@ -1,4 +1,3 @@
-
 <?php require 'app/views/templates/header.php'; ?>
 
 <div class="container-fluid" style="max-width:1400px">
@@ -72,7 +71,7 @@
         <div class="alert alert-info mt-2 d-none" id="roNote">
           <i class="fas fa-info-circle me-2"></i>You are not an admin. Schedule is read-only.
         </div>
-        
+
         <!-- Weekly Summary -->
         <div class="card mt-4">
           <div class="card-header d-flex justify-content-between align-items-center">
@@ -443,13 +442,13 @@
   .schedule-table td {
     min-width: 120px;
   }
-  
+
   .employee-avatar {
     width: 32px;
     height: 32px;
     font-size: 12px;
   }
-  
+
   .shift-block {
     padding: 6px 8px;
     font-size: 0.8rem;
@@ -496,18 +495,18 @@ function goToCurrentWeek() {
 function renderWeeklySummary() {
   const summary = {};
   let totalHours = 0;
-  
+
   employees.filter(e => e.is_active).forEach(emp => {
     const empShifts = shifts.filter(s => s.employee_id === emp.id);
     let empHours = 0;
-    
+
     empShifts.forEach(s => {
       const start = new Date(s.start_dt);
       const end = new Date(s.end_dt);
       const hours = (end - start) / (1000 * 60 * 60);
       empHours += hours;
     });
-    
+
     if (empHours > 0) {
       summary[emp.name] = {
         hours: empHours,
@@ -517,7 +516,7 @@ function renderWeeklySummary() {
       totalHours += empHours;
     }
   });
-  
+
   const summaryDiv = $('#weeklySummary');
   summaryDiv.innerHTML = `
     <div class="col-12 mb-2">
@@ -546,7 +545,7 @@ function renderTeamRoster() {
   const searchTerm = $('#searchTeam').value.toLowerCase();
   const roleFilter = $('#filterRole').value;
   const statusFilter = $('#filterStatus').value;
-  
+
   let filteredEmployees = employees.filter(emp => {
     const matchesSearch = emp.name.toLowerCase().includes(searchTerm) || 
                          (emp.email && emp.email.toLowerCase().includes(searchTerm));
@@ -554,10 +553,10 @@ function renderTeamRoster() {
     const matchesStatus = !statusFilter || 
                          (statusFilter === 'active' && emp.is_active) ||
                          (statusFilter === 'inactive' && !emp.is_active);
-    
+
     return matchesSearch && matchesRole && matchesStatus;
   });
-  
+
   tbody.innerHTML = filteredEmployees.map(emp => `
     <tr>
       <td>
@@ -598,7 +597,7 @@ function renderTeamRoster() {
       </td>
     </tr>
   `).join('');
-  
+
   $('#teamCount').textContent = `${filteredEmployees.length} team members`;
 }
 
@@ -607,17 +606,23 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   $('#weekInput').value=today;
   shiftModal=new bootstrap.Modal(document.getElementById('shiftModal'));
   addEmployeeModal=new bootstrap.Modal(document.getElementById('addEmployeeModal'));
-  
-  await loadEmployees(); 
+
+  console.log('Schedule app loaded');
+  console.log('Admin status check:', <?php echo json_encode([
+            'is_admin_session' => $_SESSION['is_admin'] ?? 'not set',
+            'username' => $_SESSION['username'] ?? 'not set',
+            'auth' => $_SESSION['auth'] ?? 'not set'
+        ]); ?>);
+  await loadEmployees();
   await loadWeek();
-  
+
   $('#saveEmployeeBtn').onclick=addEmployee;
   $('#weekInput').onchange=loadWeek;
   $('#publishBtn').onclick=togglePublish;
   $('#searchTeam').oninput=renderTeamRoster;
   $('#filterRole').onchange=renderTeamRoster;
   $('#filterStatus').onchange=renderTeamRoster;
-  
+
   document.querySelector('[data-bs-target="#pane-admins"]').addEventListener('shown.bs.tab', loadAdmins, {once:true});
   document.querySelector('[data-bs-target="#pane-roster"]').addEventListener('shown.bs.tab', renderTeamRoster);
   document.getElementById('saveShiftBtn').onclick=saveShift;
@@ -626,7 +631,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
 async function loadEmployees(){ 
   employees=await api('employees.list'); 
   renderTeamRoster();
-  
+
   // Update role filter options
   const roles = [...new Set(employees.map(emp => emp.role))];
   $('#filterRole').innerHTML = '<option value="">All Roles</option>' + 
@@ -637,33 +642,33 @@ async function addEmployee(){
   if(!is_admin) return alert('Admin only');
   const name=$('#empName').value.trim(); 
   if(!name) return alert('Name required');
-  
+
   const email=$('#empEmail').value.trim()||null; 
   const role=$('#empRole').value.trim()||'Staff';
   const department=$('#empDepartment').value||null;
   const wage=$('#empWage').value||null;
-  
+
   try {
     const response = await fetch('/schedule/api?a=employees.create',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({name,email,role,department,wage})
     });
-    
+
     const result = await response.json();
-    
+
     if (!response.ok || result.error) {
       alert('Error: ' + (result.error || 'Failed to add team member'));
       return;
     }
-    
+
     // Clear form
     $('#empName').value=''; 
     $('#empEmail').value=''; 
     $('#empRole').value='';
     $('#empDepartment').value='';
     $('#empWage').value='';
-    
+
     addEmployeeModal.hide();
     await loadEmployees();
     showToast('success', 'Success', 'Team member added successfully');
@@ -678,24 +683,24 @@ async function loadWeek(){
   const j=await api('shifts.week&week='+currentWeekStart);
   shifts=j.shifts||[]; 
   is_admin=+j.is_admin||0;
-  
+
   $$('.admin-only').forEach(el=> el.style.display = is_admin ? '' : 'none');
   document.getElementById('roNote').classList.toggle('d-none', !!is_admin);
-  
+
   renderSchedule(); 
   await loadPublishStatus();
 }
 
 function renderSchedule(){
   const thead=$('#schedTable thead'), tbody=$('#schedTable tbody'), days=daysOfWeek();
-  
+
   // Update week range
   const start = new Date(currentWeekStart);
   const end = new Date(start);
   end.setDate(end.getDate() + 6);
   $('#weekRange').textContent = `${start.toLocaleDateString()} - ${end.toLocaleDateString()}`;
   $('#weekRangeTitle').textContent = `Schedule - ${start.toLocaleDateString('en-US', {month: 'long', day: 'numeric'})} - ${end.toLocaleDateString('en-US', {month: 'long', day: 'numeric', year: 'numeric'})}`;
-  
+
   thead.innerHTML=`<tr>
     <th class="employee-cell">Team Member</th>
     ${days.map(d=>`
@@ -705,12 +710,12 @@ function renderSchedule(){
       </th>
     `).join('')}
   </tr>`;
-  
+
   tbody.innerHTML='';
-  
+
   employees.filter(e=>e.is_active).sort((a,b)=>a.name.localeCompare(b.name)).forEach(emp=>{
     const tr=document.createElement('tr');
-    
+
     // Employee info cell
     const empCell=document.createElement('td');
     empCell.className='employee-cell';
@@ -724,25 +729,25 @@ function renderSchedule(){
       </div>
     `;
     tr.appendChild(empCell);
-    
+
     // Day cells
     days.forEach(d=>{
       const td=document.createElement('td');
       td.style.padding='8px';
       td.style.verticalAlign='top';
-      
+
       const dayShifts=shifts.filter(s=> s.employee_id===emp.id && s.start_dt.slice(0,10)===d.iso);
-      
+
       dayShifts.forEach(s=>{
         const div=document.createElement('div');
         div.className=`shift-block ${getShiftColor(emp.role)}`;
-        
+
         const startTime=s.start_dt.slice(11,16);
         const endTime=s.end_dt.slice(11,16);
         const start = new Date(s.start_dt);
         const end = new Date(s.end_dt);
         const hours = ((end - start) / (1000 * 60 * 60)).toFixed(1);
-        
+
         div.innerHTML=`
           <div class="shift-time">
             <span>${startTime}–${endTime}</span>
@@ -750,7 +755,7 @@ function renderSchedule(){
           </div>
           ${s.notes ? `<div class="shift-notes">${EH(s.notes)}</div>` : ''}
         `;
-        
+
         if(is_admin){
           div.innerHTML += `
             <div class="btn-group btn-group-sm mt-1 w-100">
@@ -763,10 +768,10 @@ function renderSchedule(){
             </div>
           `;
         }
-        
+
         td.appendChild(div);
       });
-      
+
       if(is_admin){ 
         const addBtn=document.createElement('button'); 
         addBtn.className='btn add-shift-btn'; 
@@ -774,15 +779,15 @@ function renderSchedule(){
         addBtn.onclick=()=>openModal(emp.id,d.iso); 
         td.appendChild(addBtn); 
       }
-      
+
       tr.appendChild(td);
     });
-    
+
     tbody.appendChild(tr);
   });
-  
+
   renderWeeklySummary();
-  
+
   tbody.onclick=async ev=>{ 
     const del=ev.target.closest('.del-shift'); 
     if(del){ 
@@ -791,7 +796,7 @@ function renderSchedule(){
       await loadWeek(); 
       return;
     }
-    
+
     const copy=ev.target.closest('.copy-shift');
     if(copy){
       const shift = JSON.parse(copy.dataset.shift);
@@ -806,7 +811,7 @@ function openModal(empId,dateIso){
   const emp = employees.find(e => e.id === empId);
   document.querySelector('#shiftModal .modal-title').textContent = `Add Shift - ${emp ? emp.name : 'Employee'}`;
   document.getElementById('saveShiftBtn').dataset.emp=empId;
-  
+
   if (copyShiftData) {
     const startTime = copyShiftData.start_dt.slice(11,16);
     const endTime = copyShiftData.end_dt.slice(11,16);
@@ -820,7 +825,7 @@ function openModal(empId,dateIso){
     document.getElementById('endDt').value=`${dateIso}T18:00`;
     document.getElementById('notes').value='';
   }
-  
+
   document.getElementById('breakDuration').value='30';
   shiftModal.show();
 }
@@ -828,7 +833,7 @@ function openModal(empId,dateIso){
 function setShiftTime(start, end) {
   const dateIso = document.getElementById('startDt').value.slice(0,10);
   document.getElementById('startDt').value = `${dateIso}T${start}`;
-  
+
   if (end === '00:00') {
     const nextDay = new Date(dateIso);
     nextDay.setDate(nextDay.getDate() + 1);
@@ -844,24 +849,24 @@ async function saveShift(){
   const end_dt=document.getElementById('endDt').value.replace('T',' ')+':00';
   const breakDuration = +document.getElementById('breakDuration').value;
   let notes = document.getElementById('notes').value.trim();
-  
+
   if (breakDuration > 0) {
     const hours = ((new Date(end_dt) - new Date(start_dt)) / (1000 * 60 * 60)) - (breakDuration / 60);
     notes += (notes ? '\n' : '') + `Break: ${breakDuration}min, Hours: ${Math.max(0, hours).toFixed(2)}`;
   }
-  
+
   const r=await fetch('/schedule/api?a=shifts.create',{
     method:'POST',
     headers:{'Content-Type':'application/json'},
     body:JSON.stringify({employee_id,start_dt,end_dt,notes})
   });
-  
+
   const j=await r.json(); 
   if(j.error){
     alert(j.error);
     return;
   }
-  
+
   shiftModal.hide(); 
   await loadWeek();
 }
@@ -889,7 +894,7 @@ async function loadAdmins(){
   const list=await api('users.list'); 
   const wrap=document.getElementById('adminList'); 
   wrap.innerHTML='';
-  
+
   list.forEach(u=>{
     const row=document.createElement('div'); 
     row.className='border rounded p-3 mb-2 d-flex align-items-center justify-content-between';
@@ -908,7 +913,7 @@ async function loadAdmins(){
     `;
     wrap.appendChild(row);
   });
-  
+
   wrap.onclick=async ev=>{ 
     const sw=ev.target.closest('.toggle-admin'); 
     if(!sw) return;
