@@ -6,7 +6,8 @@ class Shift {
         $start = new DateTime($weekStart.' 00:00:00');
         $end   = (clone $start)->modify('+6 day')->setTime(23,59,59);
         $st = $this->db()->prepare("
-          SELECT s.*, e.name AS employee_name, e.role AS employee_role
+          SELECT s.id, s.employee_id, s.start_dt, s.end_dt, s.notes, s.status,
+                 e.name AS employee_name, e.role AS employee_role
           FROM shifts s
           JOIN employees e ON e.id = s.employee_id
           WHERE s.start_dt BETWEEN ? AND ?

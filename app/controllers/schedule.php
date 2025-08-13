@@ -47,13 +47,14 @@ class Schedule extends Controller
                 // Shifts
                 case 'shifts.week':
                     $week = $_GET['week'] ?? date('Y-m-d');
-                    $shifts = $this->Shift->getWeek($week);
-                    echo json_encode(['shifts'=>$shifts,'is_admin'=>$this->isAdmin()]); break;
+                    $w = ScheduleWeek::mondayOf($week);
+                    $rows = $this->Shift->forWeek($w);
+                    echo json_encode(['week_start'=>$w,'shifts'=>$rows,'is_admin'=>$this->isAdmin()]); break;
 
                 case 'shifts.create':
                     $this->guardAdmin();
                     $in = $this->json();
-                    $id = $this->Shift->create($in['employee_id'], $in['start_dt'], $in['end_dt'], $in['notes'] ?? '');
+                    $id = $this->Shift->create((int)$in['employee_id'], $in['start_dt'], $in['end_dt'], $in['notes'] ?? null);
                     echo json_encode(['ok'=>true,'id'=>$id]); break;
 
                 case 'shifts.delete':
@@ -104,61 +105,4 @@ class Schedule extends Controller
     private function json(): array {
         return json_decode(file_get_contents('php://input'), true) ?: [];
     }
-
-                case 'employees.delete':
-                    $this->guardAdmin();
-                    echo json_encode(['ok'=>$this->Employee->delete((int)$_GET['id'])]); break;
-
-                // Shifts
-                case 'shifts.week':
-                    $week = $_GET['week'] ?? date('Y-m-d');
-                    $w = ScheduleWeek::mondayOf($week);
-                    $rows = $this->Shift->forWeek($w);
-                    echo json_encode(['week_start'=>$w,'shifts'=>$rows,'is_admin'=>$this->isAdmin()?1:0]); break;
-
-                case 'shifts.create':
-                    $this->guardAdmin();
-                    $in = $this->json();
-                    $id = $this->Shift->create((int)$in['employee_id'], $in['start_dt'], $in['end_dt'], $in['notes'] ?? null);
-                    echo json_encode(['ok'=>true,'id'=>$id]); break;
-
-                case 'shifts.delete':
-                    $this->guardAdmin();
-                    echo json_encode(['ok'=>$this->Shift->delete((int)$_GET['id'])]); break;
-
-                // Publish controls
-                case 'publish.status':
-                    $week = $_GET['week'] ?? date('Y-m-d');
-                    echo json_encode($this->Week->status($week) + ['is_admin'=>$this->isAdmin()?1:0]); break;
-
-                case 'publish.set':
-                    $this->guardAdmin();
-                    $in = $this->json();
-                    $this->Week->setPublished($in['week'], !!$in['published']);
-                    echo json_encode(['ok'=>true]); break;
-
-                // Admin management
-                case 'users.list':
-                    $this->guardAdmin();
-                    $st = db_connect()->query("SELECT id,username,full_name,is_admin FROM users ORDER BY username");
-                    echo json_encode($st->fetchAll(PDO::FETCH_ASSOC)); break;
-
-                case 'users.setAdmin':
-                    $this->guardAdmin();
-                    $in = $this->json();
-                    $st = db_connect()->prepare("UPDATE users SET is_admin=? WHERE id=?");
-                    $st->execute([(int)!!$in['is_admin'], (int)$in['id']]);
-                    echo json_encode(['ok'=>true]); break;
-
-                default:
-                    http_response_code(404); echo json_encode(['error'=>'Unknown action']);
-            }
-        } catch (Throwable $e) {
-            http_response_code(422); echo json_encode(['error'=>$e->getMessage()]);
-        }
-    }
-
-    private function json(): array { $raw=file_get_contents('php://input')?:''; $d=json_decode($raw,true); return is_array($d)?$d:[]; }
-    private function isAdmin(): bool { return !empty($_SESSION['is_admin']); }
-    private function guardAdmin(): void { if (!$this->isAdmin()) { http_response_code(403); echo json_encode(['error'=>'Admin only']); exit; } }
 }
