@@ -36,6 +36,19 @@
         </table>
       </div>
       <div class="alert alert-info mt-2 d-none" id="roNote">You are not an admin. Schedule is read-only.</div>
+      
+      <!-- Weekly Summary -->
+      <div class="card mt-3">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h6 class="mb-0">Weekly Summary</h6>
+          <small class="text-muted" id="weekRange"></small>
+        </div>
+        <div class="card-body">
+          <div id="weeklySummary" class="row g-3">
+            <!-- Will be populated by JavaScript -->
+          </div>
+        </div>
+      </div>
     </div>
 
     <div class="tab-pane fade" id="pane-admins">
@@ -50,12 +63,60 @@
 <script>
 const api=(a,o={})=>fetch(`/schedule/api?a=${encodeURIComponent(a)}`,{headers:{'Content-Type':'application/json'},...o}).then(r=>r.json());
 const $=s=>document.querySelector(s), $$=s=>Array.from(document.querySelectorAll(s));
-let employees=[],shifts=[],currentWeekStart=null,is_admin=0,shiftModal;
+let employees=[],shifts=[],currentWeekStart=null,is_admin=0,shiftModal,copyShiftData=nulll;
 
 function iso(d){return d.toISOString().slice(0,10)}
 function mondayOf(s){const d=new Date(s);const k=(d.getDay()+6)%7;d.setDate(d.getDate()-k);return iso(d)}
 function daysOfWeek(){const s=new Date(currentWeekStart);return[...Array(7)].map((_,i)=>{const d=new Date(s);d.setDate(d.getDate()+i);return{iso:iso(d),label:d.toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'})}})}
 function EH(s){return (s??'').toString().replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+
+function renderWeeklySummary() {
+  const summary = {};
+  let totalHours = 0;
+  
+  employees.filter(e => e.is_active).forEach(emp => {
+    const empShifts = shifts.filter(s => s.employee_id === emp.id);
+    let empHours = 0;
+    
+    empShifts.forEach(s => {
+      const start = new Date(s.start_dt);
+      const end = new Date(s.end_dt);
+      const hours = (end - start) / (1000 * 60 * 60);
+      empHours += hours;
+    });
+    
+    if (empHours > 0) {
+      summary[emp.name] = {
+        hours: empHours,
+        shifts: empShifts.length,
+        role: emp.role
+      };
+      totalHours += empHours;
+    }
+  });
+  
+  const summaryDiv = $('#weeklySummary');
+  summaryDiv.innerHTML = `
+    <div class="col-12 mb-2">
+      <div class="alert alert-primary mb-0">
+        <strong>Total Weekly Hours: ${totalHours.toFixed(1)}h</strong> 
+        across ${Object.keys(summary).length} employees
+      </div>
+    </div>
+    ${Object.entries(summary).map(([name, data]) => `
+      <div class="col-md-6 col-lg-4">
+        <div class="border rounded p-2">
+          <div class="fw-bold">${EH(name)}</div>
+          <small class="text-muted">${EH(data.role)}</small>
+          <div class="mt-1">
+            <span class="badge bg-success">${data.hours.toFixed(1)}h</span>
+            <span class="badge bg-info">${data.shifts} shifts</span>
+          </div>
+        </div>
+      </div>
+    `).join('')}
+  `;
+}
 
 document.addEventListener('DOMContentLoaded', async ()=>{
   const today=new Date().toISOString().slice(0,10);
@@ -109,6 +170,12 @@ function renderSchedule(){
   const thead=$('#schedTable thead'), tbody=$('#schedTable tbody'), days=daysOfWeek();
   thead.innerHTML=`<tr><th style="min-width:200px;position:sticky;left:0;background:#fff;z-index:1">Employee</th>${days.map(d=>`<th style="min-width:160px">${d.label}</th>`).join('')}</tr>`;
   tbody.innerHTML='';
+  
+  // Update week range display
+  const start = new Date(currentWeekStart);
+  const end = new Date(start);
+  end.setDate(end.getDate() + 6);
+  $('#weekRange').textContent = `${start.toLocaleDateString()} - ${end.toLocaleDateString()}`;
   employees.filter(e=>e.is_active).sort((a,b)=>a.name.localeCompare(b.name)).forEach(emp=>{
     const tr=document.createElement('tr');
     const nameTd=document.createElement('td'); nameTd.style.position='sticky'; nameTd.style.left='0'; nameTd.style.background='#fff'; nameTd.style.zIndex=1;
@@ -118,9 +185,25 @@ function renderSchedule(){
       const td=document.createElement('td');
       const list=shifts.filter(s=> s.employee_id===emp.id && s.start_dt.slice(0,10)===d.iso);
       list.forEach(s=>{
-        const div=document.createElement('div'); div.className='border rounded p-1 mb-1';
+        const div=document.createElement('div'); div.className='border rounded p-1 mb-1 position-relative shift-card';
         const t1=s.start_dt.slice(11,16), t2=s.end_dt.slice(11,16);
-        div.innerHTML=`<div class="fw-semibold">${t1}–${t2}</div>${s.notes?`<div class="small text-muted">${EH(s.notes)}</div>`:''}${is_admin?`<button class="btn btn-sm btn-outline-danger mt-1 del-shift" data-id="${s.id}">Delete</button>`:''}`;
+        const startTime = new Date(s.start_dt);
+        const endTime = new Date(s.end_dt);
+        const hours = ((endTime - startTime) / (1000 * 60 * 60)).toFixed(1);
+        
+        div.innerHTML=`
+          <div class="fw-semibold d-flex justify-content-between">
+            <span>${t1}–${t2}</span>
+            <small class="text-muted">${hours}h</small>
+          </div>
+          ${s.notes?`<div class="small text-muted">${EH(s.notes)}</div>`:''}
+          ${is_admin?`
+            <div class="btn-group btn-group-sm mt-1 w-100">
+              <button class="btn btn-outline-primary btn-sm copy-shift" data-shift='${JSON.stringify(s)}' title="Copy to another day">Copy</button>
+              <button class="btn btn-outline-danger btn-sm del-shift" data-id="${s.id}" title="Delete shift">Del</button>
+            </div>
+          `:''}
+        `;
         td.appendChild(div);
       });
       if(is_admin){ const b=document.createElement('button'); b.className='btn btn-sm btn-outline-primary'; b.textContent='+ Add'; b.onclick=()=>openModal(emp.id,d.iso); td.appendChild(b); }
@@ -128,21 +211,85 @@ function renderSchedule(){
     });
     tbody.appendChild(tr);
   });
-  tbody.onclick=async ev=>{ const b=ev.target.closest('.del-shift'); if(!b) return; if(!confirm('Delete shift?')) return; await fetch(`/schedule/api?a=shifts.delete&id=${b.dataset.id}`); await loadWeek(); };
+  
+  // Render weekly summary
+  renderWeeklySummary();
+  
+  tbody.onclick=async ev=>{ 
+    const del=ev.target.closest('.del-shift'); 
+    if(del){ 
+      if(!confirm('Delete shift?')) return; 
+      await fetch(`/schedule/api?a=shifts.delete&id=${del.dataset.id}`); 
+      await loadWeek(); 
+      return;
+    }
+    
+    const copy=ev.target.closest('.copy-shift');
+    if(copy){
+      const shift = JSON.parse(copy.dataset.shift);
+      copyShiftData = shift;
+      showToast('info', 'Shift Copied', 'Click "+ Add" on any day to paste this shift');
+      return;
+    } };
 }
 
 function openModal(empId,dateIso){
-  document.getElementById('startDt').value=`${dateIso}T10:00`;
-  document.getElementById('endDt').value=`${dateIso}T18:00`;
+  const emp = employees.find(e => e.id === empId);
+  document.querySelector('#shiftModal .modal-title').textContent = `Add Shift - ${emp ? emp.name : 'Employee'}`;
   document.getElementById('saveShiftBtn').dataset.emp=empId;
-  document.getElementById('notes').value='';
+  
+  // If we have copied shift data, use it
+  if (copyShiftData) {
+    const startTime = copyShiftData.start_dt.slice(11,16);
+    const endTime = copyShiftData.end_dt.slice(11,16);
+    document.getElementById('startDt').value = `${dateIso}T${startTime}`;
+    document.getElementById('endDt').value = `${dateIso}T${endTime}`;
+    document.getElementById('notes').value = copyShiftData.notes || '';
+    copyShiftData = null; // Clear after use
+    showToast('success', 'Shift Pasted', 'Shift details have been filled in');
+  } else {
+    // Default times
+    document.getElementById('startDt').value=`${dateIso}T10:00`;
+    document.getElementById('endDt').value=`${dateIso}T18:00`;
+    document.getElementById('notes').value='';
+  }
+  document.getElementById('breakDuration').value='30';
+  
   shiftModal.show();
 }
+function setShiftTime(start, end) {
+  const dateIso = document.getElementById('startDt').value.slice(0,10);
+  document.getElementById('startDt').value = `${dateIso}T${start}`;
+  
+  if (end === '00:00') {
+    // Next day for overnight shifts
+    const nextDay = new Date(dateIso);
+    nextDay.setDate(nextDay.getDate() + 1);
+    document.getElementById('endDt').value = `${nextDay.toISOString().slice(0,10)}T${end}`;
+  } else {
+    document.getElementById('endDt').value = `${dateIso}T${end}`;
+  }
+}
+
+function calculateHours(start, end, breakMins = 0) {
+  const startTime = new Date(start);
+  const endTime = new Date(end);
+  const diffMs = endTime - startTime;
+  const hours = (diffMs / (1000 * 60 * 60)) - (breakMins / 60);
+  return Math.max(0, hours).toFixed(2);
+}
+
 async function saveShift(){
   const employee_id=+document.getElementById('saveShiftBtn').dataset.emp;
   const start_dt=document.getElementById('startDt').value.replace('T',' ')+':00';
   const end_dt  =document.getElementById('endDt').value.replace('T',' ')+':00';
-  const notes   =document.getElementById('notes').value.trim();
+  const breakDuration = +document.getElementById('breakDuration').value;
+  const hours = calculateHours(start_dt, end_dt, breakDuration);
+  let notes = document.getElementById('notes').value.trim();
+  if (breakDuration > 0) {
+    notes += (notes ? '\n' : '') + `Break: ${breakDuration}min, Hours: ${hours}`;
+  }
+  
   const r=await fetch('/schedule/api?a=shifts.create',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({employee_id,start_dt,end_dt,notes})});
   const j=await r.json(); if(j.error){alert(j.error);return;}
   shiftModal.hide(); await loadWeek();
@@ -181,9 +328,35 @@ async function loadAdmins(){
   <div class="modal-dialog"><div class="modal-content">
     <div class="modal-header"><h5 class="modal-title">Add Shift</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
     <div class="modal-body">
-      <div class="mb-2"><input id="startDt" type="datetime-local" class="form-control"></div>
-      <div class="mb-2"><input id="endDt" type="datetime-local" class="form-control"></div>
-      <div><textarea id="notes" class="form-control" placeholder="Notes (optional)"></textarea></div>
+      <div class="mb-3">
+        <label class="form-label">Quick Templates</label>
+        <div class="btn-group w-100 mb-2" role="group">
+          <button type="button" class="btn btn-outline-secondary btn-sm" onclick="setShiftTime('08:00','16:00')">8am-4pm</button>
+          <button type="button" class="btn btn-outline-secondary btn-sm" onclick="setShiftTime('09:00','17:00')">9am-5pm</button>
+          <button type="button" class="btn btn-outline-secondary btn-sm" onclick="setShiftTime('10:00','18:00')">10am-6pm</button>
+          <button type="button" class="btn btn-outline-secondary btn-sm" onclick="setShiftTime('16:00','00:00')">4pm-12am</button>
+        </div>
+      </div>
+      <div class="mb-2">
+        <label class="form-label">Start Time</label>
+        <input id="startDt" type="datetime-local" class="form-control">
+      </div>
+      <div class="mb-2">
+        <label class="form-label">End Time</label>
+        <input id="endDt" type="datetime-local" class="form-control">
+      </div>
+      <div class="mb-2">
+        <label class="form-label">Break Duration</label>
+        <select id="breakDuration" class="form-select">
+          <option value="0">No break</option>
+          <option value="30" selected>30 minutes</option>
+          <option value="60">1 hour</option>
+        </select>
+      </div>
+      <div>
+        <label class="form-label">Notes</label>
+        <textarea id="notes" class="form-control" placeholder="Notes (optional)"></textarea>
+      </div>
     </div>
     <div class="modal-footer"><button id="saveShiftBtn" class="btn btn-primary">Save</button></div>
   </div></div>
