@@ -573,19 +573,41 @@ function changeWeek(days) {
 
 async function loadEmployees() {
   try {
-    employees = await api('employees.list');
+    const response = await fetch('/schedule/api?a=employees.list', {
+      headers: {'Content-Type': 'application/json'}
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    
+    const text = await response.text();
+    console.log('Raw employees response:', text);
+    
+    employees = JSON.parse(text);
     console.log('Loaded employees:', employees);
   } catch (e) {
     console.error('Error loading employees:', e);
+    console.error('Response text might be HTML instead of JSON');
     employees = [];
   }
 }
 
 async function loadWeek() {
   try {
-    const data = await api(`shifts.week&week=${currentWeekStart}`);
-    shifts = data.shifts || [];
-    isAdmin = data.is_admin || false;
+    const data = await api(`shifts.week`, {
+      method: 'GET'
+    });
+    // Add week parameter to URL
+    const response = await fetch(`/schedule/api?a=shifts.week&week=${currentWeekStart}`, {
+      headers: {'Content-Type': 'application/json'}
+    });
+    
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const weekData = await response.json();
+    
+    shifts = weekData.shifts || [];
+    isAdmin = weekData.is_admin || false;
     
     updateWeekDisplay();
     renderScheduleGrid();
@@ -784,7 +806,13 @@ async function deleteShift(shiftId) {
   if (!isAdmin || !confirm('Delete this shift?')) return;
   
   try {
-    await api(`shifts.delete&id=${shiftId}`);
+    const response = await fetch(`/schedule/api?a=shifts.delete&id=${shiftId}`, {
+      method: 'GET',
+      headers: {'Content-Type': 'application/json'}
+    });
+    
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    await response.json();
     await loadWeek();
   } catch (e) {
     console.error('Error deleting shift:', e);
@@ -794,7 +822,13 @@ async function deleteShift(shiftId) {
 
 async function loadPublishStatus() {
   try {
-    const status = await api(`publish.status&week=${currentWeekStart}`);
+    const response = await fetch(`/schedule/api?a=publish.status&week=${currentWeekStart}`, {
+      headers: {'Content-Type': 'application/json'}
+    });
+    
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const status = await response.json();
+    
     const indicator = document.getElementById('statusIndicator');
     const publishBtn = document.getElementById('publishBtn');
     
