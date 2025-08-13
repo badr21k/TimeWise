@@ -577,7 +577,7 @@ function renderTeamRoster() {
       </td>
       <td>Employee</td>
       <td>AUSU</td>
-      <td>${EH(emp.role)}</td>
+      <td>${EH(emp.role || emp.role_title || 'Staff')}</td>
       <td>
         ${emp.wage ? `<span class="wage-badge">$${emp.wage}/hr</span>` : '<small class="text-muted">Add wage</small>'}
       </td>
@@ -643,21 +643,34 @@ async function addEmployee(){
   const department=$('#empDepartment').value||null;
   const wage=$('#empWage').value||null;
   
-  await fetch('/schedule/api?a=employees.create',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({name,email,role,department,wage})
-  });
-  
-  // Clear form
-  $('#empName').value=''; 
-  $('#empEmail').value=''; 
-  $('#empRole').value='';
-  $('#empDepartment').value='';
-  $('#empWage').value='';
-  
-  addEmployeeModal.hide();
-  await loadEmployees();
+  try {
+    const response = await fetch('/schedule/api?a=employees.create',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({name,email,role,department,wage})
+    });
+    
+    const result = await response.json();
+    
+    if (!response.ok || result.error) {
+      alert('Error: ' + (result.error || 'Failed to add team member'));
+      return;
+    }
+    
+    // Clear form
+    $('#empName').value=''; 
+    $('#empEmail').value=''; 
+    $('#empRole').value='';
+    $('#empDepartment').value='';
+    $('#empWage').value='';
+    
+    addEmployeeModal.hide();
+    await loadEmployees();
+    showToast('success', 'Success', 'Team member added successfully');
+  } catch (error) {
+    console.error('Error adding employee:', error);
+    alert('Failed to add team member. Please try again.');
+  }
 }
 
 async function loadWeek(){

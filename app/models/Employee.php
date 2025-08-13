@@ -23,7 +23,7 @@ class Employee {
 
     public function create(string $name, ?string $email, string $role, ?string $department = null, ?float $wage = null): int {
         $st = $this->db()->prepare("
-            INSERT INTO employees (name, email, role_title, wage, is_active, created_at) 
+            INSERT INTO employees (name, email, role, wage, is_active, created_at) 
             VALUES (?, ?, ?, ?, 1, NOW())
         ");
         $st->execute([$name, $email, $role, $wage]);
@@ -39,9 +39,11 @@ class Employee {
 
     public function update(int $id, array $fields): bool {
         $cols = []; $vals = [];
-        foreach (['name', 'email', 'role_title', 'wage', 'is_active'] as $f) {
+        foreach (['name', 'email', 'role', 'role_title', 'wage', 'is_active'] as $f) {
             if (array_key_exists($f, $fields)) { 
-                $cols[] = "$f=?"; 
+                // Map role_title to role for consistency
+                $col = ($f === 'role_title') ? 'role' : $f;
+                $cols[] = "$col=?"; 
                 $vals[] = $fields[$f]; 
             }
         }

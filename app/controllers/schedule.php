@@ -56,12 +56,18 @@ class Schedule extends Controller
                 case 'employees.create':
                     $this->guardAdmin();
                     $data = $this->json();
+                    
+                    // Validate required fields
+                    if (empty(trim($data['name'] ?? ''))) {
+                        throw new Exception('Name is required');
+                    }
+                    
                     $id = $this->Employee->create(
                         trim($data['name']), 
-                        $data['email'] ?? null, 
-                        $data['role'] ?? 'Staff',
-                        $data['department'] ?? null,
-                        $data['wage'] ? (float)$data['wage'] : null
+                        !empty($data['email']) ? trim($data['email']) : null, 
+                        !empty($data['role']) ? trim($data['role']) : 'Staff',
+                        !empty($data['department']) ? trim($data['department']) : null,
+                        !empty($data['wage']) ? (float)$data['wage'] : null
                     );
                     echo json_encode(['success' => true, 'id' => $id]);
                     break;
