@@ -71,6 +71,8 @@ class User {
           $_SESSION['auth']     = 1;
           $_SESSION['username'] = ucwords($username);
           $_SESSION['user_id'] = $row['id'];
+          $_SESSION['is_admin']  = (int)($row['is_admin'] ?? 0);
+          $_SESSION['full_name'] = $row['full_name'] ?? null;  
 
           // Set success toast
           $_SESSION['toast'] = [

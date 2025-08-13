@@ -1,4 +1,8 @@
 <?php
+error_reporting(E_ALL);
+ini_set('display_errors', 1);   // <-- was 0; turn it on to see errors
+ini_set('log_errors', 1);
+
 
 // Production settings - errors logged but not displayed
 error_reporting(E_ALL);
