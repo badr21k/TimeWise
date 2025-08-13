@@ -458,8 +458,12 @@
 
 <script>
 const api=(a,o={})=>fetch(`/schedule/api?a=${encodeURIComponent(a)}`,{headers:{'Content-Type':'application/json'},...o}).then(r=>r.json());
-const $=s=>document.querySelector(s), $$=s=>Array.from(document.querySelectorAll(s));
-let employees=[],shifts=[],currentWeekStart=null,is_admin=0,shiftModal,addEmployeeModal,copyShiftData=null;
+const $=s=>document.querySelector(s);
+const $$=s=>Array.from(document.querySelectorAll(s));
+let employees=[],shifts=[],currentWeekStart=null,shiftModal,addEmployeeModal,copyShiftData=null;
+
+// Set global admin status based on session
+window.userIsAdmin = <?= isset($_SESSION['is_admin']) && (int)$_SESSION['is_admin'] === 1 ? 'true' : 'false' ?>;
 
 function iso(d){return d.toISOString().slice(0,10)}
 function mondayOf(s){const d=new Date(s);const k=(d.getDay()+6)%7;d.setDate(d.getDate()-k);return iso(d)}
@@ -607,12 +611,12 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   shiftModal=new bootstrap.Modal(document.getElementById('shiftModal'));
   addEmployeeModal=new bootstrap.Modal(document.getElementById('addEmployeeModal'));
 
-  console.log('Schedule app loaded');
-  console.log('Admin status check:', <?php echo json_encode([
-            'is_admin_session' => $_SESSION['is_admin'] ?? 'not set',
-            'username' => $_SESSION['username'] ?? 'not set',
-            'auth' => $_SESSION['auth'] ?? 'not set'
-        ]); ?>);
+  console.log('Admin status check:', {
+    is_admin_session: <?= isset($_SESSION['is_admin']) ? (int)$_SESSION['is_admin'] : 0 ?>,
+    username: '<?= htmlspecialchars($_SESSION['username'] ?? '') ?>',
+    auth: <?= isset($_SESSION['auth']) ? (int)$_SESSION['auth'] : 0 ?>
+  });
+
   await loadEmployees();
   await loadWeek();
 
@@ -628,23 +632,34 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   document.getElementById('saveShiftBtn').onclick=saveShift;
 });
 
-async function loadEmployees(){ 
-  employees=await api('employees.list'); 
-  renderTeamRoster();
+async function loadEmployees(){
+  try {
+    employees = await api('employees.list');
+    renderTeamRoster();
+  } catch (error) {
+    console.error('Error loading employees:', error);
+    employees = [];
+    renderTeamRoster();
+  }
 
   // Update role filter options
   const roles = [...new Set(employees.map(emp => emp.role))];
-  $('#filterRole').innerHTML = '<option value="">All Roles</option>' + 
+  $('#filterRole').innerHTML = '<option value="">All Roles</option>' +
     roles.map(role => `<option value="${EH(role)}">${EH(role)}</option>`).join('');
 }
 
 async function addEmployee(){
-  if(!is_admin) return alert('Admin only');
-  const name=$('#empName').value.trim(); 
+  const name=$('#empName').value.trim();
   if(!name) return alert('Name required');
 
-  const email=$('#empEmail').value.trim()||null; 
-  const role=$('#empRole').value.trim()||'Staff';
+  // Check admin permissions
+  if (!window.userIsAdmin) {
+    alert('Only admins can add team members');
+    return;
+  }
+
+  const email=$('#empEmail').value||null;
+  const role=$('#empRole').value||'Staff';
   const department=$('#empDepartment').value||null;
   const wage=$('#empWage').value||null;
 
@@ -655,39 +670,49 @@ async function addEmployee(){
       body:JSON.stringify({name,email,role,department,wage})
     });
 
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('HTTP Error:', response.status, errorText);
+      alert('Error: HTTP ' + response.status);
+      return;
+    }
+
     const result = await response.json();
 
-    if (!response.ok || result.error) {
-      alert('Error: ' + (result.error || 'Failed to add team member'));
+    if (result.error) {
+      alert('Error: ' + result.error);
       return;
     }
 
     // Clear form
-    $('#empName').value=''; 
-    $('#empEmail').value=''; 
+    $('#empName').value='';
+    $('#empEmail').value='';
     $('#empRole').value='';
     $('#empDepartment').value='';
     $('#empWage').value='';
 
     addEmployeeModal.hide();
     await loadEmployees();
-    showToast('success', 'Success', 'Team member added successfully');
+    if (typeof showToast === 'function') {
+      showToast('success', 'Success', 'Team member added successfully');
+    }
   } catch (error) {
     console.error('Error adding employee:', error);
-    alert('Failed to add team member. Please try again.');
+    alert('Failed to add team member: ' + error.message);
   }
 }
 
 async function loadWeek(){
   currentWeekStart=mondayOf($('#weekInput').value || iso(new Date()));
   const j=await api('shifts.week&week='+currentWeekStart);
-  shifts=j.shifts||[]; 
-  is_admin=+j.is_admin||0;
+  shifts=j.shifts||[];
+  const isAdminSession = <?= isset($_SESSION['is_admin']) ? (int)$_SESSION['is_admin'] : 0 ?>;
+  window.userIsAdmin = isAdminSession === 1; // Ensure window.userIsAdmin is correctly set
 
-  $$('.admin-only').forEach(el=> el.style.display = is_admin ? '' : 'none');
-  document.getElementById('roNote').classList.toggle('d-none', !!is_admin);
+  $$('.admin-only').forEach(el=> el.style.display = window.userIsAdmin ? '' : 'none');
+  document.getElementById('roNote').classList.toggle('d-none', !!window.userIsAdmin);
 
-  renderSchedule(); 
+  renderSchedule();
   await loadPublishStatus();
 }
 
@@ -756,7 +781,7 @@ function renderSchedule(){
           ${s.notes ? `<div class="shift-notes">${EH(s.notes)}</div>` : ''}
         `;
 
-        if(is_admin){
+        if(window.userIsAdmin){
           div.innerHTML += `
             <div class="btn-group btn-group-sm mt-1 w-100">
               <button class="btn btn-outline-light btn-sm copy-shift" data-shift='${JSON.stringify(s)}' title="Copy shift">
@@ -772,12 +797,12 @@ function renderSchedule(){
         td.appendChild(div);
       });
 
-      if(is_admin){ 
-        const addBtn=document.createElement('button'); 
-        addBtn.className='btn add-shift-btn'; 
-        addBtn.innerHTML='<i class="fas fa-plus"></i> Add'; 
-        addBtn.onclick=()=>openModal(emp.id,d.iso); 
-        td.appendChild(addBtn); 
+      if(window.userIsAdmin){
+        const addBtn=document.createElement('button');
+        addBtn.className='btn add-shift-btn';
+        addBtn.innerHTML='<i class="fas fa-plus"></i> Add';
+        addBtn.onclick=()=>openModal(emp.id,d.iso);
+        td.appendChild(addBtn);
       }
 
       tr.appendChild(td);
@@ -788,12 +813,17 @@ function renderSchedule(){
 
   renderWeeklySummary();
 
-  tbody.onclick=async ev=>{ 
-    const del=ev.target.closest('.del-shift'); 
-    if(del){ 
-      if(!confirm('Delete this shift?')) return; 
-      await fetch(`/schedule/api?a=shifts.delete&id=${del.dataset.id}`); 
-      await loadWeek(); 
+  tbody.onclick=async ev=>{
+    const del=ev.target.closest('.del-shift');
+    if(del){
+      if(!confirm('Delete this shift?')) return;
+      try {
+        await fetch(`/schedule/api?a=shifts.delete&id=${del.dataset.id}`);
+        await loadWeek();
+      } catch (error) {
+        console.error('Error deleting shift:', error);
+        alert('Failed to delete shift. Please try again.');
+      }
       return;
     }
 
@@ -819,7 +849,9 @@ function openModal(empId,dateIso){
     document.getElementById('endDt').value = `${dateIso}T${endTime}`;
     document.getElementById('notes').value = copyShiftData.notes || '';
     copyShiftData = null;
-    showToast('success', 'Shift Pasted', 'Shift details have been filled in');
+    if (typeof showToast === 'function') {
+      showToast('success', 'Shift Pasted', 'Shift details have been filled in');
+    }
   } else {
     document.getElementById('startDt').value=`${dateIso}T10:00`;
     document.getElementById('endDt').value=`${dateIso}T18:00`;
@@ -855,74 +887,126 @@ async function saveShift(){
     notes += (notes ? '\n' : '') + `Break: ${breakDuration}min, Hours: ${Math.max(0, hours).toFixed(2)}`;
   }
 
-  const r=await fetch('/schedule/api?a=shifts.create',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({employee_id,start_dt,end_dt,notes})
-  });
+  try {
+    const r=await fetch('/schedule/api?a=shifts.create',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({employee_id,start_dt,end_dt,notes})
+    });
 
-  const j=await r.json(); 
-  if(j.error){
-    alert(j.error);
-    return;
+    if (!r.ok) {
+      const errorText = await r.text();
+      console.error('HTTP Error:', r.status, errorText);
+      alert('Error saving shift: HTTP ' + r.status);
+      return;
+    }
+
+    const j=await r.json();
+    if(j.error){
+      alert('Error: ' + j.error);
+      return;
+    }
+
+    shiftModal.hide();
+    await loadWeek();
+  } catch (error) {
+    console.error('Error saving shift:', error);
+    alert('Failed to save shift: ' + error.message);
   }
-
-  shiftModal.hide(); 
-  await loadWeek();
 }
 
 async function loadPublishStatus(){
-  const j=await api('publish.status&week='+currentWeekStart);
-  document.getElementById('pubStatus').textContent = j.published ? 'Published' : 'Not published';
-  document.getElementById('pubStatus').className = 'badge ' + (j.published ? 'bg-success' : 'bg-secondary');
-  document.getElementById('publishBtn').dataset.pub = j.published ? '1':'0';
-  document.getElementById('publishBtn').style.display = (j.is_admin? '' : 'none');
+  try {
+    const j=await api('publish.status&week='+currentWeekStart);
+    document.getElementById('pubStatus').textContent = j.published ? 'Published' : 'Not published';
+    document.getElementById('pubStatus').className = 'badge ' + (j.published ? 'bg-success' : 'bg-secondary');
+    document.getElementById('publishBtn').dataset.pub = j.published ? '1':'0';
+    document.getElementById('publishBtn').style.display = (window.userIsAdmin ? '' : 'none');
+  } catch (error) {
+    console.error('Error loading publish status:', error);
+    document.getElementById('pubStatus').textContent = 'Error';
+    document.getElementById('pubStatus').className = 'badge bg-danger';
+  }
 }
 
 async function togglePublish(){
-  if(!is_admin) return alert('Admin only');
+  if(!window.userIsAdmin) return alert('Admin only');
   const next = (document.getElementById('publishBtn').dataset.pub==='1') ? 0 : 1;
-  await fetch('/schedule/api?a=publish.set',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({week:currentWeekStart,published:!!next})
-  });
-  await loadPublishStatus();
+  try {
+    await fetch('/schedule/api?a=publish.set',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({week:currentWeekStart,published:!!next})
+    });
+    await loadPublishStatus();
+  } catch (error) {
+    console.error('Error toggling publish:', error);
+    alert('Failed to toggle publish status. Please try again.');
+  }
 }
 
 async function loadAdmins(){
-  const list=await api('users.list'); 
-  const wrap=document.getElementById('adminList'); 
-  wrap.innerHTML='';
+  try {
+    const list=await api('users.list');
+    const wrap=document.getElementById('adminList');
+    wrap.innerHTML='';
 
-  list.forEach(u=>{
-    const row=document.createElement('div'); 
-    row.className='border rounded p-3 mb-2 d-flex align-items-center justify-content-between';
-    row.innerHTML=`
-      <div class="d-flex align-items-center gap-2">
-        <div class="employee-avatar">${getInitials(u.username)}</div>
-        <div>
-          <strong>${EH(u.username)}</strong>
-          ${u.full_name?` <span class="text-muted">(${EH(u.full_name)})</span>`:''}
+    list.forEach(u=>{
+      const row=document.createElement('div');
+      row.className='border rounded p-3 mb-2 d-flex align-items-center justify-content-between';
+      row.innerHTML=`
+        <div class="d-flex align-items-center gap-2">
+          <div class="employee-avatar">${getInitials(u.username)}</div>
+          <div>
+            <strong>${EH(u.username)}</strong>
+            ${u.full_name?` <span class="text-muted">(${EH(u.full_name)})</span>`:''}
+          </div>
         </div>
-      </div>
-      <div class="form-check form-switch">
-        <input class="form-check-input toggle-admin" type="checkbox" data-id="${u.id}" ${u.is_admin?'checked':''}>
-        <label class="form-check-label">Admin Rights</label>
-      </div>
-    `;
-    wrap.appendChild(row);
-  });
-
-  wrap.onclick=async ev=>{ 
-    const sw=ev.target.closest('.toggle-admin'); 
-    if(!sw) return;
-    await fetch('/schedule/api?a=users.setAdmin',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({id:+sw.dataset.id,is_admin: sw.checked?1:0})
+        <div class="form-check form-switch">
+          <input class="form-check-input toggle-admin" type="checkbox" data-id="${u.id}" ${u.is_admin?'checked':''}>
+          <label class="form-check-label">Admin Rights</label>
+        </div>
+      `;
+      wrap.appendChild(row);
     });
-  };
+
+    wrap.onclick=async ev=>{
+      const sw=ev.target.closest('.toggle-admin');
+      if(!sw) return;
+      try {
+        await fetch('/schedule/api?a=users.setAdmin',{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({id:+sw.dataset.id,is_admin: sw.checked?1:0})
+        });
+      } catch (error) {
+        console.error('Error setting admin:', error);
+        alert('Failed to update admin status. Please try again.');
+        // Revert the checkbox if the API call fails
+        sw.checked = !sw.checked;
+      }
+    };
+  } catch (error) {
+    console.error('Error loading admins:', error);
+    document.getElementById('adminList').innerHTML = '<div class="alert alert-danger">Failed to load admin list.</div>';
+  }
+}
+
+// Helper function to show toasts (assuming it exists elsewhere or needs to be defined)
+function showToast(type, title, message) {
+  // Placeholder for a toast notification system
+  console.log(`Toast (${type}): ${title} - ${message}`);
+  // Example using a hypothetical toast library
+  // if (typeof Toastify !== 'undefined') {
+  //   Toastify({
+  //     text: `<b>${title}</b> ${message}`,
+  //     duration: 3000,
+  //     gravity: "top",
+  //     position: "right",
+  //     backgroundColor: type === 'success' ? '#4CAF50' : (type === 'error' ? '#f44336' : '#FFC107'),
+  //     stopOnFocus: true,
+  //   }).showToast();
+  // }
 }
 </script>
 

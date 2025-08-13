@@ -1,24 +1,12 @@
-
 <?php
 
 class Employee {
     private function db(): PDO { return db_connect(); }
 
     public function all(): array {
-        $sql = "
-            SELECT e.*, 
-                   d.name as department_name,
-                   ed.is_manager,
-                   dr.role_id,
-                   r.name as role_name
-            FROM employees e
-            LEFT JOIN employee_department ed ON e.id = ed.employee_id
-            LEFT JOIN departments d ON ed.department_id = d.id
-            LEFT JOIN department_roles dr ON d.id = dr.department_id
-            LEFT JOIN roles r ON dr.role_id = r.id
-            ORDER BY e.is_active DESC, e.name ASC
-        ";
-        return $this->db()->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+        $st = $this->db()->prepare("SELECT id, name, email, role, wage, is_active, created_at FROM employees WHERE is_active = 1 ORDER BY name");
+        $st->execute();
+        return $st->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public function create(string $name, ?string $email, string $role, ?string $department = null, ?float $wage = null): int {
@@ -67,7 +55,7 @@ class Employee {
         $st = $this->db()->prepare("SELECT id FROM departments WHERE name = ?");
         $st->execute([$departmentName]);
         $dept = $st->fetch();
-        
+
         if (!$dept) {
             $st = $this->db()->prepare("INSERT INTO departments (name, is_active, created_at) VALUES (?, 1, NOW())");
             $st->execute([$departmentName]);
@@ -78,7 +66,7 @@ class Employee {
 
         // Remove existing department assignments
         $this->db()->prepare("DELETE FROM employee_department WHERE employee_id=?")->execute([$employeeId]);
-        
+
         // Add new assignment
         $st = $this->db()->prepare("INSERT INTO employee_department (employee_id, department_id, is_manager) VALUES (?, ?, ?)");
         $st->execute([$employeeId, $deptId, $isManager ? 1 : 0]);
