@@ -14,7 +14,7 @@ class Schedule extends Controller
     }
 
     private function isAdmin(): bool {
-        return !empty($_SESSION['is_admin']);
+        return !empty($_SESSION['auth']['is_admin']);
     }
     private function guardAdmin(): void {
         if (!$this->isAdmin()) { http_response_code(403); echo json_encode(['error'=>'Admin only']); exit; }
@@ -103,9 +103,5 @@ class Schedule extends Controller
         $raw = file_get_contents('php://input') ?: '';
         $d = json_decode($raw, true);
         return is_array($d) ? $d : [];
-    }
-    private function isAdmin(): bool { return !empty($_SESSION['auth']['is_admin']); }
-    private function guardAdmin(): void {
-        if (!$this->isAdmin()) { http_response_code(403); echo json_encode(['error'=>'Admin only']); exit; }
     }
 }
