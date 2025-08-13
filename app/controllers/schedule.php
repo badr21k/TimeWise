@@ -1,5 +1,13 @@
 <?php
 
+// Handle direct API calls to this file
+if (basename($_SERVER['SCRIPT_NAME']) === 'schedule.php' && isset($_GET['a'])) {
+    require_once dirname(__DIR__) . '/init.php';
+    $schedule = new Schedule();
+    $schedule->api();
+    exit;
+}
+
 class Schedule extends Controller
 {
     private $Employee;
@@ -19,9 +27,20 @@ class Schedule extends Controller
     }
 
     public function api() {
-        if (empty($_SESSION['auth'])) { http_response_code(401); echo json_encode(['error'=>'Auth required']); return; }
+        if (empty($_SESSION['auth'])) { 
+            http_response_code(401); 
+            echo json_encode(['error'=>'Auth required']); 
+            exit; 
+        }
         header('Content-Type: application/json; charset=utf-8');
-        $a = $_GET['a'] ?? '';
+        
+        // Handle direct script access
+        if (basename($_SERVER['SCRIPT_NAME']) === 'schedule.php') {
+            $a = $_GET['a'] ?? '';
+        } else {
+            $a = $_GET['a'] ?? '';
+        }
+        
         try {
             switch ($a) {
                 // Employees
