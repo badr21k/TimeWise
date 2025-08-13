@@ -27,20 +27,20 @@ class Schedule extends Controller
     }
 
     public function api() {
-        if (empty($_SESSION['auth'])) { 
-            http_response_code(401); 
-            echo json_encode(['error'=>'Auth required']); 
-            exit; 
+        if (empty($_SESSION['auth'])) {
+            http_response_code(401);
+            echo json_encode(['error'=>'Auth required']);
+            exit;
         }
         header('Content-Type: application/json; charset=utf-8');
-        
+
         // Handle direct script access
         if (basename($_SERVER['SCRIPT_NAME']) === 'schedule.php') {
             $a = $_GET['a'] ?? '';
         } else {
             $a = $_GET['a'] ?? '';
         }
-        
+
         try {
             switch ($a) {
                 // Employees
@@ -118,7 +118,9 @@ class Schedule extends Controller
     }
 
     private function isAdmin(): bool {
-        return !empty($_SESSION['is_admin']);
+        // Check if user is admin for certain operations
+        $isAdmin = isset($_SESSION['is_admin']) && (int)$_SESSION['is_admin'] === 1;
+        return $isAdmin;
     }
 
     private function json(): array {

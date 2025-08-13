@@ -145,9 +145,7 @@ class Reports extends Controller {
      * Check if current user is admin
      */
     private function isAdmin() {
-        return isset($_SESSION['username']) && 
-               !empty($_SESSION['username']) && 
-               strtolower(trim($_SESSION['username'])) === 'admin';
+        return isset($_SESSION['is_admin']) && (int)$_SESSION['is_admin'] === 1;
     }
 
     /**

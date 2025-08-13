@@ -65,6 +65,9 @@ class User {
             $_SESSION['username']   = ucwords($row['username'] ?? $username);
             $_SESSION['is_admin']   = (int)($row['is_admin'] ?? 0);
             $_SESSION['full_name']  = $row['full_name'] ?? null;
+            
+            // Debug: log admin status
+            error_log("User {$username} logged in with admin status: " . $_SESSION['is_admin']);
 
             $_SESSION['toast'] = ['type'=>'success','title'=>'Welcome Back!','message'=>'You have successfully logged in.'];
 
