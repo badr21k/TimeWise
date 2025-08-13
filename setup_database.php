@@ -5,6 +5,35 @@ require_once 'app/database.php';
 try {
     $db = db_connect();
     
+    // Create employees table
+    $db->exec("
+        CREATE TABLE IF NOT EXISTS employees (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            name VARCHAR(100) NOT NULL,
+            email VARCHAR(150) UNIQUE,
+            role VARCHAR(100) DEFAULT 'Staff',
+            wage DECIMAL(10,2) NULL,
+            role_title VARCHAR(100) NULL,
+            is_active TINYINT(1) DEFAULT 1,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    ");
+
+    // Create shifts table
+    $db->exec("
+        CREATE TABLE IF NOT EXISTS shifts (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            employee_id INT NOT NULL,
+            date DATE NOT NULL,
+            start_time TIME NOT NULL,
+            end_time TIME NOT NULL,
+            status VARCHAR(20) DEFAULT 'scheduled',
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE,
+            UNIQUE KEY unique_employee_date (employee_id, date)
+        )
+    ");
+
     // Create departments table
     $db->exec("
         CREATE TABLE IF NOT EXISTS departments (

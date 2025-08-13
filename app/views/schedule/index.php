@@ -56,7 +56,7 @@
   </div>
 </div>
 
-<?php require_once __DIR__ . '/../../templates/footer.php'; ?>
+<?php require_once 'app/views/templates/footer.php'; ?>
 
 <script>
 console.log('[schedule] script loaded');
@@ -185,4 +185,3 @@ async function loadAdmins(){
     <div class="modal-footer"><button id="saveShiftBtn" class="btn btn-primary" onclick="saveShift()">Save</button></div>
   </div></div>
 </div>
-<?php require 'app/views/templates/footer.php'; ?> 
