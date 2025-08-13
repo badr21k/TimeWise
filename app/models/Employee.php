@@ -1,88 +1,110 @@
+
 <?php
 
 class Employee {
-    private function db(): PDO { return db_connect(); }
-
-    public function all(): array {
-        $st = $this->db()->prepare("SELECT id, name, email, role, wage, is_active, created_at FROM employees WHERE is_active = 1 ORDER BY name");
-        $st->execute();
-        return $st->fetchAll(PDO::FETCH_ASSOC);
+    private $db;
+    
+    public function __construct() {
+        $this->db = db_connect();
+        $this->createTable();
     }
-
-    public function create(string $name, ?string $email, string $role, ?string $department = null, ?float $wage = null): int {
-        $st = $this->db()->prepare("
-            INSERT INTO employees (name, email, role, wage, is_active, created_at) 
-            VALUES (?, ?, ?, ?, 1, NOW())
-        ");
-        $st->execute([$name, $email, $role, $wage]);
-        $employeeId = (int)$this->db()->lastInsertId();
-
-        // If department is provided, link employee to department
-        if ($department) {
-            $this->assignToDepartment($employeeId, $department);
+    
+    private function createTable() {
+        try {
+            $this->db->exec("
+                CREATE TABLE IF NOT EXISTS employees (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    name VARCHAR(100) NOT NULL,
+                    email VARCHAR(100) UNIQUE,
+                    phone VARCHAR(20),
+                    role VARCHAR(100),
+                    role_title VARCHAR(100),
+                    wage DECIMAL(10,2),
+                    is_active TINYINT(1) DEFAULT 1,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                )
+            ");
+        } catch (Exception $e) {
+            error_log("Error creating employees table: " . $e->getMessage());
         }
-
-        return $employeeId;
     }
-
-    public function update(int $id, array $fields): bool {
-        $cols = []; $vals = [];
-        foreach (['name', 'email', 'role', 'role_title', 'wage', 'is_active'] as $f) {
-            if (array_key_exists($f, $fields)) { 
-                // Map role_title to role for consistency
-                $col = ($f === 'role_title') ? 'role' : $f;
-                $cols[] = "$col=?"; 
-                $vals[] = $fields[$f]; 
+    
+    public function getAll() {
+        try {
+            $stmt = $this->db->query("SELECT * FROM employees WHERE is_active = 1 ORDER BY name");
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (Exception $e) {
+            error_log("Error getting employees: " . $e->getMessage());
+            return [];
+        }
+    }
+    
+    public function getById($id) {
+        try {
+            $stmt = $this->db->prepare("SELECT * FROM employees WHERE id = ? AND is_active = 1");
+            $stmt->execute([$id]);
+            return $stmt->fetch(PDO::FETCH_ASSOC);
+        } catch (Exception $e) {
+            error_log("Error getting employee by ID: " . $e->getMessage());
+            return null;
+        }
+    }
+    
+    public function create($data) {
+        try {
+            $stmt = $this->db->prepare("
+                INSERT INTO employees (name, email, phone, role, role_title, wage, is_active) 
+                VALUES (?, ?, ?, ?, ?, ?, 1)
+            ");
+            $result = $stmt->execute([
+                $data['name'] ?? '',
+                $data['email'] ?? null,
+                $data['phone'] ?? null,
+                $data['role'] ?? 'Staff',
+                $data['role_title'] ?? null,
+                $data['wage'] ?? null
+            ]);
+            
+            if ($result) {
+                return $this->db->lastInsertId();
             }
+            return false;
+        } catch (Exception $e) {
+            error_log("Error creating employee: " . $e->getMessage());
+            return false;
         }
-        if (!$cols) return false;
-        $vals[] = $id;
-        $sql = "UPDATE employees SET " . implode(',', $cols) . " WHERE id=?";
-        return $this->db()->prepare($sql)->execute($vals);
     }
-
-    public function delete(int $id): bool {
-        // First remove from employee_department
-        $this->db()->prepare("DELETE FROM employee_department WHERE employee_id=?")->execute([$id]);
-        // Then remove shifts
-        $this->db()->prepare("DELETE FROM shifts WHERE employee_id=?")->execute([$id]);
-        // Finally remove employee
-        return $this->db()->prepare("DELETE FROM employees WHERE id=?")->execute([$id]);
-    }
-
-    public function assignToDepartment(int $employeeId, string $departmentName, bool $isManager = false): void {
-        // First find or create department
-        $st = $this->db()->prepare("SELECT id FROM departments WHERE name = ?");
-        $st->execute([$departmentName]);
-        $dept = $st->fetch();
-
-        if (!$dept) {
-            $st = $this->db()->prepare("INSERT INTO departments (name, is_active, created_at) VALUES (?, 1, NOW())");
-            $st->execute([$departmentName]);
-            $deptId = $this->db()->lastInsertId();
-        } else {
-            $deptId = $dept['id'];
+    
+    public function update($id, $data) {
+        try {
+            $stmt = $this->db->prepare("
+                UPDATE employees 
+                SET name = ?, email = ?, phone = ?, role = ?, role_title = ?, wage = ?, updated_at = NOW()
+                WHERE id = ? AND is_active = 1
+            ");
+            return $stmt->execute([
+                $data['name'] ?? '',
+                $data['email'] ?? null,
+                $data['phone'] ?? null,
+                $data['role'] ?? 'Staff',
+                $data['role_title'] ?? null,
+                $data['wage'] ?? null,
+                $id
+            ]);
+        } catch (Exception $e) {
+            error_log("Error updating employee: " . $e->getMessage());
+            return false;
         }
-
-        // Remove existing department assignments
-        $this->db()->prepare("DELETE FROM employee_department WHERE employee_id=?")->execute([$employeeId]);
-
-        // Add new assignment
-        $st = $this->db()->prepare("INSERT INTO employee_department (employee_id, department_id, is_manager) VALUES (?, ?, ?)");
-        $st->execute([$employeeId, $deptId, $isManager ? 1 : 0]);
     }
-
-    public function getByDepartment(string $departmentName): array {
-        $sql = "
-            SELECT e.*, ed.is_manager, d.name as department_name
-            FROM employees e
-            JOIN employee_department ed ON e.id = ed.employee_id
-            JOIN departments d ON ed.department_id = d.id
-            WHERE d.name = ? AND e.is_active = 1
-            ORDER BY ed.is_manager DESC, e.name ASC
-        ";
-        $st = $this->db()->prepare($sql);
-        $st->execute([$departmentName]);
-        return $st->fetchAll(PDO::FETCH_ASSOC);
+    
+    public function delete($id) {
+        try {
+            $stmt = $this->db->prepare("UPDATE employees SET is_active = 0 WHERE id = ?");
+            return $stmt->execute([$id]);
+        } catch (Exception $e) {
+            error_log("Error deleting employee: " . $e->getMessage());
+            return false;
+        }
     }
 }

@@ -41,52 +41,36 @@ class Schedule extends Controller
     }
 
     public function api() {
-        if (empty($_SESSION['auth'])) {
+        // Ensure we're authenticated
+        if (!isset($_SESSION['auth']) || !$_SESSION['auth']) {
             http_response_code(401);
-            echo json_encode(['error' => 'Authentication required']);
-            return;
+            header('Content-Type: application/json');
+            echo json_encode(['error' => 'Unauthorized']);
+            exit;
         }
 
-        header('Content-Type: application/json; charset=utf-8');
+        // Set JSON header
+        header('Content-Type: application/json');
+
         $action = $_GET['a'] ?? '';
 
         try {
             switch ($action) {
                 // Employee Management
                 case 'employees.list':
-                    echo json_encode($this->Employee->all());
+                    $this->apiEmployeesList();
                     break;
 
                 case 'employees.create':
-                    $this->guardAdmin();
-                    $data = $this->json();
-
-                    // Validate required fields
-                    if (empty(trim($data['name'] ?? ''))) {
-                        throw new Exception('Name is required');
-                    }
-
-                    $id = $this->Employee->create(
-                        trim($data['name']),
-                        !empty($data['email']) ? trim($data['email']) : null,
-                        !empty($data['role']) ? trim($data['role']) : 'Staff',
-                        !empty($data['department']) ? trim($data['department']) : null,
-                        !empty($data['wage']) ? (float)$data['wage'] : null
-                    );
-                    echo json_encode(['success' => true, 'id' => $id]);
+                    $this->apiEmployeesCreate();
                     break;
 
                 case 'employees.update':
-                    $this->guardAdmin();
-                    $data = $this->json();
-                    $success = $this->Employee->update((int)$data['id'], $data);
-                    echo json_encode(['success' => $success]);
+                    $this->apiEmployeesUpdate();
                     break;
 
                 case 'employees.delete':
-                    $this->guardAdmin();
-                    $success = $this->Employee->delete((int)$_GET['id']);
-                    echo json_encode(['success' => $success]);
+                    $this->apiEmployeesDelete();
                     break;
 
                 case 'employees.assign_department':
@@ -102,41 +86,19 @@ class Schedule extends Controller
 
                 // Shift Management
                 case 'shifts.week':
-                    $week = $_GET['week'] ?? date('Y-m-d');
-                    $weekStart = ScheduleWeek::mondayOf($week);
-                    $shifts = $this->Shift->forWeek($weekStart);
-                    $summary = $this->Shift->getWeeklySummary($weekStart);
-                    echo json_encode([
-                        'week_start' => $weekStart,
-                        'shifts' => $shifts,
-                        'summary' => $summary,
-                        'is_admin' => $this->isAdmin() ? 1 : 0
-                    ]);
+                    $this->apiShiftsWeek();
                     break;
 
                 case 'shifts.create':
-                    $this->guardAdmin();
-                    $data = $this->json();
-                    $id = $this->Shift->create(
-                        (int)$data['employee_id'],
-                        $data['start_dt'],
-                        $data['end_dt'],
-                        $data['notes'] ?? null
-                    );
-                    echo json_encode(['success' => true, 'id' => $id]);
+                    $this->apiShiftsCreate();
                     break;
 
                 case 'shifts.update':
-                    $this->guardAdmin();
-                    $data = $this->json();
-                    $success = $this->Shift->update((int)$data['id'], $data);
-                    echo json_encode(['success' => $success]);
+                    $this->apiShiftsUpdate();
                     break;
 
                 case 'shifts.delete':
-                    $this->guardAdmin();
-                    $success = $this->Shift->delete((int)$_GET['id']);
-                    echo json_encode(['success' => $success]);
+                    $this->apiShiftsDelete();
                     break;
 
                 case 'shifts.check_conflict':
@@ -214,9 +176,112 @@ class Schedule extends Controller
                     echo json_encode(['error' => 'Unknown action: ' . $action]);
             }
         } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode(['error' => 'Server error: ' . $e->getMessage()]);
+        }
+        exit;
+    }
+
+    private function apiEmployeesList() {
+        try {
+            $employees = $this->Employee->all();
+            echo json_encode($employees ?: []);
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode(['error' => 'Failed to load employees']);
+        }
+    }
+
+    private function apiEmployeesCreate() {
+        $this->guardAdmin();
+        try {
+            $data = $this->json();
+
+            // Validate required fields
+            if (empty(trim($data['name'] ?? ''))) {
+                throw new Exception('Name is required');
+            }
+
+            $id = $this->Employee->create(
+                trim($data['name']),
+                !empty($data['email']) ? trim($data['email']) : null,
+                !empty($data['role']) ? trim($data['role']) : 'Staff',
+                !empty($data['department']) ? trim($data['department']) : null,
+                !empty($data['wage']) ? (float)$data['wage'] : null
+            );
+            echo json_encode(['success' => true, 'id' => $id]);
+        } catch (Exception $e) {
             http_response_code(422);
             echo json_encode(['error' => $e->getMessage()]);
         }
+    }
+
+    private function apiEmployeesUpdate() {
+        $this->guardAdmin();
+        $data = $this->json();
+        $success = $this->Employee->update((int)$data['id'], $data);
+        echo json_encode(['success' => $success]);
+    }
+
+    private function apiEmployeesDelete() {
+        $this->guardAdmin();
+        $success = $this->Employee->delete((int)$_GET['id']);
+        echo json_encode(['success' => $success]);
+    }
+
+    private function apiShiftsWeek() {
+        try {
+            $week = $_GET['week'] ?? date('Y-m-d');
+            $weekStart = ScheduleWeek::mondayOf($week);
+            $shifts = $this->Shift->forWeek($weekStart);
+            $summary = $this->Shift->getWeeklySummary($weekStart);
+            echo json_encode([
+                'week_start' => $weekStart,
+                'shifts' => $shifts,
+                'summary' => $summary,
+                'is_admin' => $this->isAdmin() ? 1 : 0
+            ]);
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode(['error' => 'Failed to load shifts']);
+        }
+    }
+
+    private function apiShiftsCreate() {
+        $this->guardAdmin();
+        try {
+            $data = $this->json();
+            $id = $this->Shift->create(
+                (int)$data['employee_id'],
+                $data['start_dt'],
+                $data['end_dt'],
+                $data['notes'] ?? null
+            );
+            echo json_encode(['success' => true, 'id' => $id]);
+        } catch (Exception $e) {
+            http_response_code(422);
+            echo json_encode(['error' => $e->getMessage()]);
+        }
+    }
+
+    private function apiShiftsUpdate() {
+        $this->guardAdmin();
+        $data = $this->json();
+        $success = $this->Shift->update((int)$data['id'], $data);
+        echo json_encode(['success' => $success]);
+    }
+
+    private function apiShiftsDelete() {
+        $this->guardAdmin();
+        $success = $this->Shift->delete((int)$_GET['id']);
+        echo json_encode(['success' => $success]);
+    }
+
+    private function apiSchedulePublish() {
+        $this->guardAdmin();
+        $data = $this->json();
+        $this->Week->setPublished($data['week'], (bool)$data['published']);
+        echo json_encode(['success' => true]);
     }
 
     private function json(): array {
