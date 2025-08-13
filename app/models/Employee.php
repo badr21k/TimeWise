@@ -11,15 +11,24 @@ class Employee {
         $st->execute([$name, $email, $role]);
         return (int)$this->db()->lastInsertId();
     }
-    public function update(int $id, array $fields): bool {
-        $cols=[]; $vals=[];
-        foreach (['name','email','role','is_active'] as $f) if (array_key_exists($f,$fields)) { $cols[]="$f=?"; $vals[]=$fields[$f]; }
-        if (!$cols) return false;
-        $vals[]=$id;
-        $sql="UPDATE employees SET ".implode(',', $cols)." WHERE id=?";
-        return $this->db()->prepare($sql)->execute($vals);
+    public function update(int $id, array $data): bool {
+        $set = [];
+        $values = [];
+
+        if (isset($data['name'])) { $set[] = 'name=?'; $values[] = $data['name']; }
+        if (isset($data['email'])) { $set[] = 'email=?'; $values[] = $data['email']; }
+        if (isset($data['role'])) { $set[] = 'role=?'; $values[] = $data['role']; }
+        if (isset($data['is_active'])) { $set[] = 'is_active=?'; $values[] = $data['is_active']; }
+
+        if (empty($set)) return false;
+
+        $values[] = $id;
+        $st = $this->db()->prepare("UPDATE employees SET " . implode(',', $set) . " WHERE id=?");
+        return $st->execute($values);
     }
+
     public function delete(int $id): bool {
-        return $this->db()->prepare("DELETE FROM employees WHERE id=?")->execute([$id]);
+        $st = $this->db()->prepare("DELETE FROM employees WHERE id=?");
+        return $st->execute([$id]);
     }
 }

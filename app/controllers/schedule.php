@@ -41,6 +41,72 @@ class Schedule extends Controller
 
                 case 'employees.delete':
                     $this->guardAdmin();
+                    $id = (int)($_GET['id'] ?? 0);
+                    echo json_encode(['ok'=>$this->Employee->delete($id)]); break;
+
+                // Shifts
+                case 'shifts.week':
+                    $week = $_GET['week'] ?? date('Y-m-d');
+                    $shifts = $this->Shift->getWeek($week);
+                    echo json_encode(['shifts'=>$shifts,'is_admin'=>$this->isAdmin()]); break;
+
+                case 'shifts.create':
+                    $this->guardAdmin();
+                    $in = $this->json();
+                    $id = $this->Shift->create($in['employee_id'], $in['start_dt'], $in['end_dt'], $in['notes'] ?? '');
+                    echo json_encode(['ok'=>true,'id'=>$id]); break;
+
+                case 'shifts.delete':
+                    $this->guardAdmin();
+                    $id = (int)($_GET['id'] ?? 0);
+                    echo json_encode(['ok'=>$this->Shift->delete($id)]); break;
+
+                // Publishing
+                case 'publish.status':
+                    $week = $_GET['week'] ?? date('Y-m-d');
+                    $status = $this->Week->status($week);
+                    $status['is_admin'] = $this->isAdmin();
+                    echo json_encode($status); break;
+
+                case 'publish.set':
+                    $this->guardAdmin();
+                    $in = $this->json();
+                    $this->Week->setPublished($in['week'], $in['published']);
+                    echo json_encode(['ok'=>true]); break;
+
+                // Users/Admins
+                case 'users.list':
+                    $this->guardAdmin();
+                    echo json_encode($this->model('User')->all()); break;
+
+                case 'users.setAdmin':
+                    $this->guardAdmin();
+                    $in = $this->json();
+                    echo json_encode(['ok'=>$this->model('User')->setAdmin($in['id'], $in['is_admin'])]); break;
+
+                default:
+                    echo json_encode(['error'=>'Unknown action']); break;
+            }
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode(['error'=>$e->getMessage()]);
+        }
+    }
+
+    private function guardAdmin() {
+        if (!$this->isAdmin()) throw new Exception('Admin access required');
+    }
+
+    private function isAdmin(): bool {
+        return !empty($_SESSION['is_admin']);
+    }
+
+    private function json(): array {
+        return json_decode(file_get_contents('php://input'), true) ?: [];
+    }
+
+                case 'employees.delete':
+                    $this->guardAdmin();
                     echo json_encode(['ok'=>$this->Employee->delete((int)$_GET['id'])]); break;
 
                 // Shifts
