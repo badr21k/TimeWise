@@ -1,3 +1,4 @@
+
 <?php
 
 class ScheduleWeek {
@@ -5,24 +6,40 @@ class ScheduleWeek {
 
     public static function mondayOf(string $date): string {
         $d = new DateTime($date);
-        $dow = (int)$d->format('N') - 1; if ($dow > 0) $d->modify("-{$dow} day");
+        $weekday = $d->format('w');
+        $daysToSubtract = ($weekday == 0) ? 6 : $weekday - 1;
+        $d->modify("-{$daysToSubtract} days");
         return $d->format('Y-m-d');
     }
 
-    public function status(string $anyDateInWeek): array {
-        $w = self::mondayOf($anyDateInWeek);
-        $st = $this->db()->prepare("SELECT week_start,published,updated_at FROM schedules WHERE week_start=?");
-        $st->execute([$w]);
-        $row = $st->fetch(PDO::FETCH_ASSOC);
-        return ['week_start'=>$w,'published'=>(int)($row['published'] ?? 0),'updated_at'=>$row['updated_at'] ?? null];
+    public function status(string $week): array {
+        $weekStart = self::mondayOf($week);
+        $st = $this->db()->prepare("SELECT * FROM schedules WHERE week_start = ?");
+        $st->execute([$weekStart]);
+        $schedule = $st->fetch(PDO::FETCH_ASSOC);
+        
+        return [
+            'week_start' => $weekStart,
+            'published' => $schedule ? (bool)$schedule['published'] : false,
+            'last_updated' => $schedule ? $schedule['updated_at'] : null
+        ];
     }
 
-    public function setPublished(string $anyDateInWeek, bool $published): void {
-        $w = self::mondayOf($anyDateInWeek);
+    public function setPublished(string $week, bool $published): void {
+        $weekStart = self::mondayOf($week);
+        
         $st = $this->db()->prepare("
-            INSERT INTO schedules (week_start,published) VALUES (?,?)
-            ON DUPLICATE KEY UPDATE published=VALUES(published), updated_at=NOW()
+            INSERT INTO schedules (week_start, published, updated_at) 
+            VALUES (?, ?, NOW())
+            ON DUPLICATE KEY UPDATE 
+            published = VALUES(published), 
+            updated_at = VALUES(updated_at)
         ");
-        $st->execute([$w, $published?1:0]);
+        $st->execute([$weekStart, $published ? 1 : 0]);
+    }
+
+    public function getPublishedWeeks(): array {
+        $sql = "SELECT week_start, updated_at FROM schedules WHERE published = 1 ORDER BY week_start DESC";
+        return $this->db()->query($sql)->fetchAll(PDO::FETCH_ASSOC);
     }
 }

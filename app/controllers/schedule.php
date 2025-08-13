@@ -1,3 +1,4 @@
+
 <?php
 
 class Schedule extends Controller
@@ -5,103 +6,212 @@ class Schedule extends Controller
     private $Employee;
     private $Shift;
     private $Week;
+    private $Department;
 
     public function __construct() {
         if (session_status() !== PHP_SESSION_ACTIVE) session_start();
         $this->Employee = $this->model('Employee');
-        $this->Shift    = $this->model('Shift');
-        $this->Week     = $this->model('ScheduleWeek');
+        $this->Shift = $this->model('Shift');
+        $this->Week = $this->model('ScheduleWeek');
+        $this->Department = $this->model('Department');
     }
 
     private function isAdmin(): bool {
         return !empty($_SESSION['auth']['is_admin']);
     }
+    
     private function guardAdmin(): void {
-        if (!$this->isAdmin()) { http_response_code(403); echo json_encode(['error'=>'Admin only']); exit; }
+        if (!$this->isAdmin()) { 
+            http_response_code(403); 
+            echo json_encode(['error' => 'Admin access required']); 
+            exit; 
+        }
     }
 
     public function index() {
-        if (empty($_SESSION['auth'])) { header('Location: /login'); exit; }
+        if (empty($_SESSION['auth'])) { 
+            header('Location: /login'); 
+            exit; 
+        }
         $this->view('schedule/index');
     }
 
     public function api() {
-        if (empty($_SESSION['auth'])) { http_response_code(401); echo json_encode(['error'=>'Auth required']); return; }
+        if (empty($_SESSION['auth'])) { 
+            http_response_code(401); 
+            echo json_encode(['error' => 'Authentication required']); 
+            return; 
+        }
+        
         header('Content-Type: application/json; charset=utf-8');
-        $a = $_GET['a'] ?? '';
+        $action = $_GET['a'] ?? '';
+        
         try {
-            switch ($a) {
-                // Employees
+            switch ($action) {
+                // Employee Management
                 case 'employees.list':
-                    echo json_encode($this->Employee->all()); break;
+                    echo json_encode($this->Employee->all());
+                    break;
 
                 case 'employees.create':
                     $this->guardAdmin();
-                    $in = $this->json();
-                    $id = $this->Employee->create(trim($in['name']), $in['email'] ?? null, $in['role'] ?? 'Staff');
-                    echo json_encode(['ok'=>true,'id'=>$id]); break;
+                    $data = $this->json();
+                    $id = $this->Employee->create(
+                        trim($data['name']), 
+                        $data['email'] ?? null, 
+                        $data['role'] ?? 'Staff',
+                        $data['department'] ?? null,
+                        $data['wage'] ? (float)$data['wage'] : null
+                    );
+                    echo json_encode(['success' => true, 'id' => $id]);
+                    break;
 
                 case 'employees.update':
                     $this->guardAdmin();
-                    $in = $this->json();
-                    echo json_encode(['ok'=>$this->Employee->update((int)$in['id'], $in)]); break;
+                    $data = $this->json();
+                    $success = $this->Employee->update((int)$data['id'], $data);
+                    echo json_encode(['success' => $success]);
+                    break;
 
                 case 'employees.delete':
                     $this->guardAdmin();
-                    echo json_encode(['ok'=>$this->Employee->delete((int)$_GET['id'])]); break;
+                    $success = $this->Employee->delete((int)$_GET['id']);
+                    echo json_encode(['success' => $success]);
+                    break;
 
-                // Shifts
+                case 'employees.assign_department':
+                    $this->guardAdmin();
+                    $data = $this->json();
+                    $this->Employee->assignToDepartment(
+                        (int)$data['employee_id'], 
+                        $data['department'], 
+                        $data['is_manager'] ?? false
+                    );
+                    echo json_encode(['success' => true]);
+                    break;
+
+                // Shift Management
                 case 'shifts.week':
                     $week = $_GET['week'] ?? date('Y-m-d');
-                    $w = ScheduleWeek::mondayOf($week);
-                    $rows = $this->Shift->forWeek($w);
-                    echo json_encode(['week_start'=>$w,'shifts'=>$rows,'is_admin'=>$this->isAdmin()?1:0]); break;
+                    $weekStart = ScheduleWeek::mondayOf($week);
+                    $shifts = $this->Shift->forWeek($weekStart);
+                    $summary = $this->Shift->getWeeklySummary($weekStart);
+                    echo json_encode([
+                        'week_start' => $weekStart,
+                        'shifts' => $shifts,
+                        'summary' => $summary,
+                        'is_admin' => $this->isAdmin() ? 1 : 0
+                    ]);
+                    break;
 
                 case 'shifts.create':
                     $this->guardAdmin();
-                    $in = $this->json();
-                    $id = $this->Shift->create((int)$in['employee_id'], $in['start_dt'], $in['end_dt'], $in['notes'] ?? null);
-                    echo json_encode(['ok'=>true,'id'=>$id]); break;
+                    $data = $this->json();
+                    $id = $this->Shift->create(
+                        (int)$data['employee_id'], 
+                        $data['start_dt'], 
+                        $data['end_dt'], 
+                        $data['notes'] ?? null
+                    );
+                    echo json_encode(['success' => true, 'id' => $id]);
+                    break;
+
+                case 'shifts.update':
+                    $this->guardAdmin();
+                    $data = $this->json();
+                    $success = $this->Shift->update((int)$data['id'], $data);
+                    echo json_encode(['success' => $success]);
+                    break;
 
                 case 'shifts.delete':
                     $this->guardAdmin();
-                    echo json_encode(['ok'=>$this->Shift->delete((int)$_GET['id'])]); break;
+                    $success = $this->Shift->delete((int)$_GET['id']);
+                    echo json_encode(['success' => $success]);
+                    break;
 
-                // Publish
+                case 'shifts.check_conflict':
+                    $data = $this->json();
+                    $hasConflict = $this->Shift->hasConflict(
+                        (int)$data['employee_id'],
+                        $data['start_dt'],
+                        $data['end_dt'],
+                        $data['exclude_id'] ?? null
+                    );
+                    echo json_encode(['has_conflict' => $hasConflict]);
+                    break;
+
+                // Department Management
+                case 'departments.list':
+                    echo json_encode($this->Department->all());
+                    break;
+
+                case 'departments.create':
+                    $this->guardAdmin();
+                    $data = $this->json();
+                    $id = $this->Department->create(
+                        $data['name'], 
+                        $data['roles'] ?? []
+                    );
+                    echo json_encode(['success' => true, 'id' => $id]);
+                    break;
+
+                case 'departments.delete':
+                    $this->guardAdmin();
+                    $success = $this->Department->delete((int)$_GET['id']);
+                    echo json_encode(['success' => $success]);
+                    break;
+
+                case 'roles.list':
+                    echo json_encode($this->Department->getRoles());
+                    break;
+
+                // Schedule Publishing
                 case 'publish.status':
                     $week = $_GET['week'] ?? date('Y-m-d');
-                    echo json_encode($this->Week->status($week) + ['is_admin'=>$this->isAdmin()?1:0]); break;
+                    $status = $this->Week->status($week);
+                    $status['is_admin'] = $this->isAdmin() ? 1 : 0;
+                    echo json_encode($status);
+                    break;
 
                 case 'publish.set':
                     $this->guardAdmin();
-                    $in = $this->json();
-                    $this->Week->setPublished($in['week'], !!$in['published']);
-                    echo json_encode(['ok'=>true]); break;
+                    $data = $this->json();
+                    $this->Week->setPublished($data['week'], (bool)$data['published']);
+                    echo json_encode(['success' => true]);
+                    break;
 
-                // Admin management
+                case 'publish.history':
+                    echo json_encode($this->Week->getPublishedWeeks());
+                    break;
+
+                // User Management
                 case 'users.list':
                     $this->guardAdmin();
-                    $st = db_connect()->query("SELECT id,username,full_name,is_admin FROM users ORDER BY username");
-                    echo json_encode($st->fetchAll(PDO::FETCH_ASSOC)); break;
+                    $st = db_connect()->query("SELECT id, username, full_name, is_admin FROM users ORDER BY username");
+                    echo json_encode($st->fetchAll(PDO::FETCH_ASSOC));
+                    break;
 
                 case 'users.setAdmin':
                     $this->guardAdmin();
-                    $in = $this->json();
-                    $st = db_connect()->prepare("UPDATE users SET is_admin=? WHERE id=?");
-                    $st->execute([(int)!!$in['is_admin'], (int)$in['id']]);
-                    echo json_encode(['ok'=>true]); break;
+                    $data = $this->json();
+                    $st = db_connect()->prepare("UPDATE users SET is_admin = ? WHERE id = ?");
+                    $st->execute([(int)!!$data['is_admin'], (int)$data['id']]);
+                    echo json_encode(['success' => true]);
+                    break;
 
                 default:
-                    http_response_code(404); echo json_encode(['error'=>'Unknown action']);
+                    http_response_code(404);
+                    echo json_encode(['error' => 'Unknown action: ' . $action]);
             }
-        } catch (Throwable $e) {
-            http_response_code(422); echo json_encode(['error'=>$e->getMessage()]);
+        } catch (Exception $e) {
+            http_response_code(422);
+            echo json_encode(['error' => $e->getMessage()]);
         }
     }
 
     private function json(): array {
         $raw = file_get_contents('php://input') ?: '';
-        $d = json_decode($raw, true);
-        return is_array($d) ? $d : [];
+        $data = json_decode($raw, true);
+        return is_array($data) ? $data : [];
     }
 }
