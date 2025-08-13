@@ -98,6 +98,8 @@ if (!isset($_SESSION['auth'])) {
         transform: translateY(-10px);
         visibility: hidden;
         transition: all 0.3s ease;
+        z-index: 9999;
+        position: absolute;
       }
       .navbar-nav .dropdown-menu.show {
         opacity: 1;
@@ -177,6 +179,8 @@ if (!isset($_SESSION['auth'])) {
           box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
           margin-left: 1rem;
           margin-top: 0.25rem;
+          z-index: 9999;
+          position: absolute;
         }
         .navbar-nav .dropdown-item {
           padding: 0.6rem 1rem;
@@ -210,7 +214,7 @@ if (!isset($_SESSION['auth'])) {
     <!-- Toast Container -->
     <div class="toast-container" id="toastContainer"></div>
 
-    <nav class="navbar navbar-expand-lg navbar-light bg-gradient" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
+    <nav class="navbar navbar-expand-lg navbar-light bg-gradient" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); z-index: 1050; position: relative;">
         <div class="container">
             <a class="navbar-brand d-flex align-items-center" href="/home">
                 <i class="fas fa-clipboard-list me-2 fa-lg"></i>
