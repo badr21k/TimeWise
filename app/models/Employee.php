@@ -3,15 +3,9 @@ class Employee {
     private function db(): PDO { return db_connect(); }
 
     public function all(): array {
-        $stmt = $this->db()->prepare("
-            SELECT e.*, d.name as department_name, d.name as role_title
-            FROM employees e 
-            LEFT JOIN departments d ON e.department_id = d.id 
-            WHERE e.is_active = 1
-            ORDER BY e.name
-        ");
-        $stmt->execute();
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $st = $this->db()->prepare("SELECT id, name, email, role, wage, is_active FROM employees WHERE is_active = 1 ORDER BY name");
+        $st->execute();
+        return $st->fetchAll(PDO::FETCH_ASSOC);
     }
     public function create(string $name, ?string $email, string $role): int {
         $st = $this->db()->prepare("INSERT INTO employees (name,email,role) VALUES (?,?,?)");
