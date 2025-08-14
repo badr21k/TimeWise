@@ -1,347 +1,69 @@
-
-<?php require 'app/views/templates/header.php'; ?>
-
+<?php
+// app/views/schedule/index.php
+require 'app/views/templates/header.php';
+?>
 <style>
-/* Homebase exact styling */
-.schedule-container {
-  background: #f8fafc;
-  min-height: 100vh;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-}
+/* ==== Homebase-like Schedule (kept & refined) ==== */
+.schedule-container { background:#f8fafc; min-height:100vh; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; }
+.schedule-header    { background:#fff; border-bottom:1px solid #e5e7eb; padding:1rem 0; }
+.schedule-title     { font-size:1.5rem; font-weight:600; color:#111827; margin:0; }
+.schedule-subtitle  { color:#6b7280; font-size:.875rem; margin:0; }
 
-.schedule-header {
-  background: white;
-  border-bottom: 1px solid #e5e7eb;
-  padding: 1rem 0;
-}
+.week-controls { display:flex; align-items:center; gap:1rem; }
+.week-navigation { display:flex; align-items:center; gap:.5rem; }
+.week-nav-btn { background:#f9fafb; border:1px solid #d1d5db; border-radius:.375rem; padding:.5rem; color:#374151; cursor:pointer; transition:.2s; }
+.week-nav-btn:hover { background:#e5e7eb; }
+.week-display { font-weight:500; color:#111827; min-width:260px; text-align:center; }
 
-.schedule-title {
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: #111827;
-  margin: 0;
-}
+.publish-section { display:flex; align-items:center; gap:.75rem; }
+.status-indicator { padding:.375rem .75rem; border-radius:9999px; font-size:.75rem; font-weight:500; }
+.status-draft { background:#fef3c7; color:#92400e; }
+.status-published { background:#d1fae5; color:#065f46; }
+.btn-primary { background:#3b82f6; color:#fff; border:none; border-radius:.375rem; padding:.5rem 1rem; font-weight:500; font-size:.875rem; cursor:pointer; transition:.2s; }
+.btn-primary:hover { background:#2563eb; }
 
-.schedule-subtitle {
-  color: #6b7280;
-  font-size: 0.875rem;
-  margin: 0;
-}
+.schedule-grid { background:#fff; border-radius:.5rem; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,.1); margin:1rem; }
+.grid-header { display:grid; grid-template-columns:240px repeat(7,1fr); background:#f9fafb; border-bottom:1px solid #e5e7eb; }
+.grid-header-cell { padding:1rem .75rem; font-weight:600; color:#374151; font-size:.875rem; text-align:center; border-right:1px solid #e5e7eb; }
+.grid-header-cell:first-child { text-align:left; background:#f3f4f6; }
 
-.week-controls {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
+.grid-body { max-height:70vh; overflow-y:auto; }
+.grid-row { display:grid; grid-template-columns:240px repeat(7,1fr); border-bottom:1px solid #e5e7eb; min-height:120px; }
 
-.week-navigation {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
+.employee-cell { background:#f9fafb; padding:1rem .75rem; border-right:1px solid #e5e7eb; display:flex; flex-direction:column; gap:.25rem; }
+.employee-name { font-weight:600; color:#111827; font-size:.9rem; }
+.employee-role { color:#6b7280; font-size:.8rem; }
+.employee-hours { color:#6b7280; font-size:.75rem; margin-top:auto; }
 
-.week-nav-btn {
-  background: #f9fafb;
-  border: 1px solid #d1d5db;
-  border-radius: 0.375rem;
-  padding: 0.5rem;
-  color: #374151;
-  cursor: pointer;
-  transition: all 0.2s;
-}
+.day-cell { padding:.5rem; border-right:1px solid #e5e7eb; position:relative; background:#fff; }
+.shift-block { background:#3b82f6; color:#fff; border-radius:.375rem; padding:.5rem; margin-bottom:.25rem; font-size:.75rem; position:relative; cursor:pointer; transition:.2s; }
+.shift-block:hover { background:#2563eb; transform:translateY(-1px); box-shadow:0 2px 4px rgba(0,0,0,.1); }
+.shift-time { font-weight:700; margin-bottom:.25rem; }
+.shift-role { opacity:.95; font-size:.72rem; }
+.shift-delete { position:absolute; top:.25rem; right:.25rem; background:rgba(255,255,255,.25); border:none; color:#fff; border-radius:50%; width:20px; height:20px; font-size:.7rem; display:flex; align-items:center; justify-content:center; opacity:0; transition:opacity .2s; cursor:pointer; }
+.shift-block:hover .shift-delete { opacity:1; }
 
-.week-nav-btn:hover {
-  background: #e5e7eb;
-}
+.add-shift-area { position:absolute; bottom:.5rem; left:.5rem; right:.5rem; }
+.add-shift-btn { width:100%; background:transparent; border:2px dashed #d1d5db; color:#6b7280; border-radius:.375rem; padding:.5rem; font-size:.75rem; cursor:pointer; transition:.2s; display:flex; align-items:center; justify-content:center; gap:.25rem; }
+.add-shift-btn:hover { border-color:#3b82f6; color:#3b82f6; background:#eff6ff; }
 
-.week-display {
-  font-weight: 500;
-  color: #111827;
-  min-width: 200px;
-  text-align: center;
-}
-
-.publish-section {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.status-indicator {
-  padding: 0.375rem 0.75rem;
-  border-radius: 9999px;
-  font-size: 0.75rem;
-  font-weight: 500;
-}
-
-.status-draft {
-  background: #fef3c7;
-  color: #92400e;
-}
-
-.status-published {
-  background: #d1fae5;
-  color: #065f46;
-}
-
-.btn-primary {
-  background: #3b82f6;
-  color: white;
-  border: none;
-  border-radius: 0.375rem;
-  padding: 0.5rem 1rem;
-  font-weight: 500;
-  font-size: 0.875rem;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-primary:hover {
-  background: #2563eb;
-}
-
-.schedule-grid {
-  background: white;
-  border-radius: 0.5rem;
-  overflow: hidden;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
-  margin: 1rem;
-}
-
-.grid-header {
-  display: grid;
-  grid-template-columns: 200px repeat(7, 1fr);
-  background: #f9fafb;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-.grid-header-cell {
-  padding: 1rem 0.75rem;
-  font-weight: 600;
-  color: #374151;
-  font-size: 0.875rem;
-  text-align: center;
-  border-right: 1px solid #e5e7eb;
-}
-
-.grid-header-cell:first-child {
-  text-align: left;
-  background: #f3f4f6;
-}
-
-.grid-body {
-  max-height: 70vh;
-  overflow-y: auto;
-}
-
-.grid-row {
-  display: grid;
-  grid-template-columns: 200px repeat(7, 1fr);
-  border-bottom: 1px solid #e5e7eb;
-  min-height: 120px;
-}
-
-.employee-cell {
-  background: #f9fafb;
-  padding: 1rem 0.75rem;
-  border-right: 1px solid #e5e7eb;
-  display: flex;
-  align-items: flex-start;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.employee-name {
-  font-weight: 600;
-  color: #111827;
-  font-size: 0.875rem;
-}
-
-.employee-role {
-  color: #6b7280;
-  font-size: 0.75rem;
-}
-
-.employee-hours {
-  color: #6b7280;
-  font-size: 0.75rem;
-  margin-top: auto;
-}
-
-.day-cell {
-  padding: 0.5rem;
-  border-right: 1px solid #e5e7eb;
-  position: relative;
-  background: white;
-}
-
-.shift-block {
-  background: #3b82f6;
-  color: white;
-  border-radius: 0.375rem;
-  padding: 0.5rem;
-  margin-bottom: 0.25rem;
-  font-size: 0.75rem;
-  position: relative;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.shift-block:hover {
-  background: #2563eb;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.shift-time {
-  font-weight: 600;
-  margin-bottom: 0.25rem;
-}
-
-.shift-role {
-  opacity: 0.9;
-  font-size: 0.7rem;
-}
-
-.shift-delete {
-  position: absolute;
-  top: 0.25rem;
-  right: 0.25rem;
-  background: rgba(255, 255, 255, 0.2);
-  border: none;
-  color: white;
-  border-radius: 50%;
-  width: 20px;
-  height: 20px;
-  font-size: 0.7rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
-  transition: opacity 0.2s;
-  cursor: pointer;
-}
-
-.shift-block:hover .shift-delete {
-  opacity: 1;
-}
-
-.add-shift-area {
-  position: absolute;
-  bottom: 0.5rem;
-  left: 0.5rem;
-  right: 0.5rem;
-}
-
-.add-shift-btn {
-  width: 100%;
-  background: transparent;
-  border: 2px dashed #d1d5db;
-  color: #6b7280;
-  border-radius: 0.375rem;
-  padding: 0.5rem;
-  font-size: 0.75rem;
-  cursor: pointer;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.25rem;
-}
-
-.add-shift-btn:hover {
-  border-color: #3b82f6;
-  color: #3b82f6;
-  background: #eff6ff;
-}
-
-.modal-content {
-  border: none;
-  border-radius: 0.75rem;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-}
-
-.modal-header {
-  border-bottom: 1px solid #e5e7eb;
-  padding: 1.5rem;
-}
-
-.modal-body {
-  padding: 1.5rem;
-}
-
-.modal-footer {
-  border-top: 1px solid #e5e7eb;
-  padding: 1.5rem;
-  gap: 0.75rem;
-}
-
-.form-group {
-  margin-bottom: 1rem;
-}
-
-.form-label {
-  display: block;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #374151;
-  margin-bottom: 0.5rem;
-}
-
-.form-control {
-  width: 100%;
-  border: 1px solid #d1d5db;
-  border-radius: 0.375rem;
-  padding: 0.5rem 0.75rem;
-  font-size: 0.875rem;
-  transition: border-color 0.2s;
-}
-
-.form-control:focus {
-  outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-}
-
-.btn-secondary {
-  background: #f9fafb;
-  color: #374151;
-  border: 1px solid #d1d5db;
-  border-radius: 0.375rem;
-  padding: 0.5rem 1rem;
-  font-weight: 500;
-  font-size: 0.875rem;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-secondary:hover {
-  background: #e5e7eb;
-}
-
-.time-input-group {
-  display: flex;
-  gap: 0.5rem;
-  align-items: center;
-}
-
-.time-separator {
-  color: #6b7280;
-  font-weight: 500;
-}
-
-.role-select {
-  appearance: none;
-  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
-  background-position: right 0.5rem center;
-  background-repeat: no-repeat;
-  background-size: 1.5em 1.5em;
-  padding-right: 2.5rem;
-}
+/* Modal */
+.modal-content { border:none; border-radius:.75rem; box-shadow:0 25px 50px -12px rgba(0,0,0,.25); }
+.modal-header { border-bottom:1px solid #e5e7eb; padding:1.25rem 1.5rem; }
+.modal-body   { padding:1.5rem; }
+.modal-footer { border-top:1px solid #e5e7eb; padding:1rem 1.5rem; gap:.75rem; }
+.form-group { margin-bottom:1rem; }
+.form-label { display:block; font-size:.875rem; font-weight:600; color:#374151; margin-bottom:.5rem; }
+.form-control { width:100%; border:1px solid #d1d5db; border-radius:.375rem; padding:.5rem .75rem; font-size:.875rem; transition:border-color .2s; }
+.form-control:focus { outline:none; border-color:#3b82f6; box-shadow:0 0 0 3px rgba(59,130,246,.1); }
+.btn-secondary { background:#f9fafb; color:#374151; border:1px solid #d1d5db; border-radius:.375rem; padding:.5rem 1rem; font-weight:500; font-size:.875rem; cursor:pointer; transition:.2s; }
+.btn-secondary:hover { background:#e5e7eb; }
+.time-input-group { display:flex; gap:.5rem; align-items:center; }
+.time-separator { color:#6b7280; font-weight:600; }
+.role-select { appearance:none; background-image:url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e"); background-position:right .5rem center; background-repeat:no-repeat; background-size:1.2em 1.2em; padding-right:2.5rem; }
 </style>
 
 <div class="schedule-container">
-  <!-- Header -->
   <div class="schedule-header">
     <div class="container-fluid px-4">
       <div class="d-flex align-items-center justify-content-between">
@@ -350,14 +72,12 @@
           <p class="schedule-subtitle">Manage your team's work schedule</p>
         </div>
         <div class="week-controls">
-          <div class="week-navigation">
-            <button class="week-nav-btn" id="prevWeekBtn">
+          <div class="week-navigation" role="group" aria-label="Week navigation">
+            <button class="week-nav-btn" id="prevWeekBtn" title="Previous week" aria-label="Previous week">
               <i class="fas fa-chevron-left"></i>
             </button>
-            <div class="week-display" id="weekDisplay">
-              Week of Mon, 28 - Sun, 4
-            </div>
-            <button class="week-nav-btn" id="nextWeekBtn">
+            <div class="week-display" id="weekDisplay" aria-live="polite"></div>
+            <button class="week-nav-btn" id="nextWeekBtn" title="Next week" aria-label="Next week">
               <i class="fas fa-chevron-right"></i>
             </button>
           </div>
@@ -370,43 +90,40 @@
     </div>
   </div>
 
-  <!-- Schedule Grid -->
   <div class="schedule-grid">
     <div class="grid-header">
       <div class="grid-header-cell">Team members (0)</div>
-      <div class="grid-header-cell" data-day="0">Mon, 28</div>
-      <div class="grid-header-cell" data-day="1">Tue, 29</div>
-      <div class="grid-header-cell" data-day="2">Wed, 30</div>
-      <div class="grid-header-cell" data-day="3">Thu, 1</div>
-      <div class="grid-header-cell" data-day="4">Fri, 2</div>
-      <div class="grid-header-cell" data-day="5">Sat, 3</div>
-      <div class="grid-header-cell" data-day="6">Sun, 4</div>
+      <div class="grid-header-cell" data-day="0">Mon</div>
+      <div class="grid-header-cell" data-day="1">Tue</div>
+      <div class="grid-header-cell" data-day="2">Wed</div>
+      <div class="grid-header-cell" data-day="3">Thu</div>
+      <div class="grid-header-cell" data-day="4">Fri</div>
+      <div class="grid-header-cell" data-day="5">Sat</div>
+      <div class="grid-header-cell" data-day="6">Sun</div>
     </div>
-    <div class="grid-body" id="scheduleGridBody">
-      <!-- Employees and shifts will be rendered here -->
-    </div>
+    <div class="grid-body" id="scheduleGridBody"></div>
   </div>
 </div>
 
 <!-- Add Shift Modal -->
-<div class="modal fade" id="shiftModal" tabindex="-1">
+<div class="modal fade" id="shiftModal" tabindex="-1" aria-labelledby="shiftModalLabel" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title">Add Shift</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <h5 id="shiftModalLabel" class="modal-title">Add Shift</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" title="Close"></button>
       </div>
       <div class="modal-body">
         <div class="form-group">
-          <label class="form-label">Time</label>
+          <label class="form-label" for="startTime">Time</label>
           <div class="time-input-group">
             <input type="time" id="startTime" class="form-control" value="09:00">
-            <span class="time-separator">-</span>
+            <span class="time-separator">–</span>
             <input type="time" id="endTime" class="form-control" value="17:00">
           </div>
         </div>
         <div class="form-group">
-          <label class="form-label">Role</label>
+          <label class="form-label" for="shiftRole">Role</label>
           <select id="shiftRole" class="form-control role-select">
             <option>Support Worker</option>
             <option>Coordinator</option>
@@ -427,8 +144,8 @@
           </div>
         </div>
         <div class="form-group">
-          <label class="form-label">Shift Notes:</label>
-          <textarea id="shiftNotes" class="form-control" rows="3" placeholder="Leave a note for your employee, like the address of a job site, and they'll see it when they clock in."></textarea>
+          <label class="form-label" for="shiftNotes">Shift Notes:</label>
+          <textarea id="shiftNotes" class="form-control" rows="3" placeholder="Notes employees will see."></textarea>
         </div>
       </div>
       <div class="modal-footer">
@@ -442,358 +159,268 @@
 <?php require_once 'app/views/templates/footer.php'; ?>
 
 <script>
-console.log('[schedule] Homebase-style script loaded');
+// ===== Strict JSON fetch (will scream if server sends HTML) =====
+async function fetchJSON(url, options = {}) {
+  const res = await fetch(url, { headers: { 'Content-Type': 'application/json' }, ...options });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const ct = res.headers.get('content-type') || '';
+  const text = await res.text();
+  if (!ct.includes('application/json')) {
+    console.error('[fetchJSON] Expected JSON, got:', text.slice(0, 400));
+    throw new Error('Server returned HTML instead of JSON. Check /schedule/api routing and auth.');
+  }
+  try { return JSON.parse(text); }
+  catch (e) { console.error('[fetchJSON] Invalid JSON:', text.slice(0, 400)); throw e; }
+}
 
-// API helper
-const api = (action, options = {}) => {
-  return fetch(`/schedule/api?a=${encodeURIComponent(action)}`, {
-    headers: {'Content-Type': 'application/json'},
-    ...options
-  }).then(r => {
-    if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    return r.json();
-  });
-};
-
-// Global state
+// ===== State =====
 let employees = [];
 let shifts = [];
 let currentWeekStart = null;
 let isAdmin = false;
 let shiftModal;
 let currentEmployee = null;
-let currentDate = null;
 let selectedDays = new Set();
 
-// Date helpers
+// ===== Dates =====
 function mondayOf(dateStr) {
-  const d = new Date(dateStr + 'T12:00:00'); // Add time to avoid timezone issues
-  const dayOfWeek = d.getDay();
-  const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-  d.setDate(d.getDate() - daysFromMonday);
-  return d.toISOString().slice(0, 10);
+  const d = new Date(dateStr + 'T12:00:00');
+  const dow = d.getDay(); // 0..6 (Sun..Sat)
+  const offset = (dow === 0) ? 6 : (dow - 1);
+  d.setDate(d.getDate() - offset);
+  return d.toISOString().slice(0,10);
 }
-
 function formatWeekDisplay(mondayStr) {
-  const monday = new Date(mondayStr + 'T12:00:00');
-  const sunday = new Date(monday);
-  sunday.setDate(sunday.getDate() + 6);
-  
-  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-                      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  
-  const mondayMonth = monthNames[monday.getMonth()];
-  const sundayMonth = monthNames[sunday.getMonth()];
-  
-  if (monday.getMonth() === sunday.getMonth()) {
-    return `Week of ${monday.toLocaleDateString('en-US', {weekday: 'short'})}, ${mondayMonth} ${monday.getDate()} - ${sunday.toLocaleDateString('en-US', {weekday: 'short'})}, ${sunday.getDate()}`;
-  } else {
-    return `Week of ${monday.toLocaleDateString('en-US', {weekday: 'short'})}, ${mondayMonth} ${monday.getDate()} - ${sunday.toLocaleDateString('en-US', {weekday: 'short'})}, ${sundayMonth} ${sunday.getDate()}`;
+  const mon = new Date(mondayStr + 'T12:00:00');
+  const sun = new Date(mon); sun.setDate(sun.getDate() + 6);
+  const m = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const same = mon.getMonth() === sun.getMonth();
+  const left  = `${mon.toLocaleDateString('en-US',{weekday:'short'})}, ${m[mon.getMonth()]} ${mon.getDate()}`;
+  const right = `${sun.toLocaleDateString('en-US',{weekday:'short'})}, ${same ? '' : (m[sun.getMonth()]+' ')}${sun.getDate()}`;
+  return `Week of ${left} - ${right}`;
+}
+function weekDays(mondayStr) {
+  const mon = new Date(mondayStr + 'T12:00:00');
+  const m = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const arr = [];
+  for (let i=0;i<7;i++) {
+    const d = new Date(mon); d.setDate(d.getDate()+i);
+    arr.push({ date: d.toISOString().slice(0,10), display: `${d.toLocaleDateString('en-US',{weekday:'short'})}, ${m[d.getMonth()]} ${d.getDate()}` });
   }
+  return arr;
 }
 
-function getWeekDays(mondayStr) {
-  const monday = new Date(mondayStr + 'T12:00:00');
-  const days = [];
-  
-  for (let i = 0; i < 7; i++) {
-    const day = new Date(monday);
-    day.setDate(day.getDate() + i);
-    
-    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-                        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    
-    days.push({
-      date: day.toISOString().slice(0, 10),
-      display: `${day.toLocaleDateString('en-US', {weekday: 'short'})}, ${monthNames[day.getMonth()]} ${day.getDate()}`
-    });
-  }
-  
-  return days;
-}
-
-// Initialize
+// ===== Init =====
 document.addEventListener('DOMContentLoaded', async () => {
-  console.log('[schedule] Initializing...');
-  
   shiftModal = new bootstrap.Modal(document.getElementById('shiftModal'));
-  
-  // Set initial week to current week
-  const today = new Date();
-  const todayStr = today.toISOString().slice(0, 10);
-  currentWeekStart = mondayOf(todayStr);
-  
-  console.log('Today:', todayStr);
-  console.log('Current week start:', currentWeekStart);
-  
-  // Event listeners
-  document.getElementById('prevWeekBtn').addEventListener('click', () => {
-    console.log('Previous week clicked');
-    changeWeek(-7);
-  });
-  document.getElementById('nextWeekBtn').addEventListener('click', () => {
-    console.log('Next week clicked');
-    changeWeek(7);
-  });
+
+  const today = new Date().toISOString().slice(0,10);
+  currentWeekStart = mondayOf(today);
+
+  document.getElementById('prevWeekBtn').addEventListener('click', () => changeWeek(-7));
+  document.getElementById('nextWeekBtn').addEventListener('click', () => changeWeek(7));
   document.getElementById('publishBtn').addEventListener('click', togglePublish);
   document.getElementById('saveShiftBtn').addEventListener('click', saveShift);
-  
-  // Day selector buttons
-  document.querySelectorAll('.day-selector').forEach(btn => {
+
+  // Safe day-selector handlers
+  document.querySelectorAll('.day-selector').forEach((btn) => {
     btn.addEventListener('click', (e) => {
-      const day = e.target.dataset.day;
+      const b = e.currentTarget;
+      const day = b.dataset.day;
       if (selectedDays.has(day)) {
         selectedDays.delete(day);
-        e.target.classList.remove('btn-primary');
-        e.target.classList.add('btn-secondary');
+        b.classList.remove('btn-primary'); b.classList.add('btn-secondary');
       } else {
         selectedDays.add(day);
-        e.target.classList.remove('btn-secondary');
-        e.target.classList.add('btn-primary');
+        b.classList.remove('btn-secondary'); b.classList.add('btn-primary');
       }
     });
   });
-  
-  // Load initial data
-  console.log('Loading employees...');
+
   await loadEmployees();
-  console.log('Loading week data...');
   await loadWeek();
-  
-  console.log('[schedule] Initialization complete');
 });
 
-function changeWeek(days) {
-  const current = new Date(currentWeekStart + 'T12:00:00');
-  current.setDate(current.getDate() + days);
-  currentWeekStart = current.toISOString().slice(0, 10);
-  console.log('Changing to week:', currentWeekStart);
+// ===== Week nav =====
+function changeWeek(deltaDays) {
+  const cur = new Date(currentWeekStart + 'T12:00:00');
+  cur.setDate(cur.getDate() + deltaDays);
+  currentWeekStart = mondayOf(cur.toISOString().slice(0,10));
   loadWeek();
 }
 
+// ===== Loads =====
 async function loadEmployees() {
   try {
-    const response = await fetch('/schedule/api?a=employees.list', {
-      headers: {'Content-Type': 'application/json'}
-    });
-    
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-    }
-    
-    const text = await response.text();
-    console.log('Raw employees response:', text);
-    
-    employees = JSON.parse(text);
-    console.log('Loaded employees:', employees);
+    employees = await fetchJSON('/schedule/api?a=employees.list');
   } catch (e) {
     console.error('Error loading employees:', e);
-    console.error('Response text might be HTML instead of JSON');
     employees = [];
   }
 }
-
 async function loadWeek() {
   try {
-    const data = await api(`shifts.week`, {
-      method: 'GET'
-    });
-    // Add week parameter to URL
-    const response = await fetch(`/schedule/api?a=shifts.week&week=${currentWeekStart}`, {
-      headers: {'Content-Type': 'application/json'}
-    });
-    
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const weekData = await response.json();
-    
-    shifts = weekData.shifts || [];
-    isAdmin = weekData.is_admin || false;
-    
-    updateWeekDisplay();
-    renderScheduleGrid();
+    const data = await fetchJSON(`/schedule/api?a=shifts.week&week=${currentWeekStart}`);
+    shifts  = data.shifts || [];
+    isAdmin = !!data.is_admin;
+
+    updateWeekHeader();
+    renderGrid();
     await loadPublishStatus();
   } catch (e) {
     console.error('Error loading week:', e);
   }
 }
-
-function updateWeekDisplay() {
-  console.log('Updating week display for:', currentWeekStart);
-  
-  const weekDisplay = document.getElementById('weekDisplay');
-  weekDisplay.textContent = formatWeekDisplay(currentWeekStart);
-  
-  const days = getWeekDays(currentWeekStart);
-  console.log('Week days:', days);
-  
-  const headerCells = document.querySelectorAll('.grid-header-cell[data-day]');
-  
-  headerCells.forEach((cell, index) => {
-    if (days[index]) {
-      cell.textContent = days[index].display;
-      console.log(`Day ${index}: ${days[index].display}`);
+async function loadPublishStatus() {
+  try {
+    const status = await fetchJSON(`/schedule/api?a=publish.status&week=${currentWeekStart}`);
+    const ind = document.getElementById('statusIndicator');
+    const btn = document.getElementById('publishBtn');
+    if (status.published) {
+      ind.textContent = 'Published';
+      ind.className   = 'status-indicator status-published';
+      btn.textContent = 'Unpublish (0)';
+    } else {
+      ind.textContent = 'Draft';
+      ind.className   = 'status-indicator status-draft';
+      btn.textContent = 'Publish (0)';
     }
-  });
-  
-  // Update team members count
-  const activeEmployees = employees.filter(emp => emp.is_active !== false);
-  const teamHeader = document.querySelector('.grid-header-cell:first-child');
-  if (teamHeader) {
-    teamHeader.textContent = `Team members (${activeEmployees.length})`;
+    btn.style.display = isAdmin ? 'block' : 'none';
+  } catch (e) {
+    console.error('Error loading publish status:', e);
   }
 }
 
-function renderScheduleGrid() {
-  const gridBody = document.getElementById('scheduleGridBody');
-  gridBody.innerHTML = '';
-  
-  const activeEmployees = employees.filter(emp => emp.is_active);
-  const days = getWeekDays(currentWeekStart);
-  
-  activeEmployees.forEach(employee => {
+// ===== UI =====
+function updateWeekHeader() {
+  document.getElementById('weekDisplay').textContent = formatWeekDisplay(currentWeekStart);
+
+  const days = weekDays(currentWeekStart);
+  document.querySelectorAll('.grid-header-cell[data-day]').forEach((cell, idx) => {
+    if (days[idx]) cell.textContent = days[idx].display;
+  });
+
+  const active = employees.filter(emp => emp.is_active !== 0 && emp.is_active !== false);
+  const teamHeader = document.querySelector('.grid-header-cell:first-child');
+  if (teamHeader) teamHeader.textContent = `Team members (${active.length})`;
+}
+
+function renderGrid() {
+  const body = document.getElementById('scheduleGridBody');
+  body.innerHTML = '';
+
+  const activeEmployees = employees.filter(emp => emp.is_active !== 0 && emp.is_active !== false);
+  const days = weekDays(currentWeekStart);
+
+  activeEmployees.forEach(emp => {
     const row = document.createElement('div');
     row.className = 'grid-row';
-    
-    // Employee cell
-    const employeeCell = document.createElement('div');
-    employeeCell.className = 'employee-cell';
-    
-    const employeeShifts = shifts.filter(s => s.employee_id === employee.id);
-    const totalHours = calculateTotalHours(employeeShifts);
-    
-    employeeCell.innerHTML = `
-      <div class="employee-name">${escapeHtml(employee.name)}</div>
-      <div class="employee-role">${escapeHtml(employee.role)}</div>
-      <div class="employee-hours">${totalHours.toFixed(2)} hrs / $${(totalHours * (employee.wage || 0)).toFixed(2)}</div>
+
+    const empCell = document.createElement('div');
+    empCell.className = 'employee-cell';
+
+    const empShifts = shifts.filter(s => s.employee_id === emp.id);
+    const hours = totalHours(empShifts);
+
+    empCell.innerHTML = `
+      <div class="employee-name">${escapeHtml(emp.name)}</div>
+      <div class="employee-role">${escapeHtml(emp.role_title || '')}</div>
+      <div class="employee-hours">${hours.toFixed(2)} hrs</div>
     `;
-    
-    row.appendChild(employeeCell);
-    
-    // Day cells
-    days.forEach((day, dayIndex) => {
-      const dayCell = document.createElement('div');
-      dayCell.className = 'day-cell';
-      
-      const dayShifts = employeeShifts.filter(s => s.start_dt.slice(0, 10) === day.date);
-      
-      // Render existing shifts
-      dayShifts.forEach(shift => {
-        const shiftBlock = createShiftBlock(shift);
-        dayCell.appendChild(shiftBlock);
-      });
-      
-      // Add shift button (admin only)
+    row.appendChild(empCell);
+
+    days.forEach(day => {
+      const cell = document.createElement('div');
+      cell.className = 'day-cell';
+
+      const todays = empShifts.filter(s => (s.start_dt || '').slice(0,10) === day.date);
+      todays.forEach(shift => cell.appendChild(shiftBlock(shift)));
+
       if (isAdmin) {
-        const addArea = document.createElement('div');
-        addArea.className = 'add-shift-area';
-        
-        const addBtn = document.createElement('button');
-        addBtn.className = 'add-shift-btn';
-        addBtn.innerHTML = '<i class="fas fa-plus"></i>';
-        addBtn.addEventListener('click', () => openShiftModal(employee, day.date));
-        
-        addArea.appendChild(addBtn);
-        dayCell.appendChild(addArea);
+        const add = document.createElement('div'); add.className = 'add-shift-area';
+        const btn = document.createElement('button');
+        btn.className = 'add-shift-btn';
+        btn.innerHTML = '<i class="fas fa-plus"></i> Add shift';
+        btn.addEventListener('click', () => openShiftModal(emp, day.date));
+        add.appendChild(btn);
+        cell.appendChild(add);
       }
-      
-      row.appendChild(dayCell);
+
+      row.appendChild(cell);
     });
-    
-    gridBody.appendChild(row);
+
+    body.appendChild(row);
   });
 }
 
-function createShiftBlock(shift) {
-  const block = document.createElement('div');
-  block.className = 'shift-block';
-  
-  const startTime = shift.start_dt.slice(11, 16);
-  const endTime = shift.end_dt.slice(11, 16);
-  
-  block.innerHTML = `
-    <div class="shift-time">${startTime}-${endTime}</div>
-    <div class="shift-role">${escapeHtml(shift.notes || shift.employee_role)}</div>
-    ${isAdmin ? `<button class="shift-delete" onclick="deleteShift(${shift.id})">×</button>` : ''}
+function shiftBlock(shift) {
+  const div = document.createElement('div');
+  div.className = 'shift-block';
+  const t1 = (shift.start_dt || '').slice(11,16);
+  const t2 = (shift.end_dt   || '').slice(11,16);
+  div.innerHTML = `
+    <div class="shift-time">${t1}-${t2}</div>
+    <div class="shift-role">${escapeHtml(shift.notes || shift.employee_role || '')}</div>
+    ${isAdmin ? `<button class="shift-delete" onclick="deleteShift(${shift.id})" aria-label="Delete">×</button>` : ''}
   `;
-  
-  return block;
+  return div;
 }
 
-function calculateTotalHours(shifts) {
-  return shifts.reduce((total, shift) => {
-    const start = new Date(shift.start_dt);
-    const end = new Date(shift.end_dt);
-    const hours = (end - start) / (1000 * 60 * 60);
-    return total + hours;
-  }, 0);
-}
-
-function openShiftModal(employee, date) {
+// ===== Modal/CRUD =====
+function openShiftModal(emp, ymd) {
   if (!isAdmin) return;
-  
-  currentEmployee = employee;
-  currentDate = date;
+
+  currentEmployee = emp;
   selectedDays.clear();
-  
-  // Reset day selector buttons
-  document.querySelectorAll('.day-selector').forEach(btn => {
-    btn.classList.remove('btn-primary');
-    btn.classList.add('btn-secondary');
+
+  // Reset day buttons safely
+  document.querySelectorAll('.day-selector').forEach((b) => {
+    b.classList.remove('btn-primary'); b.classList.add('btn-secondary');
   });
-  
-  // Pre-select the clicked day
-  const dayOfWeek = new Date(date).getDay();
-  const dayBtn = document.querySelector(`[data-day="${dayOfWeek}"]`);
-  if (dayBtn) {
-    selectedDays.add(dayOfWeek.toString());
-    dayBtn.classList.remove('btn-secondary');
-    dayBtn.classList.add('btn-primary');
-  }
-  
-  // Reset form
+
+  // Preselect day that was clicked
+  const dow = new Date(ymd + 'T12:00:00').getDay(); // 0..6
+  const pre = document.querySelector(`.day-selector[data-day="${dow}"]`);
+  if (pre) { selectedDays.add(String(dow)); pre.classList.add('btn-primary'); pre.classList.remove('btn-secondary'); }
+
+  // Defaults
   document.getElementById('startTime').value = '09:00';
-  document.getElementById('endTime').value = '17:00';
-  document.getElementById('shiftRole').value = employee.role || 'Support Worker';
+  document.getElementById('endTime').value   = '17:00';
+  document.getElementById('shiftRole').value = emp.role_title || 'Support Worker';
   document.getElementById('shiftNotes').value = '';
-  
+
   shiftModal.show();
 }
 
 async function saveShift() {
   if (!currentEmployee || selectedDays.size === 0) return;
-  
+
   const startTime = document.getElementById('startTime').value;
-  const endTime = document.getElementById('endTime').value;
-  const role = document.getElementById('shiftRole').value;
-  const notes = document.getElementById('shiftNotes').value;
-  
-  if (!startTime || !endTime) {
-    alert('Please select start and end times');
-    return;
-  }
-  
+  const endTime   = document.getElementById('endTime').value;
+  const role      = document.getElementById('shiftRole').value;
+  const notes     = document.getElementById('shiftNotes').value;
+
+  if (!startTime || !endTime) return alert('Select start and end times');
+
   try {
-    const baseDate = new Date(currentWeekStart);
-    
+    const base = new Date(currentWeekStart + 'T12:00:00');
+
     for (const dayStr of selectedDays) {
-      const day = parseInt(dayStr);
-      const shiftDate = new Date(baseDate);
-      shiftDate.setDate(shiftDate.getDate() + day);
-      
-      const startDt = `${shiftDate.toISOString().slice(0, 10)} ${startTime}:00`;
-      const endDt = `${shiftDate.toISOString().slice(0, 10)} ${endTime}:00`;
-      
-      await api('shifts.create', {
+      const d = new Date(base);
+      d.setDate(d.getDate() + parseInt(dayStr, 10));
+      const ymd = d.toISOString().slice(0,10);
+
+      await fetchJSON('/schedule/api?a=shifts.create', {
         method: 'POST',
         body: JSON.stringify({
           employee_id: currentEmployee.id,
-          start_dt: startDt,
-          end_dt: endDt,
+          start_dt: `${ymd} ${startTime}:00`,
+          end_dt:   `${ymd} ${endTime}:00`,
           notes: notes || role
         })
       });
     }
-    
+
     shiftModal.hide();
     await loadWeek();
   } catch (e) {
@@ -802,17 +429,10 @@ async function saveShift() {
   }
 }
 
-async function deleteShift(shiftId) {
+async function deleteShift(id) {
   if (!isAdmin || !confirm('Delete this shift?')) return;
-  
   try {
-    const response = await fetch(`/schedule/api?a=shifts.delete&id=${shiftId}`, {
-      method: 'GET',
-      headers: {'Content-Type': 'application/json'}
-    });
-    
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    await response.json();
+    await fetchJSON(`/schedule/api?a=shifts.delete&id=${id}`);
     await loadWeek();
   } catch (e) {
     console.error('Error deleting shift:', e);
@@ -820,62 +440,32 @@ async function deleteShift(shiftId) {
   }
 }
 
-async function loadPublishStatus() {
-  try {
-    const response = await fetch(`/schedule/api?a=publish.status&week=${currentWeekStart}`, {
-      headers: {'Content-Type': 'application/json'}
-    });
-    
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const status = await response.json();
-    
-    const indicator = document.getElementById('statusIndicator');
-    const publishBtn = document.getElementById('publishBtn');
-    
-    if (status.published) {
-      indicator.textContent = 'Published';
-      indicator.className = 'status-indicator status-published';
-      publishBtn.textContent = 'Unpublish (0)';
-    } else {
-      indicator.textContent = 'Draft';
-      indicator.className = 'status-indicator status-draft';
-      publishBtn.textContent = 'Publish (0)';
-    }
-    
-    publishBtn.style.display = isAdmin ? 'block' : 'none';
-  } catch (e) {
-    console.error('Error loading publish status:', e);
-  }
-}
-
 async function togglePublish() {
   if (!isAdmin) return;
-  
   try {
-    const status = await api(`publish.status&week=${currentWeekStart}`);
-    const newStatus = !status.published;
-    
-    await api('publish.set', {
+    const s = await fetchJSON(`/schedule/api?a=publish.status&week=${currentWeekStart}`);
+    const next = !s.published;
+    await fetchJSON('/schedule/api?a=publish.set', {
       method: 'POST',
-      body: JSON.stringify({
-        week: currentWeekStart,
-        published: newStatus
-      })
+      body: JSON.stringify({ week: currentWeekStart, published: next })
     });
-    
     await loadPublishStatus();
   } catch (e) {
-    console.error('Error toggling publish status:', e);
+    console.error('Error toggling publish:', e);
     alert('Error updating publish status: ' + e.message);
   }
 }
 
-function escapeHtml(text) {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
+// ===== Utils =====
+function totalHours(list) {
+  return list.reduce((acc, s) => {
+    const a = new Date(s.start_dt), b = new Date(s.end_dt);
+    const h = (b - a) / 36e5;
+    return acc + (isFinite(h) ? h : 0);
+  }, 0);
 }
+function escapeHtml(t=''){ const d=document.createElement('div'); d.textContent=t; return d.innerHTML; }
 
-// Make deleteShift globally available
+// expose delete for inline onclick
 window.deleteShift = deleteShift;
 </script>
