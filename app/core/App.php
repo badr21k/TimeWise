@@ -59,16 +59,12 @@ class App {
         call_user_func_array([$this->controller, $this->method], $this->params);		
     }
 
-    protected function parseUrl() {
-        if (isset($_GET['url'])) {
-            $url = explode('/', filter_var(rtrim($_GET['url'], '/'), FILTER_SANITIZE_URL));
-            // Handle schedule/api routing specifically
-            if (count($url) >= 2 && $url[0] === 'schedule' && $url[1] === 'api') {
-                return ['schedule', 'api'];
-            }
-            return $url;
-        }
-        return ['home'];
+    public function parseUrl() {
+        $u = "{$_SERVER['REQUEST_URI']}";
+        //trims the trailing forward slash (rtrim), sanitizes URL, explode it by forward slash to get elements
+        $url = explode('/', filter_var(rtrim($u, '/'), FILTER_SANITIZE_URL));
+        unset($url[0]);
+        return $url;
     }
 
 }
