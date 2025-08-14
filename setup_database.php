@@ -1,10 +1,9 @@
-
 <?php
 require_once 'app/database.php';
 
 try {
     $db = db_connect();
-    
+
     // Create employees table
     $db->exec("
         CREATE TABLE IF NOT EXISTS employees (
@@ -122,8 +121,17 @@ try {
         $db->prepare("INSERT IGNORE INTO departments (name, is_active, created_at) VALUES (?, 1, NOW())")->execute([$dept]);
     }
 
-    echo "Database setup completed successfully!\n";
-    
+    // Insert sample employees for testing
+    $db->exec("
+        INSERT IGNORE INTO employees (id, name, email, role, role_title, is_active) VALUES 
+        (1, 'John Smith', 'john@example.com', 'Manager', 'Store Manager', 1),
+        (2, 'Jane Doe', 'jane@example.com', 'Staff', 'Sales Associate', 1),
+        (3, 'Bob Johnson', 'bob@example.com', 'Staff', 'Cashier', 1),
+        (4, 'Alice Brown', 'alice@example.com', 'Supervisor', 'Department Supervisor', 1)
+    ");
+
+    echo "Database tables created successfully!\n";
+
 } catch (Exception $e) {
     echo "Error setting up database: " . $e->getMessage() . "\n";
 }
