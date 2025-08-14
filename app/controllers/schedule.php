@@ -15,6 +15,7 @@ class Schedule extends Controller {
     }
 
     private function handleAPI() {
+        ob_clean(); // Clear any output buffer
         // Set JSON header
         header('Content-Type: application/json');
         
@@ -58,6 +59,7 @@ class Schedule extends Controller {
     }
 
     private function apiEmployeesList() {
+        ob_clean(); // Clear any output buffer
         $employeeModel = $this->model('Employee');
         $employees = $employeeModel->all();
         
