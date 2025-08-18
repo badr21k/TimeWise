@@ -1,57 +1,57 @@
-
 <?php
-class Shift {
-    private function db(): PDO { return db_connect(); }
+class Shift
+{
+    /**
+     * Return all shifts within the Monday..Sunday window, joined with employee info.
+     */
+    public function forWeek(string $mondayYmd): array
+    {
+        $db = db_connect();
+        $monday = new DateTime($mondayYmd);
+        $sunday = clone $monday; $sunday->modify('+6 day');
 
-    public function forWeek(string $weekStart): array {
-        $start = new DateTime($weekStart.' 00:00:00');
-        $end   = (clone $start)->modify('+6 day')->setTime(23,59,59);
-        $st = $this->db()->prepare("
-          SELECT s.id, s.employee_id, s.start_dt, s.end_dt, s.notes, s.status,
-                 e.name AS employee_name, e.role AS employee_role
-          FROM shifts s
-          JOIN employees e ON e.id = s.employee_id
-          WHERE s.start_dt BETWEEN ? AND ?
-          ORDER BY s.start_dt
+        $stmt = $db->prepare("
+            SELECT 
+                s.id,
+                s.employee_id,
+                s.start_dt,
+                s.end_dt,
+                s.notes,
+                s.status,
+                e.name           AS employee_name,
+                e.role_title     AS employee_role
+            FROM shifts s
+            JOIN employees e ON e.id = s.employee_id
+            WHERE DATE(s.start_dt) BETWEEN :monday AND :sunday
+            ORDER BY e.name ASC, s.start_dt ASC
         ");
-        $st->execute([$start->format('Y-m-d H:i:s'), $end->format('Y-m-d H:i:s')]);
-        return $st->fetchAll(PDO::FETCH_ASSOC);
+        $stmt->execute([
+            ':monday' => $monday->format('Y-m-d'),
+            ':sunday' => $sunday->format('Y-m-d')
+        ]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function create(int $employeeId, string $startDt, string $endDt, ?string $notes): int {
-        $st = $this->db()->prepare("INSERT INTO shifts (employee_id, start_dt, end_dt, notes) VALUES (?, ?, ?, ?)");
-        $st->execute([$employeeId, $startDt, $endDt, $notes]);
-        return (int)$this->db()->lastInsertId();
-    }
-
-    public function update(int $id, array $data): bool {
-        $set = [];
-        $values = [];
-
-        if (isset($data['start_dt'])) { $set[] = 'start_dt=?'; $values[] = $data['start_dt']; }
-        if (isset($data['end_dt'])) { $set[] = 'end_dt=?'; $values[] = $data['end_dt']; }
-        if (isset($data['notes'])) { $set[] = 'notes=?'; $values[] = $data['notes']; }
-        if (isset($data['status'])) { $set[] = 'status=?'; $values[] = $data['status']; }
-
-        if (empty($set)) return false;
-
-        $values[] = $id;
-        $st = $this->db()->prepare("UPDATE shifts SET " . implode(',', $set) . " WHERE id=?");
-        return $st->execute($values);
-    }
-
-    public function delete(int $id): bool {
-        $st = $this->db()->prepare("DELETE FROM shifts WHERE id=?");
-        return $st->execute([$id]);
-    }
-
-    public function getByEmployee(int $employeeId, string $date): array {
-        $st = $this->db()->prepare("
-            SELECT * FROM shifts 
-            WHERE employee_id = ? AND DATE(start_dt) = ?
-            ORDER BY start_dt
+    public function create(int $employeeId, string $startDt, string $endDt, ?string $notes): int
+    {
+        $db = db_connect();
+        $stmt = $db->prepare("
+            INSERT INTO shifts (employee_id, start_dt, end_dt, notes, status)
+            VALUES (:emp, :start_dt, :end_dt, :notes, 'Scheduled')
         ");
-        $st->execute([$employeeId, $date]);
-        return $st->fetchAll(PDO::FETCH_ASSOC);
+        $stmt->execute([
+            ':emp'      => $employeeId,
+            ':start_dt' => $startDt,
+            ':end_dt'   => $endDt,
+            ':notes'    => $notes
+        ]);
+        return (int)$db->lastInsertId();
+    }
+
+    public function delete(int $id): bool
+    {
+        $db = db_connect();
+        $stmt = $db->prepare("DELETE FROM shifts WHERE id = :id");
+        return $stmt->execute([':id'=>$id]);
     }
 }

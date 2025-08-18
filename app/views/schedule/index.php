@@ -407,7 +407,7 @@ async function saveShift() {
 
     for (const dayStr of selectedDays) {
       const d = new Date(base);
-      d.setDate(d.getDate() + parseInt(dayStr, 10));
+      d.setDate(base.getDate() + (day === 0 ? 6 : day-1));
       const ymd = d.toISOString().slice(0,10);
 
       await fetchJSON('/schedule/api?a=shifts.create', {

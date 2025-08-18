@@ -1,152 +1,137 @@
-
 <?php
 
-class Schedule extends Controller {
+class Schedule extends Controller
+{
+    private $Employee;
+    private $Shift;
+    private $Week;
 
-    public function index($params = []) {
-        // Handle API requests first
-        if (isset($_GET['a'])) {
-            $this->handleAPI();
+    public function __construct() {
+        if (session_status() !== PHP_SESSION_ACTIVE) session_start();
+        $this->Employee = $this->model('Employee');
+        $this->Shift    = $this->model('Shift');
+        $this->Week     = $this->model('ScheduleWeek');
+    }
+
+    public function index() {
+        if (empty($_SESSION['auth'])) { header('Location: /login'); exit; }
+        $this->view('schedule/index');
+    }
+
+    /** JSON API: /schedule/api?a=… */
+    public function api() {
+        if (empty($_SESSION['auth'])) {
+            http_response_code(401);
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode(['error' => 'Auth required']);
             return;
         }
 
-        // Regular page view
-        $this->view('schedule/index', []);
-    }
+        header('Content-Type: application/json; charset=utf-8');
+        $a = $_GET['a'] ?? '';
 
-    private function handleAPI() {
-        ob_clean(); // Clear any output buffer
-        // Set JSON header
-        header('Content-Type: application/json');
-        
-        $action = $_GET['a'] ?? '';
-        
         try {
-            switch ($action) {
+            switch ($a) {
+
+                /* ---------- Employees ---------- */
                 case 'employees.list':
-                    $this->apiEmployeesList();
+                    echo json_encode($this->Employee->all());
                     break;
-                    
+
+                case 'employees.create':
+                    $this->guardAdmin();
+                    $in = $this->json();
+                    $id = $this->Employee->create(
+                        trim($in['name'] ?? ''),
+                        $in['email'] ?? null,
+                        $in['role']  ?? 'Staff'
+                    );
+                    echo json_encode(['ok'=>true,'id'=>$id]);
+                    break;
+
+                case 'employees.update':
+                    $this->guardAdmin();
+                    $in = $this->json();
+                    echo json_encode(['ok'=>$this->Employee->update((int)$in['id'], $in)]);
+                    break;
+
+                case 'employees.delete':
+                    $this->guardAdmin();
+                    $id = (int)($_GET['id'] ?? 0);
+                    echo json_encode(['ok'=>$this->Employee->delete($id)]);
+                    break;
+
+                /* ---------- Shifts ---------- */
                 case 'shifts.week':
-                    $this->apiShiftsWeek();
+                    $week = $_GET['week'] ?? date('Y-m-d');
+                    $w    = ScheduleWeek::mondayOf($week);
+                    $rows = $this->Shift->forWeek($w);
+                    echo json_encode(['week_start'=>$w,'shifts'=>$rows,'is_admin'=>$this->isAdmin()]);
                     break;
-                    
+
                 case 'shifts.create':
-                    $this->apiShiftsCreate();
+                    $this->guardAdmin();
+                    $in = $this->json();
+                    $id = $this->Shift->create(
+                        (int)$in['employee_id'],
+                        $in['start_dt'],
+                        $in['end_dt'],
+                        $in['notes'] ?? null
+                    );
+                    echo json_encode(['ok'=>true,'id'=>$id]);
                     break;
-                    
+
                 case 'shifts.delete':
-                    $this->apiShiftsDelete();
+                    $this->guardAdmin();
+                    $id = (int)($_GET['id'] ?? 0);
+                    echo json_encode(['ok'=>$this->Shift->delete($id)]);
                     break;
-                    
+
+                /* ---------- Publishing ---------- */
                 case 'publish.status':
-                    $this->apiPublishStatus();
+                    $week = $_GET['week'] ?? date('Y-m-d');
+                    $status = $this->Week->status($week);
+                    $status['is_admin'] = $this->isAdmin();
+                    echo json_encode($status);
                     break;
-                    
+
                 case 'publish.set':
-                    $this->apiPublishSet();
+                    $this->guardAdmin();
+                    $in = $this->json();
+                    $this->Week->setPublished($in['week'], (int)$in['published'] ? 1 : 0);
+                    echo json_encode(['ok'=>true]);
                     break;
-                    
+
+                /* ---------- Admin users (optional) ---------- */
+                case 'users.list':
+                    $this->guardAdmin();
+                    echo json_encode($this->model('User')->all());
+                    break;
+
+                case 'users.setAdmin':
+                    $this->guardAdmin();
+                    $in = $this->json();
+                    echo json_encode(['ok'=>$this->model('User')->setAdmin((int)$in['id'], (int)$in['is_admin'])]);
+                    break;
+
                 default:
-                    http_response_code(404);
-                    echo json_encode(['error' => 'API endpoint not found']);
+                    echo json_encode(['error'=>'Unknown action']);
             }
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             http_response_code(500);
-            echo json_encode(['error' => $e->getMessage()]);
+            echo json_encode(['error'=>$e->getMessage()]);
         }
-        exit;
     }
 
-    private function apiEmployeesList() {
-        ob_clean(); // Clear any output buffer
-        $employeeModel = $this->model('Employee');
-        $employees = $employeeModel->all();
-        
-        // Check admin status
-        $isAdmin = isset($_SESSION['is_admin']) && (int)$_SESSION['is_admin'] === 1;
-        
-        echo json_encode([
-            'employees' => $employees,
-            'isAdmin' => $isAdmin
-        ]);
+    private function guardAdmin() {
+        if (!$this->isAdmin()) throw new Exception('Admin access required');
     }
 
-    private function apiShiftsWeek() {
-        $week = $_GET['week'] ?? date('Y-m-d');
-        $shiftModel = $this->model('Shift');
-        $shifts = $shiftModel->forWeek($week);
-        
-        echo json_encode(['shifts' => $shifts]);
+    private function isAdmin(): bool {
+        return isset($_SESSION['is_admin']) && (int)$_SESSION['is_admin'] === 1;
     }
 
-    private function apiShiftsCreate() {
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            http_response_code(405);
-            echo json_encode(['error' => 'Method not allowed']);
-            return;
-        }
-        
-        $input = json_decode(file_get_contents('php://input'), true);
-        
-        if (!$input || !isset($input['employee_id'], $input['start_dt'], $input['end_dt'])) {
-            http_response_code(400);
-            echo json_encode(['error' => 'Missing required fields']);
-            return;
-        }
-        
-        $shiftModel = $this->model('Shift');
-        $id = $shiftModel->create(
-            (int)$input['employee_id'],
-            $input['start_dt'],
-            $input['end_dt'],
-            $input['notes'] ?? null
-        );
-        
-        echo json_encode(['id' => $id, 'success' => true]);
-    }
-
-    private function apiShiftsDelete() {
-        $id = $_GET['id'] ?? null;
-        
-        if (!$id) {
-            http_response_code(400);
-            echo json_encode(['error' => 'Missing shift ID']);
-            return;
-        }
-        
-        $shiftModel = $this->model('Shift');
-        $success = $shiftModel->delete((int)$id);
-        
-        echo json_encode(['success' => $success]);
-    }
-
-    private function apiPublishStatus() {
-        $week = $_GET['week'] ?? date('Y-m-d');
-        $scheduleWeekModel = $this->model('ScheduleWeek');
-        $status = $scheduleWeekModel->getPublishStatus($week);
-        
-        echo json_encode(['published' => $status]);
-    }
-
-    private function apiPublishSet() {
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            http_response_code(405);
-            echo json_encode(['error' => 'Method not allowed']);
-            return;
-        }
-        
-        $input = json_decode(file_get_contents('php://input'), true);
-        
-        if (!$input || !isset($input['week'], $input['published'])) {
-            http_response_code(400);
-            echo json_encode(['error' => 'Missing required fields']);
-            return;
-        }
-        
-        $scheduleWeekModel = $this->model('ScheduleWeek');
-        $success = $scheduleWeekModel->setPublishStatus($input['week'], (bool)$input['published']);
-        
-        echo json_encode(['success' => $success]);
+    private function json(): array {
+        return json_decode(file_get_contents('php://input'), true) ?: [];
     }
 }

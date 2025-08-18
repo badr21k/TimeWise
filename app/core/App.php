@@ -1,70 +1,55 @@
 <?php
+/**
+ * Minimal front controller / router
+ * - Strips query string from the method segment (so /schedule/api?a=... works)
+ * - Defaults to Home@index when no controller/method
+ */
+class App
+{
+    protected $controller = 'home';
+    protected $method     = 'index';
+    protected $params     = [];
 
-class App {
+    public function __construct()
+    {
+        if (session_status() !== PHP_SESSION_ACTIVE) session_start();
 
-    protected $controller = 'login';
-    protected $method = 'index';
-    protected $special_url = ['apply'];
-    protected $params = [];
+        $url = $this->parseUrl(); // ['schedule','api'] for /schedule/api?a=...
 
-    public function __construct() {
-        if (isset($_SESSION['auth']) == 1) {
+        // Controller
+        if (!empty($url[0])) {
+            $this->controller = strtolower($url[0]);
+            unset($url[0]);
+        }
+
+        $ctrlPath = 'app/controllers/' . $this->controller . '.php';
+        if (!is_file($ctrlPath)) {
+            // fallback
             $this->controller = 'home';
+            $ctrlPath = 'app/controllers/home.php';
         }
-
-        // This will return a broken up URL
-        // it will be /controller/method
-        $url = $this->parseUrl();
-
-        /* if controller exists in the URL, then go to it
-         * if not, then go to this->controller which is defaulted to home 
-         */
-
-        if (isset($url[1]) && !empty($url[1]) && file_exists('app/controllers/' . $url[1] . '.php')) {
-            $this->controller = $url[1];
-            $_SESSION['controller'] = $this->controller;
-
-            /* This is if we have a special URL in the index.
-             * For example, our apply page is public and in the index method
-             * We do not want the method to be login in this case, but instead index
-             */
-            if (in_array($this->controller, $this->special_url)) { 
-              $this->method = 'index';
-            }
-            unset($url[1]);
-        } else {
-            // Only redirect if we actually have a URL part that doesn't match
-            if (isset($url[1]) && !empty($url[1])) {
-                header('Location: /home');
-                die;
-            }
-        }
-
-        require_once 'app/controllers/' . $this->controller . '.php';
+        require_once $ctrlPath;
         $this->controller = new $this->controller;
 
-        // check to see if method is passed
-        // check to see if it exists
-        if (isset($url[2]) && !empty($url[2])) {
-            if (method_exists($this->controller, $url[2])) {
-                $this->method = $url[2];
-                $_SESSION['method'] = $this->method;
-                unset($url[2]);
+        // Method (strip ?query from segment)
+        if (!empty($url[1])) {
+            $candidate = explode('?', $url[1], 2)[0];
+            if (method_exists($this->controller, $candidate)) {
+                $this->method = $candidate;
+                unset($url[1]);
             }
         }
 
-        // This will rebase the params to a new array (starting at 0)
-        // if params exist
+        // Params
         $this->params = $url ? array_values($url) : [];
-        call_user_func_array([$this->controller, $this->method], $this->params);		
+
+        call_user_func_array([$this->controller, $this->method], $this->params);
     }
 
-    public function parseUrl() {
-        $u = "{$_SERVER['REQUEST_URI']}";
-        //trims the trailing forward slash (rtrim), sanitizes URL, explode it by forward slash to get elements
-        $url = explode('/', filter_var(rtrim($u, '/'), FILTER_SANITIZE_URL));
-        unset($url[0]);
-        return $url;
+    private function parseUrl(): array
+    {
+        $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH) ?? '/';
+        $path = trim($path, '/');
+        return $path === '' ? [] : explode('/', $path);
     }
-
 }

@@ -1,41 +1,64 @@
 <?php
-class Employee {
-    private function db(): PDO { return db_connect(); }
+class Employee
+{
+    public function all(): array
+    {
+        $db = db_connect();
+        // Match your schema: employees(id, name, email, role_title, is_active, created_at)
+        $sql = "
+            SELECT 
+                id,
+                name,
+                email,
+                role_title,
+                is_active,
+                created_at
+            FROM employees
+            ORDER BY name ASC
+        ";
+        return $db->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+    }
 
-    public function all(): array {
-        $stmt = $this->db()->prepare("
-            SELECT e.*, d.name as department_name, d.name as role_title
-            FROM employees e 
-            LEFT JOIN departments d ON e.department_id = d.id 
-            WHERE e.is_active = 1
-            ORDER BY e.name
+    public function create(string $name, ?string $email, string $roleTitle = 'Staff'): int
+    {
+        $db = db_connect();
+        $stmt = $db->prepare("
+            INSERT INTO employees (name, email, role_title, is_active)
+            VALUES (:name, :email, :role_title, 1)
         ");
-        $stmt->execute();
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
-    public function create(string $name, ?string $email, string $role): int {
-        $st = $this->db()->prepare("INSERT INTO employees (name,email,role) VALUES (?,?,?)");
-        $st->execute([$name, $email, $role]);
-        return (int)$this->db()->lastInsertId();
-    }
-    public function update(int $id, array $data): bool {
-        $set = [];
-        $values = [];
-
-        if (isset($data['name'])) { $set[] = 'name=?'; $values[] = $data['name']; }
-        if (isset($data['email'])) { $set[] = 'email=?'; $values[] = $data['email']; }
-        if (isset($data['role'])) { $set[] = 'role=?'; $values[] = $data['role']; }
-        if (isset($data['is_active'])) { $set[] = 'is_active=?'; $values[] = $data['is_active']; }
-
-        if (empty($set)) return false;
-
-        $values[] = $id;
-        $st = $this->db()->prepare("UPDATE employees SET " . implode(',', $set) . " WHERE id=?");
-        return $st->execute($values);
+        $stmt->execute([
+            ':name'       => $name,
+            ':email'      => $email,
+            ':role_title' => $roleTitle
+        ]);
+        return (int)$db->lastInsertId();
     }
 
-    public function delete(int $id): bool {
-        $st = $this->db()->prepare("DELETE FROM employees WHERE id=?");
-        return $st->execute([$id]);
+    public function update(int $id, array $in): bool
+    {
+        $db   = db_connect();
+        $sets = [];
+        $args = [':id' => $id];
+
+        if (isset($in['name']))       { $sets[] = 'name = :name';               $args[':name']       = $in['name']; }
+        if (isset($in['email']))      { $sets[] = 'email = :email';             $args[':email']      = $in['email']; }
+        if (isset($in['role']) || isset($in['role_title'])) {
+            $role = $in['role_title'] ?? $in['role'];
+            $sets[] = 'role_title = :role_title';  $args[':role_title'] = $role;
+        }
+        if (isset($in['is_active']))  { $sets[] = 'is_active = :is_active';     $args[':is_active']  = (int)$in['is_active']; }
+
+        if (!$sets) return true;
+
+        $sql = "UPDATE employees SET ".implode(', ', $sets)." WHERE id = :id";
+        $stmt = $db->prepare($sql);
+        return $stmt->execute($args);
+    }
+
+    public function delete(int $id): bool
+    {
+        $db = db_connect();
+        $stmt = $db->prepare("DELETE FROM employees WHERE id = :id");
+        return $stmt->execute([':id'=>$id]);
     }
 }
