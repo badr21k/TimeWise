@@ -124,12 +124,7 @@ require 'app/views/templates/header.php';
         </div>
         <div class="form-group">
           <label class="form-label" for="shiftRole">Role</label>
-          <select id="shiftRole" class="form-control role-select">
-            <option>Support Worker</option>
-            <option>Coordinator</option>
-            <option>Manager</option>
-            <option>Supervisor</option>
-          </select>
+          <select id="shiftRole" class="form-control role-select"></select>
         </div>
         <div class="form-group">
           <label class="form-label">Apply to:</label>
@@ -365,32 +360,49 @@ function shiftBlock(shift) {
   `;
   return div;
 }
+  async function loadRolesIntoModal() {
+    try {
+      // hit your controller via /schedule/api
+      const roles = await fetchJSON('/schedule/api?a=roles.list');
+      const sel = document.getElementById('shiftRole');
+      sel.innerHTML = ''; // clear existing
+
+      roles.forEach(r => {
+        const o = document.createElement('option');
+        o.value = r.name;
+        o.textContent = r.name;
+        sel.appendChild(o);
+      });
+    } catch (e) {
+      console.error('Could not load roles:', e);
+    }
+  }
 
 // ===== Modal/CRUD =====
-function openShiftModal(emp, ymd) {
-  if (!isAdmin) return;
+  async function openShiftModal(emp, ymd) {
+    if (!isAdmin) return;
 
-  currentEmployee = emp;
-  selectedDays.clear();
+    currentEmployee = emp;
+    selectedDays.clear();
 
-  // Reset day buttons safely
-  document.querySelectorAll('.day-selector').forEach((b) => {
-    b.classList.remove('btn-primary'); b.classList.add('btn-secondary');
-  });
+    document.querySelectorAll('.day-selector').forEach((b) => {
+      b.classList.remove('btn-primary'); b.classList.add('btn-secondary');
+    });
 
-  // Preselect day that was clicked
-  const dow = new Date(ymd + 'T12:00:00').getDay(); // 0..6
-  const pre = document.querySelector(`.day-selector[data-day="${dow}"]`);
-  if (pre) { selectedDays.add(String(dow)); pre.classList.add('btn-primary'); pre.classList.remove('btn-secondary'); }
+    const dow = new Date(ymd + 'T12:00:00').getDay();
+    const pre = document.querySelector(`.day-selector[data-day="${dow}"]`);
+    if (pre) { selectedDays.add(String(dow)); pre.classList.add('btn-primary'); pre.classList.remove('btn-secondary'); }
 
-  // Defaults
-  document.getElementById('startTime').value = '09:00';
-  document.getElementById('endTime').value   = '17:00';
-  document.getElementById('shiftRole').value = emp.role_title || 'Support Worker';
-  document.getElementById('shiftNotes').value = '';
+    await loadRolesIntoModal();   // <--- this is the key addition
 
-  shiftModal.show();
-}
+    document.getElementById('startTime').value = '09:00';
+    document.getElementById('endTime').value   = '17:00';
+    document.getElementById('shiftRole').value = emp.role_title || '';
+    document.getElementById('shiftNotes').value = '';
+
+    shiftModal.show();
+  }
+
 
   async function saveShift() {
     if (!currentEmployee || selectedDays.size === 0) return;

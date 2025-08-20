@@ -15,7 +15,7 @@ class App
             // === Quick API hook for roles ===
             if (isset($_GET['a']) && $_GET['a'] === 'roles.list') {
                 require_once 'app/controllers/schedule.php';
-                (new schedule)->listRoles();
+                (new Schedule)->listRoles();
                 exit;
             }
 

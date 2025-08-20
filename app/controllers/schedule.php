@@ -18,7 +18,6 @@ class Schedule extends Controller
         $this->view('schedule/index');
     }
 
-
     /** JSON API: /schedule/api?a=… */
     public function api() {
         if (empty($_SESSION['auth'])) {
@@ -97,12 +96,16 @@ class Schedule extends Controller
                     break;
 
                 case 'publish.set':
-                $this->guardAdmin();
-                $in = $this->json();
-                $this->Week->setPublished($in['week'], 1);   // always publish
-                echo json_encode(['ok'=>true]);
-                break;
+                    $this->guardAdmin();
+                    $in = $this->json();
+                    $this->Week->setPublished($in['week'], 1);   // always publish for now
+                    echo json_encode(['ok'=>true]);
+                    break;
 
+                /* ---------- Roles (Option A) ---------- */
+                case 'roles.list':
+                    echo json_encode($this->getActiveRoles());
+                    break;
 
                 /* ---------- Admin users (optional) ---------- */
                 case 'users.list':
@@ -137,11 +140,30 @@ class Schedule extends Controller
         return json_decode(file_get_contents('php://input'), true) ?: [];
     }
 
-public function listRoles()
-{
-    $stmt = $this->db->query("SELECT id, name FROM roles WHERE is_active = 1");
-    $roles = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    echo json_encode($roles);
-    exit;
-}
+    /**
+     * Shared roles fetcher so both /schedule/api?a=roles.list
+     * and (if you keep it) the direct listRoles() hook return the same thing.
+     */
+    private function getActiveRoles(): array {
+        $db = db_connect();
+        // If you later want department-specific roles, adjust this query.
+        $stmt = $db->query("SELECT id, name FROM roles WHERE is_active = 1 ORDER BY name ASC");
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Only needed if you still call Schedule::listRoles() directly from App.php.
+     * Safe to keep — it just proxies to getActiveRoles().
+     */
+    public function listRoles() {
+        if (empty($_SESSION['auth'])) {
+            http_response_code(401);
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode(['error' => 'Auth required']);
+            return;
+        }
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode($this->getActiveRoles());
+        exit;
+    }
 }
