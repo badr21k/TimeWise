@@ -18,6 +18,7 @@ class Schedule extends Controller
         $this->view('schedule/index');
     }
 
+
     /** JSON API: /schedule/api?a=… */
     public function api() {
         if (empty($_SESSION['auth'])) {
@@ -96,11 +97,12 @@ class Schedule extends Controller
                     break;
 
                 case 'publish.set':
-                    $this->guardAdmin();
-                    $in = $this->json();
-                    $this->Week->setPublished($in['week'], (int)$in['published'] ? 1 : 0);
-                    echo json_encode(['ok'=>true]);
-                    break;
+                $this->guardAdmin();
+                $in = $this->json();
+                $this->Week->setPublished($in['week'], 1);   // always publish
+                echo json_encode(['ok'=>true]);
+                break;
+
 
                 /* ---------- Admin users (optional) ---------- */
                 case 'users.list':
@@ -134,4 +136,12 @@ class Schedule extends Controller
     private function json(): array {
         return json_decode(file_get_contents('php://input'), true) ?: [];
     }
+
+public function listRoles()
+{
+    $stmt = $this->db->query("SELECT id, name FROM roles WHERE is_active = 1");
+    $roles = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    echo json_encode($roles);
+    exit;
+}
 }

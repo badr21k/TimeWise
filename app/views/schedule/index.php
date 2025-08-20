@@ -392,42 +392,58 @@ function openShiftModal(emp, ymd) {
   shiftModal.show();
 }
 
-async function saveShift() {
-  if (!currentEmployee || selectedDays.size === 0) return;
+  async function saveShift() {
+    if (!currentEmployee || selectedDays.size === 0) return;
 
-  const startTime = document.getElementById('startTime').value;
-  const endTime   = document.getElementById('endTime').value;
-  const role      = document.getElementById('shiftRole').value;
-  const notes     = document.getElementById('shiftNotes').value;
+    const startTime = document.getElementById('startTime').value;
+    const endTime   = document.getElementById('endTime').value;
+    const role      = document.getElementById('shiftRole').value;
+    const notes     = document.getElementById('shiftNotes').value;
 
-  if (!startTime || !endTime) return alert('Select start and end times');
-
-  try {
-    const base = new Date(currentWeekStart + 'T12:00:00');
-
-    for (const dayStr of selectedDays) {
-      const d = new Date(base);
-      d.setDate(d.getDate() + day);
-      const ymd = d.toISOString().slice(0,10);
-
-      await fetchJSON('/schedule/api?a=shifts.create', {
-        method: 'POST',
-        body: JSON.stringify({
-          employee_id: currentEmployee.id,
-          start_dt: `${ymd} ${startTime}:00`,
-          end_dt:   `${ymd} ${endTime}:00`,
-          notes: notes || role
-        })
-      });
+    if (!startTime || !endTime) {
+      alert('Please select start and end times');
+      return;
     }
 
-    shiftModal.hide();
-    await loadWeek();
-  } catch (e) {
-    console.error('Error saving shift:', e);
-    alert('Error saving shift: ' + e.message);
+    try {
+      const base = new Date(currentWeekStart + 'T12:00:00');
+
+      // Loop each selected day as a string '0'..'6'
+      for (const dayStr of selectedDays) {
+        const dow = parseInt(dayStr, 10);
+
+        // Convert JS .getDay() 0=Sun to your Monday-start logic
+        // dow: 1=Mon should be +0 days, 2=Tue +1, ... 0=Sun +6
+        let offset;
+        if (dow === 0) offset = 6;
+        else offset = dow - 1;
+
+        const d = new Date(base);
+        d.setDate(base.getDate() + offset);
+
+        const ymd = d.toISOString().slice(0,10);
+        const start_dt = `${ymd} ${startTime}:00`;
+        const end_dt   = `${ymd} ${endTime}:00`;
+
+        await fetchJSON('/schedule/api?a=shifts.create', {
+          method: 'POST',
+          body: JSON.stringify({
+            employee_id: currentEmployee.id,
+            start_dt,
+            end_dt,
+            notes: notes || role
+          })
+        });
+      }
+
+      shiftModal.hide();
+      await loadWeek();
+    } catch (e) {
+      console.error('Error saving shift:', e);
+      alert('Error saving shift: ' + e.message);
+    }
   }
-}
+
 
 async function deleteShift(id) {
   if (!isAdmin || !confirm('Delete this shift?')) return;
@@ -440,21 +456,26 @@ async function deleteShift(id) {
   }
 }
 
-async function togglePublish() {
-  if (!isAdmin) return;
-  try {
-    const s = await fetchJSON(`/schedule/api?a=publish.status&week=${currentWeekStart}`);
-    const next = !s.published;
-    await fetchJSON('/schedule/api?a=publish.set', {
-      method: 'POST',
-      body: JSON.stringify({ week: currentWeekStart, published: next })
-    });
-    await loadPublishStatus();
-  } catch (e) {
-    console.error('Error toggling publish:', e);
-    alert('Error updating publish status: ' + e.message);
+  async function togglePublish() {
+    if (!isAdmin) return;
+
+    try {
+      await fetchJSON('/schedule/api?a=publish.set', {
+        method: 'POST',
+        body: JSON.stringify({
+          week: currentWeekStart,
+          published: 1   // force set to 1
+        })
+      });
+
+      await loadPublishStatus();
+      alert('Week has been marked as published');
+    } catch (e) {
+      console.error('Error publishing:', e);
+      alert('Error publishing: ' + e.message);
+    }
   }
-}
+
 
 // ===== Utils =====
 function totalHours(list) {

@@ -10,9 +10,16 @@ class App
     protected $method     = 'index';
     protected $params     = [];
 
-    public function __construct()
-    {
-        if (session_status() !== PHP_SESSION_ACTIVE) session_start();
+        public function __construct()
+        {
+            // === Quick API hook for roles ===
+            if (isset($_GET['a']) && $_GET['a'] === 'roles.list') {
+                require_once 'app/controllers/schedule.php';
+                (new schedule)->listRoles();
+                exit;
+            }
+
+            if (session_status() !== PHP_SESSION_ACTIVE) session_start();
 
         $url = $this->parseUrl(); // ['schedule','api'] for /schedule/api?a=...
 
