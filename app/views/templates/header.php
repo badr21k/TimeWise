@@ -210,9 +210,18 @@ if (!isset($_SESSION['auth'])) {
       }
     </style>
 </head>
+
+    
 <body>
     <!-- Toast Container -->
     <div class="toast-container" id="toastContainer"></div>
+    <?php
+    $path    = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
+    $isSched = (bool)preg_match('#^/schedule\b#', $path);
+    $isDept  = (bool)preg_match('#^/departments\b#', $path);
+    $isTeamActive = ($isSched || $isDept);
+    ?>
+
 
     <nav class="navbar navbar-expand-lg navbar-light bg-gradient" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); z-index: 1050; position: relative;">
         <div class="container">
@@ -231,10 +240,24 @@ if (!isset($_SESSION['auth'])) {
                     </li>
 
                     <!-- INSERTED: Team & Schedule (desktop) -->
-                    <li class="nav-item">
-                        <a class="nav-link" href="/schedule">
-                            <i class="fas fa-users me-1"></i>Team &amp; Schedule
-                        </a>
+                    <li class="nav-item dropdown <?= $isTeamActive ? 'active' : '' ?>">
+                      <a class="nav-link dropdown-toggle <?= $isTeamActive ? 'active' : '' ?>"
+                         href="#" id="teamSchedDropdown" role="button"
+                         data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-users me-1"></i> Team &amp; Schedule
+                      </a>
+                      <ul class="dropdown-menu" aria-labelledby="teamSchedDropdown">
+                        <li>
+                          <a class="dropdown-item <?= $isSched ? 'active' : '' ?>" href="/schedule">
+                            <i class="fas fa-calendar-alt me-2"></i> Schedule
+                          </a>
+                        </li>
+                        <li>
+                          <a class="dropdown-item <?= $isDept ? 'active' : '' ?>" href="/departments">
+                            <i class="fas fa-sitemap me-2"></i> Departments &amp; Roles
+                          </a>
+                        </li>
+                      </ul>
                     </li>
 
                     <li class="nav-item dropdown">
@@ -306,10 +329,16 @@ if (!isset($_SESSION['auth'])) {
 
                     <!-- INSERTED: Team & Schedule (mobile) -->
                     <li class="nav-item">
-                        <a class="nav-link" href="/schedule">
-                            <i class="fas fa-users me-1"></i>Team &amp; Schedule
-                        </a>
+                      <a class="nav-link <?= $isSched ? 'active' : '' ?>" href="/schedule">
+                        <i class="fas fa-calendar-alt me-1"></i>Schedule
+                      </a>
                     </li>
+                    <li class="nav-item">
+                      <a class="nav-link <?= $isDept ? 'active' : '' ?>" href="/departments">
+                        <i class="fas fa-sitemap me-1"></i>Departments &amp; Roles
+                      </a>
+                    </li>
+
 
                     <li class="nav-item">
                         <a class="nav-link" href="/notes">
@@ -375,4 +404,8 @@ if (!isset($_SESSION['auth'])) {
             </div>
         </div>
     </nav>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p"
+    crossorigin="anonymous"></script>
+
     <main>
