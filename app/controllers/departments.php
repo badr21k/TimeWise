@@ -2,6 +2,8 @@
 // app/controllers/departments.php
 class departments extends Controller
 {
+    private PDO $db;
+
     public function __construct() {
         if (session_status() !== PHP_SESSION_ACTIVE) session_start();
         $this->db = db_connect();
@@ -40,7 +42,7 @@ class departments extends Controller
                 /* ---------- Departments CRUD ---------- */
                 case 'department.create':
                     $this->guardAdmin();
-                    $in  = $this->json();
+                    $in   = $this->json();
                     $name = trim($in['name'] ?? '');
                     if ($name === '') throw new Exception('Name required');
                     $stmt = $this->db->prepare("INSERT INTO departments (name, is_active) VALUES (:n, 1)");
@@ -50,8 +52,8 @@ class departments extends Controller
 
                 case 'department.rename':
                     $this->guardAdmin();
-                    $in  = $this->json();
-                    $id  = (int)($in['id'] ?? 0);
+                    $in   = $this->json();
+                    $id   = (int)($in['id'] ?? 0);
                     $name = trim($in['name'] ?? '');
                     if (!$id || $name==='') throw new Exception('Invalid rename');
                     $stmt = $this->db->prepare("UPDATE departments SET name=:n WHERE id=:id");
@@ -63,10 +65,22 @@ class departments extends Controller
                     $this->guardAdmin();
                     $id = (int)($_GET['id'] ?? 0);
                     if (!$id) throw new Exception('Invalid id');
-                    // remove pivots then department
+
+                    // Grab affected managers first
+                    $stmt = $this->db->prepare("SELECT DISTINCT user_id FROM department_managers WHERE department_id = :id");
+                    $stmt->execute([':id'=>$id]);
+                    $affected = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+                    // Remove pivots then department
                     $this->db->prepare("DELETE FROM department_roles WHERE department_id=:id")->execute([':id'=>$id]);
                     $this->db->prepare("DELETE FROM department_managers WHERE department_id=:id")->execute([':id'=>$id]);
                     $this->db->prepare("DELETE FROM departments WHERE id=:id")->execute([':id'=>$id]);
+
+                    // Recalc admin flags for everyone that was a manager here
+                    foreach ($affected as $uid) {
+                        $this->refreshAdminFlag((int)$uid);
+                    }
+
                     echo json_encode(['ok'=>true]);
                     break;
 
@@ -74,16 +88,16 @@ class departments extends Controller
                 case 'role.attach':
                     $this->guardAdmin();
                     $in = $this->json();
-                    $deptId = (int)($in['department_id'] ?? 0);
+                    $deptId   = (int)($in['department_id'] ?? 0);
                     if (!$deptId) throw new Exception('department_id required');
 
-                    // If role_name provided, upsert into roles
-                    $roleId = (int)($in['role_id'] ?? 0);
+                    $roleId   = (int)($in['role_id'] ?? 0);
                     $roleName = trim($in['role_name'] ?? '');
+
                     if (!$roleId && $roleName === '') throw new Exception('role_id or role_name required');
 
                     if (!$roleId) {
-                        // find or create
+                        // find or create by name
                         $stmt = $this->db->prepare("SELECT id FROM roles WHERE name=:n LIMIT 1");
                         $stmt->execute([':n'=>$roleName]);
                         $roleId = (int)$stmt->fetchColumn();
@@ -121,10 +135,16 @@ class departments extends Controller
                     $deptId = (int)($in['department_id'] ?? 0);
                     $userId = (int)($in['user_id'] ?? 0);
                     if (!$deptId || !$userId) throw new Exception('department_id and user_id required');
+
+                    // Link user to department as manager
                     $this->db->prepare("
                         INSERT IGNORE INTO department_managers (department_id, user_id)
                         VALUES (:d,:u)
                     ")->execute([':d'=>$deptId, ':u'=>$userId]);
+
+                    // Ensure admin flag is correct after change
+                    $this->refreshAdminFlag($userId);
+
                     echo json_encode(['ok'=>true]);
                     break;
 
@@ -134,9 +154,16 @@ class departments extends Controller
                     $deptId = (int)($in['department_id'] ?? 0);
                     $userId = (int)($in['user_id'] ?? 0);
                     if (!$deptId || !$userId) throw new Exception('department_id and user_id required');
+
+                    // Unlink manager
                     $this->db->prepare("
-                        DELETE FROM department_managers WHERE department_id=:d AND user_id=:u
+                        DELETE FROM department_managers
+                        WHERE department_id=:d AND user_id=:u
                     ")->execute([':d'=>$deptId, ':u'=>$userId]);
+
+                    // Flip admin off if they no longer manage any departments
+                    $this->refreshAdminFlag($userId);
+
                     echo json_encode(['ok'=>true]);
                     break;
 
@@ -145,7 +172,7 @@ class departments extends Controller
                     $id = (int)($_GET['id'] ?? 0);
                     if (!$id) throw new Exception('id required');
 
-                    $roles = $this->fetchRolesForDepartment($id);
+                    $roles    = $this->fetchRolesForDepartment($id);
                     $managers = $this->fetchManagersForDepartment($id);
                     echo json_encode(['roles'=>$roles, 'managers'=>$managers]);
                     break;
@@ -178,7 +205,8 @@ class departments extends Controller
 
     private function listUsers(): array {
         // Use username if full_name is null
-        $sql = "SELECT id, COALESCE(NULLIF(full_name,''), username) AS label 
+        $sql = "SELECT id,
+                       COALESCE(NULLIF(full_name,''), username) AS label
                 FROM users ORDER BY label ASC";
         return $this->db->query($sql)->fetchAll(PDO::FETCH_ASSOC);
     }
@@ -220,7 +248,7 @@ class departments extends Controller
     }
 
     private function ensurePivotTables(): void {
-        // Create department_roles if missing (department_id, role_id)
+        // department_roles (department_id, role_id)
         $this->db->exec("
             CREATE TABLE IF NOT EXISTS department_roles (
                 department_id INT NOT NULL,
@@ -230,7 +258,8 @@ class departments extends Controller
                 CONSTRAINT fk_dr_role FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE
             )
         ");
-        // Create department_managers if missing (department_id, user_id)
+
+        // department_managers (department_id, user_id)
         $this->db->exec("
             CREATE TABLE IF NOT EXISTS department_managers (
                 department_id INT NOT NULL,
@@ -240,5 +269,23 @@ class departments extends Controller
                 CONSTRAINT fk_dm_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
             )
         ");
+    }
+
+    /** Count whether user manages any departments */
+    private function userManagerCount(int $userId): int {
+        $stmt = $this->db->prepare("SELECT COUNT(*) FROM department_managers WHERE user_id = :u");
+        $stmt->execute([':u'=>$userId]);
+        return (int)$stmt->fetchColumn();
+    }
+
+    /** Flip users.is_admin based on whether they manage >= 1 department and sync session if needed */
+    private function refreshAdminFlag(int $userId): void {
+        $isAdmin = $this->userManagerCount($userId) > 0 ? 1 : 0;
+        $this->db->prepare("UPDATE users SET is_admin = :a WHERE id = :u")
+                 ->execute([':a'=>$isAdmin, ':u'=>$userId]);
+
+        if (!empty($_SESSION['id']) && (int)$_SESSION['id'] === $userId) {
+            $_SESSION['is_admin'] = $isAdmin;
+        }
     }
 }
