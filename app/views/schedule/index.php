@@ -1,6 +1,7 @@
 <?php
 // app/views/schedule/index.php
 require 'app/views/templates/header.php';
+require 'app/views/templates/spinner.php';
 ?>
 <style>
 /* ==== Homebase-like Schedule (kept & refined) ==== */
@@ -154,18 +155,25 @@ require 'app/views/templates/header.php';
 <?php require_once 'app/views/templates/footer.php'; ?>
 
 <script>
-// ===== Strict JSON fetch (will scream if server sends HTML) =====
+// ===== Spinner-aware strict JSON fetch =====
 async function fetchJSON(url, options = {}) {
-  const res = await fetch(url, { headers: { 'Content-Type': 'application/json' }, ...options });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const ct = res.headers.get('content-type') || '';
-  const text = await res.text();
-  if (!ct.includes('application/json')) {
-    console.error('[fetchJSON] Expected JSON, got:', text.slice(0, 400));
-    throw new Error('Server returned HTML instead of JSON. Check /schedule/api routing and auth.');
+  Spinner.show();
+  try {
+    const res = await fetch(url, { headers: { 'Content-Type': 'application/json' }, ...options });
+    const text = await res.text();
+    if (!res.ok) throw new Error(text || `HTTP ${res.status}`);
+
+    // If server didn't set JSON content-type but returned JSON, still parse it.
+    let data;
+    try { data = JSON.parse(text); }
+    catch (e) {
+      console.error('[fetchJSON] Invalid JSON:', text.slice(0, 400));
+      throw e;
+    }
+    return data;
+  } finally {
+    Spinner.hide();
   }
-  try { return JSON.parse(text); }
-  catch (e) { console.error('[fetchJSON] Invalid JSON:', text.slice(0, 400)); throw e; }
 }
 
 // ===== State =====
@@ -360,102 +368,98 @@ function shiftBlock(shift) {
   `;
   return div;
 }
-  async function loadRolesIntoModal() {
-    try {
-      // hit your controller via /schedule/api
-      const roles = await fetchJSON('/schedule/api?a=roles.list');
-      const sel = document.getElementById('shiftRole');
-      sel.innerHTML = ''; // clear existing
 
-      roles.forEach(r => {
-        const o = document.createElement('option');
-        o.value = r.name;
-        o.textContent = r.name;
-        sel.appendChild(o);
-      });
-    } catch (e) {
-      console.error('Could not load roles:', e);
-    }
+async function loadRolesIntoModal() {
+  try {
+    const roles = await fetchJSON('/schedule/api?a=roles.list');
+    const sel = document.getElementById('shiftRole');
+    sel.innerHTML = ''; // clear existing
+
+    roles.forEach(r => {
+      const o = document.createElement('option');
+      o.value = r.name;
+      o.textContent = r.name;
+      sel.appendChild(o);
+    });
+  } catch (e) {
+    console.error('Could not load roles:', e);
   }
+}
 
 // ===== Modal/CRUD =====
-  async function openShiftModal(emp, ymd) {
-    if (!isAdmin) return;
+async function openShiftModal(emp, ymd) {
+  if (!isAdmin) return;
 
-    currentEmployee = emp;
-    selectedDays.clear();
+  currentEmployee = emp;
+  selectedDays.clear();
 
-    document.querySelectorAll('.day-selector').forEach((b) => {
-      b.classList.remove('btn-primary'); b.classList.add('btn-secondary');
-    });
+  document.querySelectorAll('.day-selector').forEach((b) => {
+    b.classList.remove('btn-primary'); b.classList.add('btn-secondary');
+  });
 
-    const dow = new Date(ymd + 'T12:00:00').getDay();
-    const pre = document.querySelector(`.day-selector[data-day="${dow}"]`);
-    if (pre) { selectedDays.add(String(dow)); pre.classList.add('btn-primary'); pre.classList.remove('btn-secondary'); }
+  const dow = new Date(ymd + 'T12:00:00').getDay();
+  const pre = document.querySelector(`.day-selector[data-day="${dow}"]`);
+  if (pre) { selectedDays.add(String(dow)); pre.classList.add('btn-primary'); pre.classList.remove('btn-secondary'); }
 
-    await loadRolesIntoModal();   // <--- this is the key addition
+  await loadRolesIntoModal();   // pull roles with spinner
 
-    document.getElementById('startTime').value = '09:00';
-    document.getElementById('endTime').value   = '17:00';
-    document.getElementById('shiftRole').value = emp.role_title || '';
-    document.getElementById('shiftNotes').value = '';
+  document.getElementById('startTime').value = '09:00';
+  document.getElementById('endTime').value   = '17:00';
+  document.getElementById('shiftRole').value = emp.role_title || '';
+  document.getElementById('shiftNotes').value = '';
 
-    shiftModal.show();
+  shiftModal.show();
+}
+
+async function saveShift() {
+  if (!currentEmployee || selectedDays.size === 0) return;
+
+  const startTime = document.getElementById('startTime').value;
+  const endTime   = document.getElementById('endTime').value;
+  const role      = document.getElementById('shiftRole').value;
+  const notes     = document.getElementById('shiftNotes').value;
+
+  if (!startTime || !endTime) {
+    alert('Please select start and end times');
+    return;
   }
 
+  try {
+    const base = new Date(currentWeekStart + 'T12:00:00');
 
-  async function saveShift() {
-    if (!currentEmployee || selectedDays.size === 0) return;
+    for (const dayStr of selectedDays) {
+      const dow = parseInt(dayStr, 10);
 
-    const startTime = document.getElementById('startTime').value;
-    const endTime   = document.getElementById('endTime').value;
-    const role      = document.getElementById('shiftRole').value;
-    const notes     = document.getElementById('shiftNotes').value;
+      // Convert JS .getDay() 0=Sun to Monday-start logic
+      let offset;
+      if (dow === 0) offset = 6;
+      else offset = dow - 1;
 
-    if (!startTime || !endTime) {
-      alert('Please select start and end times');
-      return;
+      const d = new Date(base);
+      d.setDate(base.getDate() + offset);
+
+      const ymd = d.toISOString().slice(0,10);
+      const start_dt = `${ymd} ${startTime}:00`;
+      const end_dt   = `${ymd} ${endTime}:00`;
+
+      await fetchJSON('/schedule/api?a=shifts.create', {
+        method: 'POST',
+        body: JSON.stringify({
+          employee_id: currentEmployee.id,
+          start_dt,
+          end_dt,
+          notes: notes || role
+        })
+      });
     }
 
-    try {
-      const base = new Date(currentWeekStart + 'T12:00:00');
-
-      // Loop each selected day as a string '0'..'6'
-      for (const dayStr of selectedDays) {
-        const dow = parseInt(dayStr, 10);
-
-        // Convert JS .getDay() 0=Sun to your Monday-start logic
-        // dow: 1=Mon should be +0 days, 2=Tue +1, ... 0=Sun +6
-        let offset;
-        if (dow === 0) offset = 6;
-        else offset = dow - 1;
-
-        const d = new Date(base);
-        d.setDate(base.getDate() + offset);
-
-        const ymd = d.toISOString().slice(0,10);
-        const start_dt = `${ymd} ${startTime}:00`;
-        const end_dt   = `${ymd} ${endTime}:00`;
-
-        await fetchJSON('/schedule/api?a=shifts.create', {
-          method: 'POST',
-          body: JSON.stringify({
-            employee_id: currentEmployee.id,
-            start_dt,
-            end_dt,
-            notes: notes || role
-          })
-        });
-      }
-
-      shiftModal.hide();
-      await loadWeek();
-    } catch (e) {
-      console.error('Error saving shift:', e);
-      alert('Error saving shift: ' + e.message);
-    }
+    shiftModal.hide();
+    await loadWeek();
+  } catch (e) {
+    console.error('Error saving shift:', e);
+    alert('Error saving shift: ' + e.message);
   }
-
+}
 
 async function deleteShift(id) {
   if (!isAdmin || !confirm('Delete this shift?')) return;
@@ -468,26 +472,24 @@ async function deleteShift(id) {
   }
 }
 
-  async function togglePublish() {
-    if (!isAdmin) return;
+async function togglePublish() {
+  if (!isAdmin) return;
+  try {
+    await fetchJSON('/schedule/api?a=publish.set', {
+      method: 'POST',
+      body: JSON.stringify({
+        week: currentWeekStart,
+        published: 1
+      })
+    });
 
-    try {
-      await fetchJSON('/schedule/api?a=publish.set', {
-        method: 'POST',
-        body: JSON.stringify({
-          week: currentWeekStart,
-          published: 1   // force set to 1
-        })
-      });
-
-      await loadPublishStatus();
-      alert('Week has been marked as published');
-    } catch (e) {
-      console.error('Error publishing:', e);
-      alert('Error publishing: ' + e.message);
-    }
+    await loadPublishStatus();
+    alert('Week has been marked as published');
+  } catch (e) {
+    console.error('Error publishing:', e);
+    alert('Error publishing: ' + e.message);
   }
-
+}
 
 // ===== Utils =====
 function totalHours(list) {
@@ -502,3 +504,4 @@ function escapeHtml(t=''){ const d=document.createElement('div'); d.textContent=
 // expose delete for inline onclick
 window.deleteShift = deleteShift;
 </script>
+

@@ -1,4 +1,7 @@
-<?php require 'app/views/templates/header.php'; ?>
+<?php require 'app/views/templates/header.php';
+require 'app/views/templates/spinner.php';
+?>
+
 <style>
 .page-wrap { background:#f8fafc; min-height:100vh; }
 .h1 { font-size:1.5rem; font-weight:700; color:#111827; }
@@ -79,10 +82,15 @@
             <input class="form-control" id="h_phone" placeholder="(555) 555-5555">
           </div>
 
+
           <div class="col-md-5">
             <label class="form-label">Role</label>
-            <input class="form-control" id="h_role" placeholder="Support Worker">
+            <select class="form-select" id="h_role"></select>
+            <div class="form-text">Manage options in <b>roles</b> table.</div>
           </div>
+
+
+          
           <div class="col-md-3">
             <label class="form-label">Wage</label>
             <input class="form-control" id="h_wage" type="number" step="0.01" value="0.00">
@@ -174,14 +182,18 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('q').addEventListener('input', render);
   document.getElementById('showTerminated').addEventListener('change', render);
 
-  document.getElementById('btnAdd').addEventListener('click', () => {
+  document.getElementById('btnAdd').addEventListener('click', async () => {
     if (!IS_ADMIN) return alert('Admin only');
-    clearHireForm(); M_hire.show();
+    clearHireForm();
+    await loadRolesForHire();
+    M_hire.show();
   });
+
   document.getElementById('hireSave').addEventListener('click', onHireSave);
   document.getElementById('termSave').addEventListener('click', onTermSave);
 });
 
+/* ---------- Bootstrap roster ---------- */
 async function bootstrapTeam() {
   const data = await get('/team/api?a=bootstrap');
   ROSTER = data.roster || [];
@@ -189,6 +201,85 @@ async function bootstrapTeam() {
   render();
 }
 
+/* ---------- Spinner-aware fetch helpers ---------- */
+async function fetchJSON(url, options = {}) {
+  Spinner.show();
+  try {
+    const r = await fetch(url, { headers: { 'Content-Type': 'application/json' }, ...options });
+    const t = await r.text();
+    if (!r.ok) throw new Error(t || `HTTP ${r.status}`);
+    return JSON.parse(t);
+  } finally {
+    Spinner.hide();
+  }
+}
+
+async function get(url) {
+  Spinner.show();
+  try {
+    const r = await fetch(url);
+    const t = await r.text();
+    if (!r.ok) throw new Error(t);
+    return JSON.parse(t);
+  } finally {
+    Spinner.hide();
+  }
+}
+
+async function post(url, data) {
+  Spinner.show();
+  try {
+    const r = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    const t = await r.text();
+    if (!r.ok) throw new Error(t);
+    return JSON.parse(t);
+  } finally {
+    Spinner.hide();
+  }
+}
+
+/* ---------- Roles ---------- */
+async function loadRolesForHire() {
+  const sel = document.getElementById('h_role');
+  sel.innerHTML = '<option>Loading…</option>';
+
+  async function tryFetch(url) {
+    try {
+      const r = await fetch(url, { headers: { 'Content-Type': 'application/json' }});
+      const txt = await r.text();
+      if (!r.ok) throw new Error(txt || `HTTP ${r.status}`);
+      const json = JSON.parse(txt);
+      return Array.isArray(json) ? json : (Array.isArray(json.roles) ? json.roles : []);
+    } catch (e) {
+      console.error('[roles.list] error from', url, e);
+      return null;
+    }
+  }
+
+  let roles = await tryFetch('/schedule/api?a=roles.list');
+  if (!roles) roles = await tryFetch('/team/api?a=roles.list');
+
+  sel.innerHTML = '';
+  if (Array.isArray(roles) && roles.length) {
+    for (const r of roles) {
+      const name = (r && (r.name ?? r.title ?? r.role ?? '')).toString();
+      if (!name) continue;
+      const opt = document.createElement('option');
+      opt.value = name;
+      opt.textContent = name;
+      sel.appendChild(opt);
+    }
+  }
+  if (!sel.options.length) {
+    sel.innerHTML = '<option value="">— No roles found (check API / DB) —</option>';
+  }
+}
+
+/* ---------- Render roster ---------- */
 function render() {
   const q = (document.getElementById('q').value || '').toLowerCase();
   const showTerm = document.getElementById('showTerminated').checked;
@@ -201,7 +292,6 @@ function render() {
     return matchQ && matchTerm;
   }).forEach(r => {
     const tr = document.createElement('tr');
-
     tr.innerHTML = `
       <td><strong>${escapeHtml(r.name || r.username)}</strong><div class="small text-muted">${escapeHtml(r.username||'')}</div></td>
       <td>${escapeHtml(r.email||'')}<div class="small text-muted">${escapeHtml(r.phone||'')}</div></td>
@@ -225,8 +315,8 @@ function render() {
 }
 
 /* ---------- Hire ---------- */
-function clearHireForm(){
-  ['h_username','h_fullname','h_email','h_phone','h_role','h_password'].forEach(id => document.getElementById(id).value='');
+function clearHireForm() {
+  ['h_username','h_fullname','h_email','h_phone','h_password'].forEach(id => document.getElementById(id).value='');
   document.getElementById('h_wage').value = '0.00';
   document.getElementById('h_rate').value = 'hourly';
   document.getElementById('h_access').value = '0';
@@ -239,7 +329,7 @@ async function onHireSave(){
     full_name: v('h_fullname'),
     email:     v('h_email'),
     phone:     v('h_phone'),
-    role_title:v('h_role'),
+    role_title: v('h_role'),
     wage:      parseFloat(v('h_wage')||0),
     rate:      v('h_rate'),
     is_admin:  parseInt(v('h_access'),10),
@@ -262,6 +352,7 @@ function openTerminate(user_id){
   document.getElementById('t_date').value = (new Date()).toISOString().slice(0,10);
   M_term.show();
 }
+
 async function onTermSave(){
   const payload = {
     user_id: parseInt(document.getElementById('t_user_id').value,10),
@@ -274,17 +365,14 @@ async function onTermSave(){
   M_term.hide();
   await refreshRoster();
 }
+
 async function rehire(user_id){
   await post('/team/api?a=rehire', { user_id, start_date:(new Date()).toISOString().slice(0,10) });
   await refreshRoster();
 }
 
-/* ---------- Net helpers ---------- */
-async function get(url){ const r=await fetch(url); const t=await r.text(); if(!r.ok) throw new Error(t); return JSON.parse(t); }
-async function post(url, data){
-  const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
-  const t=await r.text(); if(!r.ok) throw new Error(t); return JSON.parse(t);
-}
+/* ---------- Utils ---------- */
 async function refreshRoster(){ const d = await get('/team/api?a=list'); ROSTER = d.roster||[]; render(); }
 function escapeHtml(t=''){ const d=document.createElement('div'); d.textContent=t; return d.innerHTML; }
 </script>
+

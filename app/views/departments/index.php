@@ -1,4 +1,7 @@
-<?php require 'app/views/templates/header.php'; ?>
+<?php require 'app/views/templates/header.php'; 
+require 'app/views/templates/spinner.php';
+?>
+
 <style>
 .page-wrap { background:#f8fafc; min-height:100vh; }
 .card      { background:#fff; border-radius:.75rem; box-shadow:0 1px 3px rgba(0,0,0,.08); }
@@ -43,12 +46,23 @@
 <?php require 'app/views/templates/footer.php'; ?>
 
 <script>
-async function fetchJSON(url, options={}) {
-  const res  = await fetch(url, { headers:{'Content-Type':'application/json'}, ...options });
-  const text = await res.text();
-  if (!res.ok) throw new Error(text || ('HTTP ' + res.status));
-  if (!/application\/json/.test(res.headers.get('content-type')||'')) throw new Error('Not JSON');
-  return JSON.parse(text);
+/* ===== Spinner-aware JSON fetch ===== */
+async function fetchJSON(url, options = {}) {
+  Spinner.show();
+  try {
+    const res  = await fetch(url, { headers:{'Content-Type':'application/json'}, ...options });
+    const text = await res.text();
+    if (!res.ok) throw new Error(text || ('HTTP ' + res.status));
+    let data;
+    try { data = JSON.parse(text); }
+    catch (e) {
+      console.error('[fetchJSON] Invalid JSON:', text.slice(0, 400));
+      throw e;
+    }
+    return data;
+  } finally {
+    Spinner.hide();
+  }
 }
 
 /* State */
@@ -163,8 +177,7 @@ function deptRow(d) {
   return row;
 }
 
-async function refreshRoles(deptId, chipsEl, nameEl, deptRef)
-{
+async function refreshRoles(deptId, chipsEl, nameEl, deptRef) {
   chipsEl.innerHTML = '<span class="small">Loading roles…</span>';
   const r = await fetchJSON(`/departments/api?a=departments.roles.managers&id=${deptId}`);
   chipsEl.innerHTML = '';
@@ -181,8 +194,7 @@ async function refreshRoles(deptId, chipsEl, nameEl, deptRef)
   nameEl.textContent = `${deptRef.name} (${deptRef.role_count})`;
 }
 
-async function refreshManagers(deptId, boxEl)
-{
+async function refreshManagers(deptId, boxEl) {
   boxEl.innerHTML = '<span class="small">Loading managers…</span>';
   const r = await fetchJSON(`/departments/api?a=departments.roles.managers&id=${deptId}`);
   boxEl.innerHTML = '';
