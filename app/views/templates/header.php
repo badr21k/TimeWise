@@ -373,6 +373,12 @@
                                     <i class="fas fa-tachometer-alt me-1"></i>Dashboard
                                 </a>
                             </li>
+                          <li class="nav-item">
+                            <a class="nav-link <?= preg_match('#^/chat\b#', $path) ? 'active' : '' ?>" href="/chat">
+                              <i class="fas fa-comments me-1"></i>Chat
+                            </a>
+                          </li>
+
 
                             <!-- Team & Schedule (desktop) -->
                             <li class="nav-item dropdown <?= $isTeamActive ? 'active' : '' ?>">
@@ -470,6 +476,12 @@
                                     <i class="fas fa-tachometer-alt me-1"></i>Dashboard
                                 </a>
                             </li>
+                          <li class="nav-item">
+                            <a class="nav-link <?= preg_match('#^/chat\b#', $path) ? 'active' : '' ?>" href="/chat">
+                              <i class="fas fa-comments me-1"></i>Chat
+                            </a>
+                          </li>
+
 
                             <!-- Team & Schedule (mobile) -->
                             <li class="nav-item">
