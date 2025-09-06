@@ -44,7 +44,9 @@ class User {
         // Fetch user (include is_admin + full_name!)
         $stmt = $db->prepare("
             SELECT id, username, password, is_admin, full_name
-            FROM users WHERE username = :u LIMIT 1
+            FROM users
+            WHERE username = :u
+            LIMIT 1
         ");
         $stmt->bindValue(':u', $username);
         $stmt->execute();
@@ -59,14 +61,15 @@ class User {
         $logStmt->execute();
 
         if ($isGood) {
-            // Normalize session
+            // Normalize session (IMPORTANT: set both id and user_id)
             $_SESSION['auth']       = 1;
-            $_SESSION['user_id']    = (int)$row['id'];
+            $_SESSION['id']         = (int)$row['id'];            // <-- needed by Schedule::currentUserRow()
+            $_SESSION['user_id']    = (int)$row['id'];            // keep if referenced elsewhere
             $_SESSION['username']   = ucwords($row['username'] ?? $username);
             $_SESSION['is_admin']   = (int)($row['is_admin'] ?? 0);
             $_SESSION['full_name']  = $row['full_name'] ?? null;
-            
-            // Debug: log admin status
+
+            // Optional debug
             error_log("User {$username} logged in with admin status: " . $_SESSION['is_admin']);
 
             $_SESSION['toast'] = ['type'=>'success','title'=>'Welcome Back!','message'=>'You have successfully logged in.'];
