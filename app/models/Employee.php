@@ -1,10 +1,12 @@
 <?php
 class Employee
 {
+    /* ===== existing CRUD you already had ===== */
+
     public function all(): array
     {
         $db = db_connect();
-        // Match your schema: employees(id, name, email, role_title, is_active, created_at)
+        // employees(id, name, email, role_title, is_active, created_at)
         $sql = "
             SELECT 
                 id,
@@ -60,5 +62,39 @@ class Employee
         $db = db_connect();
         $stmt = $db->prepare("DELETE FROM employees WHERE id = :id");
         return $stmt->execute([':id'=>$id]);
+    }
+
+    /* ===== lightweight lookup helpers for “My Shifts” mapping =====
+       Only one of these needs to succeed for resolveEmployeeForCurrentUser() */
+    public function findByUserId(int $userId): ?array {
+        $db = db_connect();
+        // This works if your employees table has a user_id column. If not, query returns no rows.
+        $stmt = $db->prepare("SELECT * FROM employees WHERE user_id = :uid LIMIT 1");
+        try {
+            $stmt->execute([':uid'=>$userId]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            return $row ?: null;
+        } catch (Throwable $e) {
+            // Column may not exist; ignore and fallback to other strategies
+            return null;
+        }
+    }
+
+    public function findByEmail(string $email): ?array {
+        if ($email === '') return null;
+        $db = db_connect();
+        $stmt = $db->prepare("SELECT * FROM employees WHERE LOWER(email) = LOWER(:e) LIMIT 1");
+        $stmt->execute([':e'=>$email]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $row ?: null;
+    }
+
+    public function findByName(string $name): ?array {
+        if ($name === '') return null;
+        $db = db_connect();
+        $stmt = $db->prepare("SELECT * FROM employees WHERE TRIM(LOWER(name)) = TRIM(LOWER(:n)) LIMIT 1");
+        $stmt->execute([':n'=>$name]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $row ?: null;
     }
 }

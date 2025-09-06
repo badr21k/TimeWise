@@ -13,12 +13,19 @@ class Schedule extends Controller
         $this->Week     = $this->model('ScheduleWeek');
     }
 
+    /** Admin/team schedule grid (existing page) */
     public function index() {
         if (empty($_SESSION['auth'])) { header('Location: /login'); exit; }
         $this->view('schedule/index');
     }
 
-    /** JSON API: /schedule/api?a=… */
+    /** “My Shifts” page (personal view) */
+    public function my() {
+        if (empty($_SESSION['auth'])) { header('Location: /login'); exit; }
+        $this->view('schedule/my');
+    }
+
+    /** JSON API: /schedule/api?a=... */
     public function api() {
         if (empty($_SESSION['auth'])) {
             http_response_code(401);
@@ -33,7 +40,7 @@ class Schedule extends Controller
         try {
             switch ($a) {
 
-                /* ---------- Employees ---------- */
+                /* ----------------- Employees ----------------- */
                 case 'employees.list':
                     echo json_encode($this->Employee->all());
                     break;
@@ -61,14 +68,35 @@ class Schedule extends Controller
                     echo json_encode(['ok'=>$this->Employee->delete($id)]);
                     break;
 
-                /* ---------- Shifts ---------- */
-                case 'shifts.week':
+                /* ----------------- Shifts: read ----------------- */
+                case 'shifts.week': {
                     $week = $_GET['week'] ?? date('Y-m-d');
                     $w    = ScheduleWeek::mondayOf($week);
                     $rows = $this->Shift->forWeek($w);
                     echo json_encode(['week_start'=>$w,'shifts'=>$rows,'is_admin'=>$this->isAdmin()]);
                     break;
+                }
 
+                /* Personal shifts for current user */
+                case 'shifts.my': {
+                    $week = $_GET['week'] ?? date('Y-m-d');
+                    $wk   = ScheduleWeek::mondayOf($week);
+                    $emp  = $this->resolveEmployeeForCurrentUser();
+                    if (!$emp) throw new Exception('No employee record linked to your account.');
+                    $rows = $this->Shift->forWeekEmployee($wk, (int)$emp['id']);
+                    echo json_encode(['week_start'=>$wk,'employee_id'=>(int)$emp['id'],'shifts'=>$rows]);
+                    break;
+                }
+
+                /* Map current session user → employee row */
+                case 'me.employee': {
+                    $emp = $this->resolveEmployeeForCurrentUser();
+                    if (!$emp) throw new Exception('No employee record linked to your account.');
+                    echo json_encode(['employee_id' => (int)$emp['id'], 'employee_name' => $emp['name']]);
+                    break;
+                }
+
+                /* ----------------- Shifts: write ----------------- */
                 case 'shifts.create':
                     $this->guardAdmin();
                     $in = $this->json();
@@ -87,7 +115,93 @@ class Schedule extends Controller
                     echo json_encode(['ok'=>$this->Shift->delete($id)]);
                     break;
 
-                /* ---------- Publishing ---------- */
+                /* Copy entire week → week (like Homebase) */
+                case 'shifts.copyWeek': {
+                    $this->guardAdmin();
+                    $in = $this->json();
+                    $src = ScheduleWeek::mondayOf($in['source_week'] ?? date('Y-m-d'));
+                    $dst = ScheduleWeek::mondayOf($in['target_week'] ?? date('Y-m-d'));
+                    $overwrite = !empty($in['overwrite']);
+
+                    // ensure target week row exists
+                    $this->Week->status($dst);
+
+                    if ($overwrite) {
+                        $this->Shift->deleteForWeek($dst);
+                    }
+
+                    $rows = $this->Shift->forWeek($src);
+                    $copied = 0;
+                    $srcDate = new DateTime($src);
+                    $dstDate = new DateTime($dst);
+                    $diffDays = (int)$srcDate->diff($dstDate)->format('%r%a');
+
+                    foreach ($rows as $r) {
+                        $s = new DateTime($r['start_dt']); $s->modify(($diffDays>=0?'+':'') . $diffDays . ' day');
+                        $e = new DateTime($r['end_dt']);   $e->modify(($diffDays>=0?'+':'') . $diffDays . ' day');
+                        $this->Shift->create((int)$r['employee_id'], $s->format('Y-m-d H:i:s'), $e->format('Y-m-d H:i:s'), $r['notes']);
+                        $copied++;
+                    }
+                    echo json_encode(['ok'=>true,'copied'=>$copied, 'source_week'=>$src, 'target_week'=>$dst]);
+                    break;
+                }
+
+                /* Copy user → user within a week (optionally specific days, optionally overwrite) */
+                case 'shifts.copyUserToUser': {
+                    $this->guardAdmin();
+                    $in = $this->json();
+                    $week = ScheduleWeek::mondayOf($in['week'] ?? date('Y-m-d'));
+                    $from = (int)$in['from_employee_id'];
+                    $to   = (int)$in['to_employee_id'];
+                    $days = isset($in['days']) && is_array($in['days']) ? array_values(array_map('intval',$in['days'])) : null;
+                    $overwrite = !empty($in['overwrite']);
+
+                    if ($overwrite) {
+                        $this->Shift->deleteForWeekEmployee($week, $to, $days);
+                    }
+
+                    $rows = $this->Shift->forWeekEmployee($week, $from);
+                    $copied = 0;
+                    foreach ($rows as $r) {
+                        $d = new DateTime($r['start_dt']);
+                        $dow = (int)$d->format('w'); // 0=Sun..6=Sat
+                        if ($days && !in_array($dow, $days, true)) continue;
+
+                        $duration = (new DateTime($r['end_dt']))->getTimestamp() - $d->getTimestamp();
+                        $start = $d->format('Y-m-d H:i:s');
+                        $end   = date('Y-m-d H:i:s', $d->getTimestamp() + $duration);
+                        $this->Shift->create($to, $start, $end, $r['notes']);
+                        $copied++;
+                    }
+                    echo json_encode(['ok'=>true,'copied'=>$copied]);
+                    break;
+                }
+
+                /* Copy a single shift to another user/date */
+                case 'shifts.copyShift': {
+                    $this->guardAdmin();
+                    $in = $this->json();
+                    $shiftId = (int)$in['shift_id'];
+                    $toEmp   = (int)$in['to_employee_id'];
+                    $targetDate = $in['target_date'] ?? null; // YYYY-MM-DD
+
+                    $orig = $this->Shift->get($shiftId);
+                    if (!$orig) throw new Exception('Shift not found');
+
+                    $s = new DateTime($orig['start_dt']);
+                    $e = new DateTime($orig['end_dt']);
+
+                    if ($targetDate) {
+                        $s = new DateTime($targetDate . ' ' . $s->format('H:i:s'));
+                        $e = new DateTime($targetDate . ' ' . $e->format('H:i:s'));
+                    }
+
+                    $newId = $this->Shift->create($toEmp, $s->format('Y-m-d H:i:s'), $e->format('Y-m-d H:i:s'), $orig['notes']);
+                    echo json_encode(['ok'=>true,'id'=>$newId]);
+                    break;
+                }
+
+                /* ----------------- Publishing ----------------- */
                 case 'publish.status':
                     $week = $_GET['week'] ?? date('Y-m-d');
                     $status = $this->Week->status($week);
@@ -98,16 +212,17 @@ class Schedule extends Controller
                 case 'publish.set':
                     $this->guardAdmin();
                     $in = $this->json();
-                    $this->Week->setPublished($in['week'], 1);   // always publish for now
+                    // Respect requested published flag
+                    $this->Week->setPublished($in['week'], !empty($in['published']) ? 1 : 0);
                     echo json_encode(['ok'=>true]);
                     break;
 
-                /* ---------- Roles (Option A) ---------- */
+                /* ----------------- Roles ----------------- */
                 case 'roles.list':
                     echo json_encode($this->getActiveRoles());
                     break;
 
-                /* ---------- Admin users (optional) ---------- */
+                /* ----------------- Admin users (optional) ----------------- */
                 case 'users.list':
                     $this->guardAdmin();
                     echo json_encode($this->model('User')->all());
@@ -128,6 +243,8 @@ class Schedule extends Controller
         }
     }
 
+    /* ================= helpers ================= */
+
     private function guardAdmin() {
         if (!$this->isAdmin()) throw new Exception('Admin access required');
     }
@@ -140,21 +257,14 @@ class Schedule extends Controller
         return json_decode(file_get_contents('php://input'), true) ?: [];
     }
 
-    /**
-     * Shared roles fetcher so both /schedule/api?a=roles.list
-     * and (if you keep it) the direct listRoles() hook return the same thing.
-     */
+    /** Shared roles fetcher */
     private function getActiveRoles(): array {
         $db = db_connect();
-        // If you later want department-specific roles, adjust this query.
         $stmt = $db->query("SELECT id, name FROM roles WHERE is_active = 1 ORDER BY name ASC");
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    /**
-     * Only needed if you still call Schedule::listRoles() directly from App.php.
-     * Safe to keep — it just proxies to getActiveRoles().
-     */
+    /** Old direct roles endpoint kept for compatibility */
     public function listRoles() {
         if (empty($_SESSION['auth'])) {
             http_response_code(401);
@@ -165,5 +275,52 @@ class Schedule extends Controller
         header('Content-Type: application/json; charset=utf-8');
         echo json_encode($this->getActiveRoles());
         exit;
+    }
+
+    /** Map the logged-in user to an employees row, using several strategies */
+    private function resolveEmployeeForCurrentUser(): ?array {
+        $user = $this->currentUserRow();
+        if (!$user) return null;
+
+        // 1) direct foreign key (if exists)
+        $emp = $this->Employee->findByUserId((int)$user['id']);
+        if ($emp) return $emp;
+
+        // 2) email match
+        if (!empty($user['email'])) {
+            $emp = $this->Employee->findByEmail(trim($user['email']));
+            if ($emp) return $emp;
+        }
+
+        // 3) name match
+        $candidates = [];
+        if (!empty($user['full_name'])) $candidates[] = $user['full_name'];
+        if (!empty($user['username']))  $candidates[] = $user['username'];
+        foreach ($candidates as $n) {
+            $emp = $this->Employee->findByName(trim($n));
+            if ($emp) return $emp;
+        }
+        return null;
+    }
+
+    /** Safer users lookup: works even if users.email column doesn’t exist */
+    private function currentUserRow(): ?array {
+        $uid = (int)($_SESSION['id'] ?? 0);
+        if (!$uid) return null;
+        $db = db_connect();
+
+        // Try selecting email; if the column doesn't exist, fall back without it.
+        try {
+            $stmt = $db->prepare("SELECT id, username, full_name, email FROM users WHERE id = :id");
+            $stmt->execute([':id' => $uid]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+        } catch (Throwable $e) {
+            $stmt = $db->prepare("SELECT id, username, full_name FROM users WHERE id = :id");
+            $stmt->execute([':id' => $uid]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+            if ($row) $row['email'] = null; // keep a consistent shape
+        }
+
+        return $row;
     }
 }
