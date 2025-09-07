@@ -1,9 +1,22 @@
 <?php
-if (!isset($_SESSION['auth'])) {
+// Always start the session before touching $_SESSION
+if (session_status() !== PHP_SESSION_ACTIVE) session_start();
+
+// Current path
+$__path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
+
+// Public pages that should NOT force login
+$__PUBLIC = [
+  '/', '/login', '/register', '/forgot', '/password/reset', '/password/forgot'
+];
+
+// Gate only non-public pages
+if (!isset($_SESSION['auth']) && !in_array($__path, $__PUBLIC, true)) {
     header('Location: /login');
     exit;
 }
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
