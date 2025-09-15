@@ -3,9 +3,9 @@
 if (session_status() !== PHP_SESSION_ACTIVE) session_start();
 $userId   = (int)($_SESSION['id'] ?? 0);
 $userName = $_SESSION['username'] ?? ($_SESSION['full_name'] ?? 'User');
-$USERS    = $data['users'] ?? [];
-$ME       = (int)($data['me'] ?? 0);
-$CHAT_TOKEN = $data['chat_token'] ?? '';
+$USERS    = isset($data['users']) ? $data['users'] : [];
+$ME       = isset($data['me']) ? (int)$data['me'] : 0;
+$CHAT_TOKEN = isset($data['chat_token']) ? $data['chat_token'] : '';
 ?>
 <meta name="tw-user-id" content="<?= $userId ?>">
 <meta name="tw-user-name" content="<?= htmlspecialchars($userName, ENT_QUOTES) ?>">
