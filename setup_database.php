@@ -116,6 +116,45 @@ try {
         $db->prepare("INSERT IGNORE INTO roles (name) VALUES (?)")->execute([$role]);
     }
 
+    // Create users table
+    $db->exec("
+        CREATE TABLE IF NOT EXISTS users (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            username VARCHAR(100) NOT NULL UNIQUE,
+            password VARCHAR(255) NOT NULL,
+            is_admin TINYINT(1) DEFAULT 0,
+            full_name VARCHAR(200) NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    ");
+
+    // Create login_logs table  
+    $db->exec("
+        CREATE TABLE IF NOT EXISTS login_logs (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            username VARCHAR(100) NOT NULL,
+            status ENUM('good', 'bad') NOT NULL,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+            ip_address VARCHAR(45) NULL,
+            INDEX idx_username (username),
+            INDEX idx_timestamp (timestamp)
+        )
+    ");
+
+    // Create chat_tokens table for secure authentication
+    $db->exec("
+        CREATE TABLE IF NOT EXISTS chat_tokens (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            user_id INT NOT NULL,
+            token_hash VARCHAR(255) NOT NULL UNIQUE,
+            expires_at DATETIME NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+            INDEX idx_token_hash (token_hash),
+            INDEX idx_expires_at (expires_at)
+        )
+    ");
+
     // Insert default departments
     $defaultDepartments = ['General', 'Support', 'Administration', 'Operations'];
     foreach ($defaultDepartments as $dept) {

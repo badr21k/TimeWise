@@ -5,9 +5,11 @@ $userId   = (int)($_SESSION['id'] ?? 0);
 $userName = $_SESSION['username'] ?? ($_SESSION['full_name'] ?? 'User');
 $USERS    = $data['users'] ?? [];
 $ME       = (int)($data['me'] ?? 0);
+$CHAT_TOKEN = $data['chat_token'] ?? '';
 ?>
 <meta name="tw-user-id" content="<?= $userId ?>">
 <meta name="tw-user-name" content="<?= htmlspecialchars($userName, ENT_QUOTES) ?>">
+<meta name="tw-chat-token" content="<?= htmlspecialchars($CHAT_TOKEN, ENT_QUOTES) ?>">
 
 <style>
 .chat-wrap{background:#f8fafc;min-height:100vh;}
@@ -102,9 +104,21 @@ $ME       = (int)($data['me'] ?? 0);
 
 <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 <script>
-// --- define UID/UNAME from meta BEFORE connecting ---
+// --- define UID/UNAME/CHAT_TOKEN from meta BEFORE connecting ---
 const UID   = Number(document.querySelector('meta[name="tw-user-id"]')?.content || 0);
 const UNAME = document.querySelector('meta[name="tw-user-name"]')?.content || 'User';
+const CHAT_TOKEN = document.querySelector('meta[name="tw-chat-token"]')?.content || '';
+
+// DOM element references
+const peopleEl = document.getElementById('people');
+const roomsEl = document.getElementById('rooms');
+const msgsEl = document.getElementById('messages');
+const inputEl = document.getElementById('msgInput');
+const titleEl = document.getElementById('roomTitle');
+const typeEl = document.getElementById('roomType');
+
+// Current room state
+let CURRENT_ROOM = null;
 
   const isReplit = /\.repl\.co$|\.replit\.dev$/.test(location.hostname);
   const NODE_PORT = 3001;
@@ -114,18 +128,49 @@ const UNAME = document.querySelector('meta[name="tw-user-name"]')?.content || 'U
 
   console.log('[chat] connecting to', nodeURL);
 
+  // Check if we have a valid chat token
+  if (!CHAT_TOKEN) {
+    alert('Authentication error. Please refresh the page.');
+    return;
+  }
+
   const socket = io(nodeURL, {
     path: '/socket.io',
     transports: ['websocket', 'polling'], // allow fallback
     reconnection: true,
     timeout: 20000,
-    auth: { user_id: UID, username: UNAME }
+    auth: { chat_token: CHAT_TOKEN }
   });
 
   socket.on('connect_error', (e)=>console.warn('[chat] connect_error via', nodeURL, e));
 
 
-socket.on('fatal', (m)=>alert(m?.error||'Socket error'));
+socket.on('fatal', (m) => {
+  const error = m?.error || 'Socket error';
+  console.error('[chat] Fatal error:', error);
+  alert(`Chat authentication failed: ${error}\n\nPlease refresh the page to reconnect.`);
+  // Disable the chat interface when authentication fails
+  document.getElementById('msgInput').disabled = true;
+  document.getElementById('sendBtn').disabled = true;
+  document.getElementById('btnNewGroup').disabled = true;
+});
+
+socket.on('connect', () => {
+  console.log('[chat] Connected successfully');
+  // Re-enable interface on successful connection
+  document.getElementById('msgInput').disabled = false;
+  document.getElementById('sendBtn').disabled = false;
+  document.getElementById('btnNewGroup').disabled = false;
+  socket.emit('rooms:refresh');
+});
+
+socket.on('disconnect', (reason) => {
+  console.warn('[chat] Disconnected:', reason);
+  if (reason === 'io server disconnect') {
+    alert('Authentication expired. Please refresh the page.');
+  }
+});
+
 socket.on('rooms:list', (rooms)=>renderRooms(rooms));
 socket.on('message:new', (m)=>{ if(Number(m.room_id)===Number(CURRENT_ROOM)) appendMsg(m); });
 
@@ -196,6 +241,5 @@ document.getElementById('createGroup').onclick = ()=>{
   });
 };
 
-// initial
-socket.on('connect', ()=> socket.emit('rooms:refresh'));
+// Connection handling is now done in the connect event handler above
 </script>
