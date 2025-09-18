@@ -3,8 +3,153 @@
 class Reports extends Controller {
 
     public function index() {
-        // Comprehensive access control check
-        $this->checkAccess('Admin Reports Dashboard');
+        // Centralized RBAC
+        if (class_exists('AccessControl')) {
+            AccessControl::enforceAccess('reports', 'index', 'Admin Reports Dashboard');
+        }
+
+    /** Satisfaction per user (weekly average), with filters */
+    public function satisfactionUsers() {
+        if (class_exists('AccessControl')) {
+            AccessControl::enforceAccess('reports', 'satisfactionUsers', 'Satisfaction (Users)');
+        }
+
+        $db = db_connect();
+
+        // Users list for selector
+        $users = $db->query("SELECT id, COALESCE(NULLIF(full_name,''), username) AS label FROM users ORDER BY label ASC")->fetchAll(PDO::FETCH_ASSOC);
+
+        $userId = (int)($_GET['user_id'] ?? ($users[0]['id'] ?? 0));
+        $to = $_GET['to'] ?? date('Y-m-d');
+        // default from = 12 weeks ago
+        $defaultFrom = (new DateTime($to))->modify('-12 weeks')->format('Y-m-d');
+        // respect employee start_date if present (later of join and defaultFrom)
+        $from = $_GET['from'] ?? $defaultFrom;
+
+        $fromDate = new DateTime($from);
+        // Pull employee start_date
+        $startDate = null;
+        if ($userId) {
+            try {
+                $stmt = $db->prepare("SELECT e.start_date FROM employees e WHERE e.user_id = :u LIMIT 1");
+                $stmt->execute([':u'=>$userId]);
+                $s = $stmt->fetchColumn();
+                if ($s) {
+                    $sd = new DateTime($s);
+                    if ($sd > $fromDate) $fromDate = $sd;
+                }
+            } catch (Throwable $e) {}
+        }
+
+        $from = $fromDate->format('Y-m-d');
+
+        $labels = [];
+        $values = [];
+        $series = [];
+
+        if ($userId) {
+            // Weekly average satisfaction for the selected user
+            $sql = "
+                SELECT 
+                  DATE_SUB(te.entry_date, INTERVAL WEEKDAY(te.entry_date) DAY) AS week_start,
+                  ROUND(AVG(te.satisfaction),2) AS avg_sat
+                FROM time_entries te
+                LEFT JOIN employees e ON e.id = te.employee_id
+                WHERE te.user_id = :u
+                  AND te.satisfaction IS NOT NULL
+                  AND te.entry_date BETWEEN :from AND :to
+                  AND (e.start_date IS NULL OR te.entry_date >= e.start_date)
+                GROUP BY week_start
+                ORDER BY week_start ASC
+            ";
+            try {
+                $stmt = $db->prepare($sql);
+                $stmt->execute([':u'=>$userId, ':from'=>$from, ':to'=>$to]);
+                $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            } catch (Throwable $e) {
+                $rows = [];
+            }
+            foreach ($rows as $r) {
+                $labels[] = $r['week_start'];
+                $values[] = (float)$r['avg_sat'];
+            }
+            $series = [
+                'label' => 'Avg Satisfaction',
+                'data'  => $values,
+            ];
+        }
+
+        $this->view('reports/satisfaction-users', [
+            'users'  => $users,
+            'user_id'=> $userId,
+            'from'   => $from,
+            'to'     => $to,
+            'labels' => $labels,
+            'series' => $series,
+        ]);
+    }
+
+    /** Satisfaction per department (weekly average) */
+    public function satisfactionDepartments() {
+        if (class_exists('AccessControl')) {
+            AccessControl::enforceAccess('reports', 'satisfactionDepartments', 'Satisfaction (Departments)');
+        }
+
+        $db = db_connect();
+        $to = $_GET['to'] ?? date('Y-m-d');
+        $from = $_GET['from'] ?? (new DateTime($to))->modify('-12 weeks')->format('Y-m-d');
+
+        // Weekly average by department using employee_department → departments
+        $sql = "
+            SELECT 
+              d.name AS department,
+              DATE_SUB(te.entry_date, INTERVAL WEEKDAY(te.entry_date) DAY) AS week_start,
+              ROUND(AVG(te.satisfaction),2) AS avg_sat
+            FROM time_entries te
+            LEFT JOIN employees e ON e.id = te.employee_id
+            LEFT JOIN employee_department ed ON ed.employee_id = e.id
+            LEFT JOIN departments d ON d.id = ed.department_id
+            WHERE te.satisfaction IS NOT NULL
+              AND te.entry_date BETWEEN :from AND :to
+              AND (e.start_date IS NULL OR te.entry_date >= e.start_date)
+            GROUP BY d.name, week_start
+            HAVING department IS NOT NULL
+            ORDER BY week_start ASC, department ASC
+        ";
+        try {
+            $stmt = $db->prepare($sql);
+            $stmt->execute([':from'=>$from, ':to'=>$to]);
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (Throwable $e) {
+            $rows = [];
+        }
+
+        // Pivot to chart series
+        $labels = [];
+        $series = [];
+        foreach ($rows as $r) {
+            $wk = $r['week_start'];
+            if (!in_array($wk, $labels, true)) $labels[] = $wk;
+        }
+        sort($labels);
+        foreach ($rows as $r) {
+            $dept = $r['department'];
+            if (!isset($series[$dept])) $series[$dept] = array_fill_keys($labels, null);
+            $series[$dept][$r['week_start']] = (float)$r['avg_sat'];
+        }
+        // Convert to arrays
+        $seriesArr = [];
+        foreach ($series as $dept => $dataMap) {
+            $seriesArr[] = ['label'=>$dept, 'data'=>array_values($dataMap)];
+        }
+
+        $this->view('reports/satisfaction-departments', [
+            'from' => $from,
+            'to'   => $to,
+            'labels' => $labels,
+            'series' => $seriesArr,
+        ]);
+    }
 
         try {
             $db = db_connect();
@@ -45,9 +190,65 @@ class Reports extends Controller {
         }
     }
 
+    /** Weekly total hours per employee */
+    public function hours() {
+        // Centralized RBAC
+        if (class_exists('AccessControl')) {
+            AccessControl::enforceAccess('reports', 'hours', 'Weekly Hours');
+        }
+
+        $Week = $this->model('ScheduleWeek');
+        $Shift = $this->model('Shift');
+
+        $week = $_GET['week'] ?? date('Y-m-d');
+        $monday = $Week::mondayOf($week);
+
+        $rows = $Shift->hoursForWeekGrouped($monday);
+
+        $this->view('reports/hours', [
+            'week_start' => $monday,
+            'rows' => $rows,
+        ]);
+    }
+
+    /** Per-day breakdown for selected employee within a week */
+    public function hoursEmployee() {
+        // Centralized RBAC
+        if (class_exists('AccessControl')) {
+            AccessControl::enforceAccess('reports', 'hoursEmployee', 'Weekly Hours (Employee)');
+        }
+
+        $empId = (int)($_GET['employee_id'] ?? 0);
+        if ($empId <= 0) { header('Location: /reports/hours'); exit; }
+
+        $Week = $this->model('ScheduleWeek');
+        $Shift = $this->model('Shift');
+
+        $week = $_GET['week'] ?? date('Y-m-d');
+        $monday = $Week::mondayOf($week);
+
+        // Fetch per-day hours and employee label
+        $perDay = $Shift->hoursPerDayForWeekEmployee($monday, $empId);
+
+        // Fetch employee display name
+        $db = db_connect();
+        $stmt = $db->prepare("SELECT COALESCE(NULLIF(name,''), CONCAT('Employee #', id)) AS name FROM employees WHERE id = :id");
+        $stmt->execute([':id' => $empId]);
+        $empName = $stmt->fetchColumn() ?: ('Employee #' . $empId);
+
+        $this->view('reports/hours-employee', [
+            'week_start' => $monday,
+            'employee_id' => $empId,
+            'employee_name' => $empName,
+            'per_day' => $perDay,
+        ]);
+    }
+
     public function allReminders() {
-        // Comprehensive access control check
-        $this->checkAccess('All Reminders Report');
+        // Centralized RBAC
+        if (class_exists('AccessControl')) {
+            AccessControl::enforceAccess('reports', 'allReminders', 'All Reminders Report');
+        }
 
         try {
             $db = db_connect();
@@ -65,8 +266,10 @@ class Reports extends Controller {
     }
 
     public function userStats() {
-        // Comprehensive access control check
-        $this->checkAccess('User Statistics Report');
+        // Centralized RBAC
+        if (class_exists('AccessControl')) {
+            AccessControl::enforceAccess('reports', 'userStats', 'User Statistics Report');
+        }
 
         try {
             $db = db_connect();
@@ -84,8 +287,10 @@ class Reports extends Controller {
     }
 
     public function loginReport() {
-        // Comprehensive access control check
-        $this->checkAccess('Login Report');
+        // Centralized RBAC
+        if (class_exists('AccessControl')) {
+            AccessControl::enforceAccess('reports', 'loginReport', 'Login Report');
+        }
 
         try {
             $db = db_connect();

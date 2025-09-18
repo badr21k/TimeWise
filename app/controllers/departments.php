@@ -13,6 +13,9 @@ class departments extends Controller
     /* GET /departments */
     public function index() {
         if (empty($_SESSION['auth'])) { header('Location: /login'); exit; }
+        if (class_exists('AccessControl')) {
+            AccessControl::enforceAccess('departments', 'index', 'Departments & Roles');
+        }
         $this->view('departments/index');
     }
 
@@ -22,6 +25,14 @@ class departments extends Controller
             http_response_code(401);
             header('Content-Type: application/json; charset=utf-8');
             echo json_encode(['error'=>'Auth required']);
+            return;
+        }
+
+        // Centralized RBAC for the whole controller (managers only)
+        if (class_exists('AccessControl') && !AccessControl::hasControllerAccess('departments')) {
+            http_response_code(403);
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode(['error'=>'Access denied']);
             return;
         }
 

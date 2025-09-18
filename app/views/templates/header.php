@@ -301,7 +301,8 @@ if (!isset($_SESSION['auth']) && !in_array($__path, $__PUBLIC, true)) {
       $isSched = (bool)preg_match('#^/schedule\b(?!/my)#', $path); // schedule index but not /schedule/my
       $isMy    = (bool)preg_match('#^/schedule/my\b#', $path);
       $isDept  = (bool)preg_match('#^/departments\b#', $path);
-      $isTeamActive = ($isSched || $isDept || $isMy);
+      $isTimeClock = (bool)preg_match('#^/timeclock\b#', $path);
+      $isTeamActive = ($isSched || $isDept || $isMy || $isTimeClock);
     ?>
 
     <nav class="navbar navbar-expand-lg navbar-light sticky-top">
@@ -318,12 +319,23 @@ if (!isset($_SESSION['auth']) && !in_array($__path, $__PUBLIC, true)) {
                 <i class="fas fa-tachometer-alt me-1"></i>Dashboard
               </a>
             </li>
+            <?php if (class_exists('AccessControl') && AccessControl::hasAccess('chat', 'navigation')): ?>
             <li class="nav-item">
               <a class="nav-link <?= preg_match('#^/chat\b#', $path) ? 'active' : '' ?>" href="/chat">
                 <i class="fas fa-comments me-1"></i>Chat
               </a>
             </li>
+            <?php endif; ?>
 
+            <?php
+              $showSchedule    = class_exists('AccessControl') && AccessControl::hasAccess('schedule', 'navigation');
+              $showMyShifts    = class_exists('AccessControl') && AccessControl::hasAccess('my_shifts', 'navigation');
+              $showDepartments = class_exists('AccessControl') && AccessControl::hasAccess('departments_roles', 'navigation');
+              $showTeamRoster  = class_exists('AccessControl') && AccessControl::hasAccess('team_roster', 'navigation');
+              $showTimeClock   = class_exists('AccessControl') && AccessControl::hasAccess('time_clock', 'navigation');
+              $showTeamMenu    = $showSchedule || $showMyShifts || $showDepartments || $showTeamRoster || $showTimeClock;
+            ?>
+            <?php if ($showTeamMenu): ?>
             <!-- Team & Schedule (desktop dropdown) -->
             <li class="nav-item dropdown <?= $isTeamActive ? 'active' : '' ?>">
               <a class="nav-link dropdown-toggle <?= $isTeamActive ? 'active' : '' ?>"
@@ -332,32 +344,49 @@ if (!isset($_SESSION['auth']) && !in_array($__path, $__PUBLIC, true)) {
                 <i class="fas fa-users me-1"></i> Team &amp; Schedule
               </a>
               <ul class="dropdown-menu" aria-labelledby="teamSchedDropdown">
+                <?php if ($showTimeClock): ?>
+                <li>
+                  <a class="dropdown-item <?= preg_match('#^/timeclock\b#', $path) ? 'active' : '' ?>" href="/timeclock">
+                    <i class="fas fa-user-check me-2"></i> Time Clock
+                  </a>
+                </li>
+                <?php endif; ?>
+                <?php if ($showSchedule): ?>
                 <li>
                   <a class="dropdown-item <?= $isSched ? 'active' : '' ?>" href="/schedule">
                     <i class="fas fa-calendar-alt me-2"></i> Schedule
                   </a>
                 </li>
+                <?php endif; ?>
+                <?php if ($showMyShifts): ?>
                 <li>
                   <a class="dropdown-item <?= $isMy ? 'active' : '' ?>" href="/schedule/my">
                     <i class="fas fa-user-clock me-2"></i> My Shifts
                   </a>
                 </li>
+                <?php endif; ?>
+                <?php if ($showDepartments): ?>
                 <li>
                   <a class="dropdown-item <?= $isDept ? 'active' : '' ?>" href="/departments">
                     <i class="fas fa-sitemap me-2"></i> Departments &amp; Roles
                   </a>
                 </li>
+                <?php endif; ?>
+                <?php if ($showTeamRoster): ?>
                 <li>
-                  <a class="dropdown-item <?= preg_match('#^/team\b#', $path) ? 'active' : '' ?>" href="/team">
+                  <a class="dropdown-item <?= preg_match('#^/team\\b#', $path) ? 'active' : '' ?>" href="/team">
                     <i class="fas fa-users me-2"></i> Team roster
                   </a>
                 </li>
+                <?php endif; ?>
               </ul>
             </li>
+            <?php endif; ?>
 
+            <?php if (class_exists('AccessControl') && AccessControl::hasAccess('reminders', 'navigation')): ?>
             <!-- Reminders (desktop dropdown) -->
             <li class="nav-item dropdown">
-              <a class="nav-link dropdown-toggle <?= preg_match('#^/notes\b#', $path) ? 'active' : '' ?>"
+              <a class="nav-link dropdown-toggle <?= preg_match('#^/notes\\b#', $path) ? 'active' : '' ?>"
                  href="#" id="remindersDropdown" role="button"
                  data-bs-toggle="dropdown" aria-expanded="false">
                 <i class="fas fa-tasks me-1"></i>Reminders
@@ -384,10 +413,11 @@ if (!isset($_SESSION['auth']) && !in_array($__path, $__PUBLIC, true)) {
                 </a></li>
               </ul>
             </li>
+            <?php endif; ?>
 
-            <?php if (isset($_SESSION['is_admin']) && (int)$_SESSION['is_admin'] === 1): ?>
+            <?php if (class_exists('AccessControl') && AccessControl::hasAccess('reports', 'navigation')): ?>
             <li class="nav-item dropdown">
-              <a class="nav-link dropdown-toggle <?= preg_match('#^/reports\b#', $path) ? 'active' : '' ?>"
+              <a class="nav-link dropdown-toggle <?= preg_match('#^/reports\\b#', $path) ? 'active' : '' ?>"
                  href="#" id="adminDropdown" role="button"
                  data-bs-toggle="dropdown" aria-expanded="false">
                 <i class="fas fa-chart-bar me-1"></i>Reports
@@ -407,6 +437,9 @@ if (!isset($_SESSION['auth']) && !in_array($__path, $__PUBLIC, true)) {
                 </a></li>
                 <li><a class="dropdown-item <?= $path === '/reports/loginReport' ? 'active' : '' ?>" href="/reports/loginReport">
                   <i class="fas fa-sign-in-alt me-2"></i>Login Report
+                </a></li>
+                <li><a class="dropdown-item <?= $path === '/reports/hours' ? 'active' : '' ?>" href="/reports/hours">
+                  <i class="fas fa-hourglass-half me-2"></i>Weekly Hours
                 </a></li>
               </ul>
             </li>
@@ -428,34 +461,52 @@ if (!isset($_SESSION['auth']) && !in_array($__path, $__PUBLIC, true)) {
                 <i class="fas fa-tachometer-alt me-1"></i>Dashboard
               </a>
             </li>
+            <?php if (class_exists('AccessControl') && AccessControl::hasAccess('chat', 'navigation')): ?>
             <li class="nav-item">
-              <a class="nav-link <?= preg_match('#^/chat\b#', $path) ? 'active' : '' ?>" href="/chat">
+              <a class="nav-link <?= preg_match('#^/chat\\b#', $path) ? 'active' : '' ?>" href="/chat">
                 <i class="fas fa-comments me-1"></i>Chat
               </a>
             </li>
+            <?php endif; ?>
 
             <!-- Team & Schedule (mobile links) -->
+            <?php if ($showTimeClock): ?>
+            <li class="nav-item">
+              <a class="nav-link <?= preg_match('#^/timeclock\\b#', $path) ? 'active' : '' ?>" href="/timeclock">
+                <i class="fas fa-user-check me-1"></i>Time Clock
+              </a>
+            </li>
+            <?php endif; ?>
+            <?php if ($showSchedule): ?>
             <li class="nav-item">
               <a class="nav-link <?= $isSched ? 'active' : '' ?>" href="/schedule">
                 <i class="fas fa-calendar-alt me-1"></i>Schedule
               </a>
             </li>
+            <?php endif; ?>
+            <?php if ($showMyShifts): ?>
             <li class="nav-item">
               <a class="nav-link <?= $isMy ? 'active' : '' ?>" href="/schedule/my">
                 <i class="fas fa-user-clock me-1"></i>My Shifts
               </a>
             </li>
+            <?php endif; ?>
+            <?php if ($showDepartments): ?>
             <li class="nav-item">
               <a class="nav-link <?= $isDept ? 'active' : '' ?>" href="/departments">
                 <i class="fas fa-sitemap me-1"></i>Departments &amp; Roles
               </a>
             </li>
+            <?php endif; ?>
+            <?php if ($showTeamRoster): ?>
             <li class="nav-item">
-              <a class="nav-link <?= preg_match('#^/team\b#', $path) ? 'active' : '' ?>" href="/team">
+              <a class="nav-link <?= preg_match('#^/team\\b#', $path) ? 'active' : '' ?>" href="/team">
                 <i class="fas fa-users me-1"></i>Team Roster
               </a>
             </li>
+            <?php endif; ?>
 
+            <?php if (class_exists('AccessControl') && AccessControl::hasAccess('reminders', 'navigation')): ?>
             <!-- Reminders quick links -->
             <li class="nav-item">
               <a class="nav-link <?= $path === '/notes' ? 'active' : '' ?>" href="/notes">
@@ -467,10 +518,11 @@ if (!isset($_SESSION['auth']) && !in_array($__path, $__PUBLIC, true)) {
                 <i class="fas fa-plus me-1"></i>Create New
               </a>
             </li>
+            <?php endif; ?>
 
-            <?php if (isset($_SESSION['is_admin']) && (int)$_SESSION['is_admin'] === 1): ?>
+            <?php if (class_exists('AccessControl') && AccessControl::hasAccess('reports', 'navigation')): ?>
             <li class="nav-item dropdown">
-              <a class="nav-link dropdown-toggle <?= preg_match('#^/reports\b#', $path) ? 'active' : '' ?>"
+              <a class="nav-link dropdown-toggle <?= preg_match('#^/reports\\b#', $path) ? 'active' : '' ?>"
                  href="#" id="mobileAdminDropdown" role="button"
                  data-bs-toggle="dropdown" aria-expanded="false">
                 <i class="fas fa-chart-bar me-1"></i>Admin Reports
@@ -487,6 +539,9 @@ if (!isset($_SESSION['auth']) && !in_array($__path, $__PUBLIC, true)) {
                 </a></li>
                 <li><a class="dropdown-item <?= $path === '/reports/loginReport' ? 'active' : '' ?>" href="/reports/loginReport">
                   <i class="fas fa-sign-in-alt me-2"></i>Login Report
+                </a></li>
+                <li><a class="dropdown-item <?= $path === '/reports/hours' ? 'active' : '' ?>" href="/reports/hours">
+                  <i class="fas fa-hourglass-half me-2"></i>Weekly Hours
                 </a></li>
               </ul>
             </li>
