@@ -1,11 +1,11 @@
-run = "php -S 0.0.0.0:8000 -t ."
+run = "bash start.sh"
 modules = ["nix", "nodejs-20", "php-8.2"]
 
 [nix]
 channel = "stable-24_05"
 
 [deployment]
-run = ["sh", "-c", "php -S 0.0.0.0:8000 -t ."]
+run = ["sh", "-c", "bash start.sh"]
 deploymentTarget = "cloudrun"
 
 [[ports]]
@@ -16,30 +16,8 @@ externalPort = 3001
 localPort = 5000
 externalPort = 5000
 
-[[ports]]
-localPort = 32853
-externalPort = 80
-
 [workflows]
-runButton = "Project"
-
-[[workflows.workflow]]
-name = "Start Server"
-author = 36663310
-mode = "sequential"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "php -S 0.0.0.0:8000 -t ."
-
-[[workflows.workflow]]
-name = "Project"
-mode = "parallel"
-author = "agent"
-
-[[workflows.workflow.tasks]]
-task = "workflow.run"
-args = "Web Server"
+runButton = "Web Server"
 
 [[workflows.workflow]]
 name = "Web Server"
@@ -55,7 +33,3 @@ waitForPort = 5000
 
 [agent]
 expertMode = true
-
-run = "bash start.sh"
-
-

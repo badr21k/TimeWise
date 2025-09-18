@@ -1,359 +1,147 @@
-import http from "http";
-import { Server } from "socket.io";
-import sqlite3 from "sqlite3";
-import mysql from "mysql2/promise";
-import crypto from "crypto";
+// chat-server.js — Socket.IO server with in-memory rooms/messages for Replit
 
-const CHAT_PORT = Number(process.env.CHAT_PORT || 3001);
+const http = require("http");
+const { Server } = require("socket.io");
 
-// --- Database connections ---------------------------------------------------
-// SQLite for chat data
-sqlite3.verbose();
-const db = new sqlite3.Database("./database.db");
+const CHAT_PORT = process.env.CHAT_PORT || 3001;
 
-// MySQL for authentication (using same config as PHP)
-const mysqlConfig = {
-  host: process.env.DB_HOST || 'e7eh7.h.filess.io',
-  user: process.env.DB_USER || 'TimeWise_bushnearby',
-  password: process.env.DB_PASS,
-  database: process.env.DB_DATABASE || 'TimeWise_bushnearby',
-  port: Number(process.env.DB_PORT || 3305),
-  connectTimeout: 20000,
-  acquireTimeout: 20000,
-};
+// ---- In-memory store (dev) ----
+let nextRoomId = 1;
+const users = new Map();   // userId -> { username, sockets:Set<sid> }
+const sockets = new Map(); // sid -> { userId, username }
+const rooms = new Map();   // roomId -> { id, is_group, name, members:Set<userId>, history:Array }
 
-// Promise helpers for SQLite
-const run = (sql, params = []) =>
-  new Promise((resolve, reject) => {
-    db.run(sql, params, function (err) {
-      if (err) reject(err);
-      else resolve(this);
-    });
-  });
+// DMs
+function dmKey(a, b) {
+  const [x, y] = [Number(a), Number(b)].sort((m, n) => m - n);
+  return `dm:${x}-${y}`;
+}
+const dmIndex = new Map(); // dmKey -> roomId
 
-const get = (sql, params = []) =>
-  new Promise((resolve, reject) => {
-    db.get(sql, params, (err, row) => (err ? reject(err) : resolve(row)));
-  });
-
-const all = (sql, params = []) =>
-  new Promise((resolve, reject) => {
-    db.all(sql, params, (err, rows) => (err ? reject(err) : resolve(rows)));
-  });
-
-// Create SQLite tables if they don't exist
-await run(`
-CREATE TABLE IF NOT EXISTS chat_rooms (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  name TEXT,
-  is_group INTEGER DEFAULT 1,
-  created_by INTEGER,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-)`);
-
-await run(`
-CREATE TABLE IF NOT EXISTS chat_members (
-  room_id INTEGER,
-  user_id INTEGER,
-  PRIMARY KEY (room_id, user_id)
-)`);
-
-await run(`
-CREATE TABLE IF NOT EXISTS chat_messages (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  room_id INTEGER,
-  user_id INTEGER,
-  username TEXT,
-  body TEXT,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-)`);
-
-// --- Authentication Functions -----------------------------------------------
-async function validateAuthToken(token) {
-  if (!token) return null;
-  
-  try {
-    const connection = await mysql.createConnection(mysqlConfig);
-    
-    // Hash the token and check if it exists and is not expired
-    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
-    
-    const [rows] = await connection.execute(
-      `SELECT ct.user_id, u.username, u.full_name, u.is_admin
-       FROM chat_tokens ct 
-       JOIN users u ON ct.user_id = u.id 
-       WHERE ct.token_hash = ? AND ct.expires_at > NOW()`,
-      [tokenHash]
-    );
-    
-    await connection.end();
-    
-    if (rows.length === 0) return null;
-    
-    const user = rows[0];
-    return {
-      id: user.user_id,
-      username: user.username,
-      full_name: user.full_name,
-      is_admin: user.is_admin
-    };
-  } catch (error) {
-    console.error("Token validation error:", error.message);
-    return null;
-  }
+function ensureDM(u1, u2) {
+  const key = dmKey(u1, u2);
+  if (dmIndex.has(key)) return dmIndex.get(key);
+  const id = String(nextRoomId++);
+  rooms.set(id, { id, is_group: 0, name: null, members: new Set([+u1, +u2]), history: [] });
+  dmIndex.set(key, id);
+  return id;
 }
 
-async function verifyRoomMembership(userId, roomId) {
-  try {
-    const member = await get(
-      `SELECT 1 FROM chat_members WHERE room_id = ? AND user_id = ?`,
-      [roomId, userId]
-    );
-    return !!member;
-  } catch (error) {
-    console.error("Membership verification error:", error.message);
-    return false;
+function listRoomsFor(userId) {
+  const out = [];
+  for (const r of rooms.values()) {
+    if (r.members.has(+userId)) out.push({ id: r.id, is_group: r.is_group, name: r.name });
   }
+  return out;
 }
 
-// --- HTTP + Socket.IO -------------------------------------------------------
+function historyOf(roomId) {
+  const r = rooms.get(String(roomId));
+  return r ? r.history.slice(-200) : [];
+}
+
+// ---- HTTP + IO ----
 const httpServer = http.createServer((req, res) => {
-  if (req.url === "/healthz") {
-    res.writeHead(200, { "content-type": "text/plain" });
-    return res.end("ok");
-  }
-  res.writeHead(200, { "content-type": "text/plain" });
-  res.end("Socket.IO chat running");
+  res.writeHead(200, { "Content-Type": "text/plain" });
+  res.end("Socket.IO chat running\n");
 });
 
 const io = new Server(httpServer, {
-  path: "/socket.io",
-  transports: ["websocket", "polling"],
   cors: {
-    origin: (_origin, cb) => cb(null, true),
+    origin: (origin, cb) => cb(null, true), // allow all origins in Replit dev
+    methods: ["GET", "POST"],
     credentials: true
-  }
+  },
+  transports: ["websocket", "polling"],
+  allowEIO3: false
 });
 
-io.on("connection", async (socket) => {
-  const auth = socket.handshake.auth || {};
-  const chatToken = auth.chat_token;
-  
-  // Validate authentication token
-  const user = await validateAuthToken(chatToken);
-  if (!user) {
-    console.log("Invalid or missing chat token, disconnecting");
-    socket.emit("fatal", { error: "Authentication failed" });
-    socket.disconnect(true);
-    return;
-  }
-  
-  const userId = user.id;
-  const username = user.full_name || user.username;
-  
-  console.log(`User ${username} (${userId}) authenticated successfully`);
-  
-  // Send initial room list
-  sendRooms(userId, socket);
+// ---- Socket handlers ----
+io.on("connection", (socket) => {
+  console.log("[chat] client connected:", socket.id, "origin:", socket.handshake.headers.origin);
 
-  socket.on("rooms:refresh", () => sendRooms(userId, socket));
+  socket.on("auth", (payload = {}) => {
+    const userId = Number(payload.userId || 0);
+    const username = String(payload.username || "User");
+    if (!userId) {
+      socket.emit("fatal", { error: "Missing userId" });
+      return;
+    }
+    sockets.set(socket.id, { userId, username });
+    if (!users.has(userId)) users.set(userId, { username, sockets: new Set() });
+    users.get(userId).username = username;
+    users.get(userId).sockets.add(socket.id);
+    console.log("[chat] authed:", userId, username);
+    socket.emit("rooms:list", listRoomsFor(userId));
+  });
 
-  socket.on("room:join", async (roomId, ack) => {
-    try {
-      roomId = Number(roomId);
-      
-      // Verify user is a member of the room before allowing join
-      const isMember = await verifyRoomMembership(userId, roomId);
-      if (!isMember) {
-        console.log(`User ${userId} attempted to join room ${roomId} without membership`);
-        return ack?.({ error: "Access denied" });
-      }
-      
-      // Join socket.io room
-      socket.join(`room:${roomId}`);
-      
-      // Fetch and send message history
-      const history = await all(
-        `SELECT id, room_id, user_id, username, body, created_at
-         FROM chat_messages WHERE room_id = ? ORDER BY id ASC LIMIT 200`,
-        [roomId]
-      );
-      ack?.(history || []);
-    } catch (e) {
-      console.error("Room join error:", e.message);
-      ack?.({ error: "Join failed" });
+  socket.on("rooms:refresh", () => {
+    const meta = sockets.get(socket.id);
+    if (!meta) return socket.emit("fatal", { error: "Unauthenticated" });
+    socket.emit("rooms:list", listRoomsFor(meta.userId));
+  });
+
+  socket.on("dm:open", (targetUserId, cb) => {
+    const meta = sockets.get(socket.id);
+    if (!meta) return cb && cb({ ok: false, error: "Unauthenticated" });
+    const roomId = ensureDM(meta.userId, Number(targetUserId));
+    cb && cb({ ok: true, room_id: roomId });
+  });
+
+  socket.on("room:join", (roomId, cb) => {
+    const meta = sockets.get(socket.id);
+    if (!meta) return cb && cb([]);
+    const r = rooms.get(String(roomId));
+    if (!r || !r.members.has(meta.userId)) return cb && cb([]);
+    socket.join(String(roomId));
+    cb && cb(historyOf(roomId));
+  });
+
+  socket.on("room:create", (name, memberIds = [], cb) => {
+    const meta = sockets.get(socket.id);
+    if (!meta) return cb && cb({ ok: false, error: "Unauthenticated" });
+    const id = String(nextRoomId++);
+    const members = new Set([meta.userId, ...memberIds.map(Number)]);
+    rooms.set(id, { id, is_group: 1, name: String(name || `Room ${id}`), members, history: [] });
+    cb && cb({ ok: true, room_id: id });
+    // notify members to refresh room list
+    for (const uid of members) {
+      const u = users.get(uid);
+      if (u) for (const sid of u.sockets) io.to(sid).emit("rooms:list", listRoomsFor(uid));
     }
   });
 
-  socket.on("message:send", async (payload, ack) => {
-    try {
-      const roomId = Number(payload?.room_id);
-      const body = String(payload?.body || "").trim().slice(0, 5000);
-      if (!roomId || !body) return ack?.({ ok: false, error: "Invalid message" });
+  socket.on("message:send", (payload = {}, cb) => {
+    const meta = sockets.get(socket.id);
+    const { room_id, body } = payload || {};
+    if (!meta) return cb && cb({ ok: false, error: "Unauthenticated" });
+    const r = rooms.get(String(room_id));
+    if (!r || !r.members.has(meta.userId)) return cb && cb({ ok: false, error: "No access" });
 
-      // Verify membership before allowing message send
-      const isMember = await verifyRoomMembership(userId, roomId);
-      if (!isMember) {
-        console.log(`User ${userId} attempted to send message to room ${roomId} without membership`);
-        return ack?.({ ok: false, error: "Access denied" });
-      }
-
-      const rs = await run(
-        `INSERT INTO chat_messages (room_id, user_id, username, body)
-         VALUES (?, ?, ?, ?)`,
-        [roomId, userId, username, body]
-      );
-
-      const msg = await get(
-        `SELECT id, room_id, user_id, username, body, created_at
-           FROM chat_messages WHERE id = ?`,
-        [rs.lastID]
-      );
-
-      io.to(`room:${roomId}`).emit("message:new", msg);
-      ack?.({ ok: true, id: rs.lastID });
-    } catch (e) {
-      console.error("Message send error:", e.message);
-      ack?.({ ok: false, error: "Send failed" });
-    }
+    const msg = {
+      id: Date.now() + ":" + Math.random().toString(36).slice(2),
+      room_id: String(room_id),
+      user_id: meta.userId,
+      username: meta.username,
+      body: String(body || ""),
+      created_at: Date.now()
+    };
+    r.history.push(msg);
+    if (r.history.length > 500) r.history.shift();
+    io.to(String(room_id)).emit("message:new", msg);
+    cb && cb({ ok: true });
   });
 
-  socket.on("room:create", async (name, memberIds, ack) => {
-    try {
-      name = String(name || "").trim().slice(0, 120);
-      if (!name) return ack?.({ ok: false, error: "Group name required" });
-      
-      // Validate that all member IDs are valid users
-      const ids = Array.from(new Set([userId, ...(memberIds || [])]))
-        .map((x) => Number(x))
-        .filter(Boolean);
-
-      if (ids.length < 2) {
-        return ack?.({ ok: false, error: "At least one other member required" });
-      }
-
-      // Verify all member IDs exist in users table
-      try {
-        const connection = await mysql.createConnection(mysqlConfig);
-        const placeholders = ids.map(() => '?').join(',');
-        const [userRows] = await connection.execute(
-          `SELECT id FROM users WHERE id IN (${placeholders})`,
-          ids
-        );
-        await connection.end();
-        
-        if (userRows.length !== ids.length) {
-          return ack?.({ ok: false, error: "Invalid user selected" });
-        }
-      } catch (dbError) {
-        console.error("User validation error:", dbError.message);
-        return ack?.({ ok: false, error: "Validation failed" });
-      }
-
-      const ins = await run(
-        `INSERT INTO chat_rooms (name, is_group, created_by) VALUES (?, 1, ?)`,
-        [name, userId]
-      );
-      const roomId = ins.lastID;
-
-      const ps = ids.map((id) =>
-        run(`INSERT OR IGNORE INTO chat_members (room_id, user_id) VALUES (?,?)`, [
-          roomId,
-          id
-        ])
-      );
-      await Promise.all(ps);
-
-      sendRooms(userId, socket);
-      ack?.({ ok: true, room_id: roomId });
-    } catch (e) {
-      console.error("Room creation error:", e.message);
-      ack?.({ ok: false, error: "Creation failed" });
+  socket.on("disconnect", (reason) => {
+    const meta = sockets.get(socket.id);
+    if (meta) {
+      const u = users.get(meta.userId);
+      if (u) u.sockets.delete(socket.id);
+      sockets.delete(socket.id);
     }
-  });
-
-  socket.on("dm:open", async (otherUserId, ack) => {
-    try {
-      const otherId = Number(otherUserId);
-      if (!otherId || otherId === userId) return ack?.({ ok: false, error: "Invalid user" });
-
-      // Verify the other user exists
-      try {
-        const connection = await mysql.createConnection(mysqlConfig);
-        const [userRows] = await connection.execute(
-          `SELECT id FROM users WHERE id = ?`,
-          [otherId]
-        );
-        await connection.end();
-        
-        if (userRows.length === 0) {
-          return ack?.({ ok: false, error: "User not found" });
-        }
-      } catch (dbError) {
-        console.error("User verification error:", dbError.message);
-        return ack?.({ ok: false, error: "Verification failed" });
-      }
-
-      const a = Math.min(userId, otherId);
-      const b = Math.max(userId, otherId);
-
-      // Look for existing DM with exactly these two members
-      const existing = await get(
-        `SELECT r.id
-           FROM chat_rooms r
-           JOIN chat_members m1 ON m1.room_id = r.id AND m1.user_id = ?
-           JOIN chat_members m2 ON m2.room_id = r.id AND m2.user_id = ?
-          WHERE r.is_group = 0
-          LIMIT 1`,
-        [a, b]
-      );
-
-      if (existing?.id) {
-        sendRooms(userId, socket);
-        return ack?.({ ok: true, room_id: existing.id });
-      }
-
-      const ins = await run(
-        `INSERT INTO chat_rooms (name, is_group, created_by)
-         VALUES (?, 0, ?)`,
-        [`DM:${a}-${b}`, userId]
-      );
-      const roomId = ins.lastID;
-
-      await run(
-        `INSERT OR IGNORE INTO chat_members (room_id, user_id) VALUES (?,?)`,
-        [roomId, a]
-      );
-      await run(
-        `INSERT OR IGNORE INTO chat_members (room_id, user_id) VALUES (?,?)`,
-        [roomId, b]
-      );
-
-      sendRooms(userId, socket);
-      ack?.({ ok: true, room_id: roomId });
-    } catch (e) {
-      console.error("DM creation error:", e.message);
-      ack?.({ ok: false, error: "DM failed" });
-    }
+    console.log("[chat] disconnected:", socket.id, reason);
   });
 });
-
-async function sendRooms(userId, socket) {
-  try {
-    const rows = await all(
-      `SELECT r.id, r.name, r.is_group
-         FROM chat_rooms r
-         JOIN chat_members m ON m.room_id = r.id
-        WHERE m.user_id = ?
-        ORDER BY r.created_at DESC, r.id DESC`,
-      [userId]
-    );
-    socket.emit("rooms:list", rows || []);
-  } catch (error) {
-    console.error("Error sending rooms:", error.message);
-    socket.emit("rooms:list", []);
-  }
-}
 
 httpServer.listen(CHAT_PORT, "0.0.0.0", () => {
   console.log(`Secure Socket.IO chat server running on port ${CHAT_PORT}`);
