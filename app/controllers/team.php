@@ -13,6 +13,9 @@ class Team extends Controller
 
     /* GET /team */
     public function index() {
+        if (class_exists('AccessControl')) {
+            AccessControl::enforceAccess('team', 'index', 'Team Roster');
+        }
         $this->view('team/index');
     }
 
@@ -22,6 +25,14 @@ class Team extends Controller
             http_response_code(401);
             header('Content-Type: application/json; charset=utf-8');
             echo json_encode(['error'=>'Auth required']);
+            return;
+        }
+
+        // Centralized RBAC for Team controller (managers only)
+        if (class_exists('AccessControl') && !AccessControl::hasControllerAccess('team')) {
+            http_response_code(403);
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode(['error'=>'Access denied']);
             return;
         }
 

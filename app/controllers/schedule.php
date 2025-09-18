@@ -16,12 +16,18 @@ class Schedule extends Controller
     /** Admin/team schedule grid (existing page) */
     public function index() {
         if (empty($_SESSION['auth'])) { header('Location: /login'); exit; }
+        if (class_exists('AccessControl')) {
+            AccessControl::enforceAccess('schedule', 'index', 'Schedule');
+        }
         $this->view('schedule/index');
     }
 
     /** “My Shifts” page (personal view) */
     public function my() {
         if (empty($_SESSION['auth'])) { header('Location: /login'); exit; }
+        if (class_exists('AccessControl')) {
+            AccessControl::enforceAccess('schedule', 'my', 'My Shifts');
+        }
         $this->view('schedule/my');
     }
 

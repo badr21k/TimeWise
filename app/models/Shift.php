@@ -126,4 +126,65 @@ class Shift
         $stmt->execute($params);
         return $stmt->rowCount();
     }
+
+    /**
+     * Aggregate total hours per employee for a given week (Monday..Sunday)
+     * Returns: [ ['employee_id'=>.., 'employee_name'=>.., 'total_hours'=>float], ... ]
+     */
+    public function hoursForWeekGrouped(string $mondayYmd): array
+    {
+        $db = db_connect();
+        $monday = new DateTime($mondayYmd);
+        $sunday = clone $monday; $sunday->modify('+6 day');
+
+        $sql = "
+            SELECT 
+                e.id AS employee_id,
+                COALESCE(NULLIF(e.name,''), CONCAT('Employee #', e.id)) AS employee_name,
+                ROUND(SUM(TIMESTAMPDIFF(MINUTE, s.start_dt, s.end_dt)) / 60, 2) AS total_hours
+            FROM shifts s
+            JOIN employees e ON e.id = s.employee_id
+            WHERE DATE(s.start_dt) BETWEEN :monday AND :sunday
+              AND (e.start_date IS NULL OR DATE(s.start_dt) >= e.start_date)
+            GROUP BY e.id, e.name
+            ORDER BY employee_name ASC
+        ";
+        $stmt = $db->prepare($sql);
+        $stmt->execute([
+            ':monday' => $monday->format('Y-m-d'),
+            ':sunday' => $sunday->format('Y-m-d')
+        ]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Per-day hours for a specific employee within a week. Returns Mon..Sun rows present.
+     * Returns: [ ['date'=>Y-m-d, 'hours'=>float], ... ]
+     */
+    public function hoursPerDayForWeekEmployee(string $mondayYmd, int $employeeId): array
+    {
+        $db = db_connect();
+        $monday = new DateTime($mondayYmd);
+        $sunday = clone $monday; $sunday->modify('+6 day');
+
+        $sql = "
+            SELECT 
+                DATE(s.start_dt) AS date,
+                ROUND(SUM(TIMESTAMPDIFF(MINUTE, s.start_dt, s.end_dt)) / 60, 2) AS hours
+            FROM shifts s
+            JOIN employees e ON e.id = s.employee_id
+            WHERE s.employee_id = :emp
+              AND DATE(s.start_dt) BETWEEN :monday AND :sunday
+              AND (e.start_date IS NULL OR DATE(s.start_dt) >= e.start_date)
+            GROUP BY DATE(s.start_dt)
+            ORDER BY DATE(s.start_dt) ASC
+        ";
+        $stmt = $db->prepare($sql);
+        $stmt->execute([
+            ':emp' => $employeeId,
+            ':monday' => $monday->format('Y-m-d'),
+            ':sunday' => $sunday->format('Y-m-d')
+        ]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 }
