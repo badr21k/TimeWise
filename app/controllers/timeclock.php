@@ -11,6 +11,8 @@ class timeclock extends Controller
         $this->ensureTables();
     }
 
+    /* -------------------- Routes -------------------- */
+
     public function index() {
         if (class_exists('AccessControl')) {
             AccessControl::enforceAccess('timeclock', 'index', 'Time Clock');
@@ -20,45 +22,50 @@ class timeclock extends Controller
 
     public function api() {
         if (empty($_SESSION['auth'])) {
-            http_response_code(401);
-            header('Content-Type: application/json; charset=utf-8');
-            echo json_encode(['error'=>'Auth required']);
-            return;
+            return $this->jsonError('Auth required', 401);
         }
         if (class_exists('AccessControl') && !AccessControl::hasControllerAccess('timeclock')) {
-            http_response_code(403);
-            header('Content-Type: application/json; charset=utf-8');
-            echo json_encode(['error'=>'Access denied']);
-            return;
+            return $this->jsonError('Access denied', 403);
         }
 
-        header('Content-Type: application/json; charset=utf-8');
         $action = $_GET['a'] ?? '';
         try {
+            // read client time context (optional but fixes local-time issues)
+            [$tzName, $clientIso] = $this->readClientContext();
+
             switch ($action) {
                 case 'status':
-                    echo json_encode($this->status());
-                    break;
+                    return $this->jsonOk($this->status($tzName));
                 case 'clock.in':
-                    echo json_encode($this->clockIn());
-                    break;
+                    return $this->jsonOk($this->clockIn($tzName, $clientIso));
                 case 'break.start':
-                    echo json_encode($this->breakStart());
-                    break;
+                    return $this->jsonOk($this->breakStart($clientIso));
                 case 'break.end':
-                    echo json_encode($this->breakEnd());
-                    break;
+                    return $this->jsonOk($this->breakEnd($clientIso));
                 case 'clock.out':
                     $satisfaction = isset($_POST['satisfaction']) ? (int)$_POST['satisfaction'] : null;
-                    echo json_encode($this->clockOut($satisfaction));
-                    break;
+                    return $this->jsonOk($this->clockOut($clientIso, $satisfaction));
                 default:
-                    echo json_encode(['error'=>'Unknown action']);
+                    return $this->jsonError('Unknown action', 400);
             }
         } catch (Throwable $e) {
-            http_response_code(500);
-            echo json_encode(['error'=>$e->getMessage()]);
+            return $this->jsonError($e->getMessage(), 500);
         }
+    }
+
+    /* -------------------- Helpers -------------------- */
+
+    private function jsonOk($data) {
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode($data);
+        return;
+    }
+
+    private function jsonError($msg, $code = 400) {
+        http_response_code($code);
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode(['error' => $msg]);
+        return;
     }
 
     private function ensureTables(): void
@@ -95,7 +102,6 @@ class timeclock extends Controller
     private function currentUserId(): int { return (int)($_SESSION['id'] ?? 0); }
 
     private function resolveEmployeeForUser(): ?array {
-        // Prefer direct employees.user_id link
         try {
             $stmt = $this->db->prepare("SELECT id, start_date FROM employees WHERE user_id = :uid LIMIT 1");
             $stmt->execute([':uid' => $this->currentUserId()]);
@@ -104,11 +110,54 @@ class timeclock extends Controller
         } catch (Throwable $e) { return null; }
     }
 
-    private function today(): string { return date('Y-m-d'); }
+    /** Read tz context sent by the browser; defaults to UTC if missing */
+    private function readClientContext(): array {
+        $tzName   = $_POST['tz'] ?? $_GET['tz'] ?? 'UTC';
+        $clientIso = $_POST['client_time_iso'] ?? $_GET['client_time_iso'] ?? null;
+        // sanitize tz
+        try { new DateTimeZone($tzName); } catch (\Throwable $e) { $tzName = 'UTC'; }
+        return [$tzName, $clientIso];
+    }
 
+    /** Convert client ISO instant (UTC) to server UTC 'Y-m-d H:i:s' */
+    private function clientInstantToUtc(?string $clientIso): string {
+        try {
+            if ($clientIso) {
+                $dt = new DateTime($clientIso, new DateTimeZone('UTC')); // client_time_iso is UTC on frontend
+                return $dt->format('Y-m-d H:i:s');
+            }
+        } catch (\Throwable $e) {}
+        // fallback: server UTC now
+        $dt = new DateTime('now', new DateTimeZone('UTC'));
+        return $dt->format('Y-m-d H:i:s');
+    }
+
+    /** Given tz, return [startUtc, endUtc] for "today" in that tz */
+    private function todayBoundsUtc(string $tzName): array {
+        try { $tz = new DateTimeZone($tzName); } catch (\Throwable $e) { $tz = new DateTimeZone('UTC'); }
+        $startLocal = new DateTime('today 00:00:00', $tz);
+        $endLocal   = clone $startLocal; $endLocal->modify('+1 day');
+        $startLocal->setTimezone(new DateTimeZone('UTC'));
+        $endLocal->setTimezone(new DateTimeZone('UTC'));
+        return [$startLocal->format('Y-m-d H:i:s'), $endLocal->format('Y-m-d H:i:s')];
+    }
+
+    /** Derive a DATE string for entry_date based on the client's time and tz */
+    private function entryDateForClient(?string $clientIso, string $tzName): string {
+        try {
+            $tz = new DateTimeZone($tzName);
+            $dt = $clientIso ? new DateTime($clientIso, new DateTimeZone('UTC')) : new DateTime('now', new DateTimeZone('UTC'));
+            $dt->setTimezone($tz);
+            return $dt->format('Y-m-d');
+        } catch (\Throwable $e) {
+            return gmdate('Y-m-d');
+        }
+    }
+
+    /** Return the currently open entry (no clock_out), regardless of entry_date */
     private function openEntry(): ?array {
-        $stmt = $this->db->prepare("SELECT * FROM time_entries WHERE user_id = :u AND entry_date = :d AND clock_out IS NULL LIMIT 1");
-        $stmt->execute([':u'=>$this->currentUserId(), ':d'=>$this->today()]);
+        $stmt = $this->db->prepare("SELECT * FROM time_entries WHERE user_id = :u AND clock_out IS NULL ORDER BY clock_in DESC LIMIT 1");
+        $stmt->execute([':u'=>$this->currentUserId()]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         return $row ?: null;
     }
@@ -120,76 +169,139 @@ class timeclock extends Controller
         return $row ?: null;
     }
 
-    private function status(): array
+    /* -------------------- API Methods -------------------- */
+
+    /** STATUS: includes entries_today so the UI can render the list */
+    private function status(string $tzName): array
     {
         $entry = $this->openEntry();
-        if (!$entry) return ['clocked_in'=>false, 'on_break'=>false, 'entry'=>null];
-        $break = $this->hasActiveBreak((int)$entry['id']);
+        $onBreak = $entry ? (bool)$this->hasActiveBreak((int)$entry['id']) : false;
+
+        // window for "today" in the user's tz (converted to UTC for querying)
+        [$startUtc, $endUtc] = $this->todayBoundsUtc($tzName);
+
+        $stmt = $this->db->prepare("
+            SELECT id, clock_in, clock_out, total_break_minutes, satisfaction
+            FROM time_entries
+            WHERE user_id = :u AND clock_in >= :start AND clock_in < :end
+            ORDER BY clock_in ASC
+        ");
+        $stmt->execute([
+            ':u'     => $this->currentUserId(),
+            ':start' => $startUtc,
+            ':end'   => $endUtc,
+        ]);
+        $entries = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
         return [
-            'clocked_in' => true,
-            'on_break' => (bool)$break,
-            'entry' => [
+            'clocked_in' => (bool)$entry,
+            'on_break'   => $onBreak,
+            'entry'      => $entry ? [
                 'id' => (int)$entry['id'],
-                'clock_in' => $entry['clock_in'],
+                'clock_in' => $entry['clock_in'],                // UTC stored; frontend renders local
+                'clock_out'=> $entry['clock_out'],
                 'total_break_minutes' => (int)$entry['total_break_minutes'],
                 'satisfaction' => $entry['satisfaction'] !== null ? (int)$entry['satisfaction'] : null,
-            ]
+                // optional: you can compute scheduled/unscheduled if you add schedules table checks
+            ] : null,
+
+            // list for the "Today's Shifts" table
+            'entries_today' => array_map(function($r){
+                return [
+                    'id' => (int)$r['id'],
+                    'clock_in' => $r['clock_in'],
+                    'clock_out'=> $r['clock_out'],
+                    'total_break_minutes' => (int)$r['total_break_minutes'],
+                    'satisfaction' => $r['satisfaction'] !== null ? (int)$r['satisfaction'] : null,
+                    // 'scheduled' => null  // if you later mark it
+                ];
+            }, $entries),
         ];
     }
 
-    private function clockIn(): array
+    /** CLOCK IN: records UTC time using client instant; entry_date uses client's local date */
+    private function clockIn(string $tzName, ?string $clientIso): array
     {
         if ($this->openEntry()) throw new Exception('Already clocked in.');
+
         $emp = $this->resolveEmployeeForUser();
         $empId = $emp ? (int)$emp['id'] : null;
-        // Enforce start_date: cannot clock in before join date
+
+        // Enforce start_date: cannot clock in before join date (based on user's local date)
         if (!empty($emp['start_date'])) {
             $join = new DateTime($emp['start_date']);
-            $today = new DateTime($this->today());
-            if ($join > $today) throw new Exception('Your start date is in the future. Clock-in not allowed yet.');
+            $nowLocal = new DateTime($this->entryDateForClient($clientIso, $tzName)); // as date
+            if ($join > $nowLocal) throw new Exception('Your start date is in the future. Clock-in not allowed yet.');
         }
-        $stmt = $this->db->prepare("INSERT INTO time_entries (user_id, employee_id, entry_date, clock_in) VALUES (:u, :e, :d, NOW())");
-        $stmt->execute([':u'=>$this->currentUserId(), ':e'=>$empId, ':d'=>$this->today()]);
+
+        $clockInUtc = $this->clientInstantToUtc($clientIso);
+        $entryDate  = $this->entryDateForClient($clientIso, $tzName);
+
+        $stmt = $this->db->prepare("
+            INSERT INTO time_entries (user_id, employee_id, entry_date, clock_in, total_break_minutes, created_at, updated_at)
+            VALUES (:u, :e, :d, :cin, 0, UTC_TIMESTAMP(), UTC_TIMESTAMP())
+        ");
+        $stmt->execute([
+            ':u' => $this->currentUserId(),
+            ':e' => $empId,
+            ':d' => $entryDate,
+            ':cin' => $clockInUtc,
+        ]);
+
         return ['ok'=>true];
     }
 
-    private function breakStart(): array
+    private function breakStart(?string $clientIso): array
     {
         $entry = $this->openEntry();
         if (!$entry) throw new Exception('Not clocked in.');
         if ($this->hasActiveBreak((int)$entry['id'])) throw new Exception('Break already in progress.');
-        $stmt = $this->db->prepare("INSERT INTO time_entry_breaks (time_entry_id, break_start) VALUES (:id, NOW())");
-        $stmt->execute([':id'=>(int)$entry['id']]);
+
+        $startUtc = $this->clientInstantToUtc($clientIso);
+        $stmt = $this->db->prepare("INSERT INTO time_entry_breaks (time_entry_id, break_start, created_at) VALUES (:id, :bs, UTC_TIMESTAMP())");
+        $stmt->execute([':id'=>(int)$entry['id'], ':bs'=>$startUtc]);
+
         return ['ok'=>true];
     }
 
-    private function breakEnd(): array
+    private function breakEnd(?string $clientIso): array
     {
         $entry = $this->openEntry();
         if (!$entry) throw new Exception('Not clocked in.');
         $active = $this->hasActiveBreak((int)$entry['id']);
         if (!$active) throw new Exception('No active break.');
-        $this->db->prepare("UPDATE time_entry_breaks SET break_end = NOW() WHERE id = :id")
-                 ->execute([':id'=>(int)$active['id']]);
-        // Recompute total break minutes for entry
-        $stmt = $this->db->prepare("SELECT SUM(TIMESTAMPDIFF(MINUTE, break_start, COALESCE(break_end, NOW()))) FROM time_entry_breaks WHERE time_entry_id = :id");
+
+        $endUtc = $this->clientInstantToUtc($clientIso);
+        $this->db->prepare("UPDATE time_entry_breaks SET break_end = :be WHERE id = :id")
+                 ->execute([':be'=>$endUtc, ':id'=>(int)$active['id']]);
+
+        // Recompute total break minutes (use UTC math)
+        $stmt = $this->db->prepare("SELECT SUM(TIMESTAMPDIFF(MINUTE, break_start, COALESCE(break_end, UTC_TIMESTAMP()))) FROM time_entry_breaks WHERE time_entry_id = :id");
         $stmt->execute([':id'=>(int)$entry['id']]);
         $mins = (int)$stmt->fetchColumn();
-        $this->db->prepare("UPDATE time_entries SET total_break_minutes = :m WHERE id = :id")
+
+        $this->db->prepare("UPDATE time_entries SET total_break_minutes = :m, updated_at = UTC_TIMESTAMP() WHERE id = :id")
                  ->execute([':m'=>$mins, ':id'=>(int)$entry['id']]);
+
         return ['ok'=>true, 'total_break_minutes'=>$mins];
     }
 
-    private function clockOut(?int $satisfaction): array
+    private function clockOut(?string $clientIso, ?int $satisfaction): array
     {
         $entry = $this->openEntry();
         if (!$entry) throw new Exception('Not clocked in.');
         if ($this->hasActiveBreak((int)$entry['id'])) throw new Exception('End your break before clocking out.');
-        if ($satisfaction !== null) {
-            if ($satisfaction < 1 || $satisfaction > 5) throw new Exception('Satisfaction must be 1-5.');
+        if ($satisfaction !== null && ($satisfaction < 1 || $satisfaction > 5)) {
+            throw new Exception('Satisfaction must be 1-5.');
         }
-        $this->db->prepare("UPDATE time_entries SET clock_out = NOW(), satisfaction = COALESCE(:sat, satisfaction) WHERE id = :id")
-                 ->execute([':sat'=>$satisfaction, ':id'=>(int)$entry['id']]);
+
+        $clockOutUtc = $this->clientInstantToUtc($clientIso);
+        $this->db->prepare("
+            UPDATE time_entries
+            SET clock_out = :cout, satisfaction = COALESCE(:sat, satisfaction), updated_at = UTC_TIMESTAMP()
+            WHERE id = :id
+        ")->execute([':cout'=>$clockOutUtc, ':sat'=>$satisfaction, ':id'=>(int)$entry['id']]);
+
         return ['ok'=>true];
     }
 }
