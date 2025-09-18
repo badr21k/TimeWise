@@ -7,6 +7,7 @@ class Reports extends Controller {
         if (class_exists('AccessControl')) {
             AccessControl::enforceAccess('reports', 'index', 'Admin Reports Dashboard');
         }
+<<<<<<< HEAD
 
     /** Satisfaction per user (weekly average), with filters */
     public function satisfactionUsers() {
@@ -150,6 +151,8 @@ class Reports extends Controller {
             'series' => $seriesArr,
         ]);
     }
+=======
+>>>>>>> 8ac5f9fa4948633eb21ed4160ef3f416d72b517b
 
         try {
             $db = db_connect();

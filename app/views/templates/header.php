@@ -328,12 +328,20 @@ if (!isset($_SESSION['auth']) && !in_array($__path, $__PUBLIC, true)) {
             <?php endif; ?>
 
             <?php
+<<<<<<< HEAD
               $showSchedule    = class_exists('AccessControl') && AccessControl::hasAccess('schedule', 'navigation');
               $showMyShifts    = class_exists('AccessControl') && AccessControl::hasAccess('my_shifts', 'navigation');
               $showDepartments = class_exists('AccessControl') && AccessControl::hasAccess('departments_roles', 'navigation');
               $showTeamRoster  = class_exists('AccessControl') && AccessControl::hasAccess('team_roster', 'navigation');
               $showTimeClock   = class_exists('AccessControl') && AccessControl::hasAccess('time_clock', 'navigation');
               $showTeamMenu    = $showSchedule || $showMyShifts || $showDepartments || $showTeamRoster || $showTimeClock;
+=======
+              $showSchedule   = class_exists('AccessControl') && AccessControl::hasAccess('schedule', 'navigation');
+              $showMyShifts   = class_exists('AccessControl') && AccessControl::hasAccess('my_shifts', 'navigation');
+              $showDepartments= class_exists('AccessControl') && AccessControl::hasAccess('departments_roles', 'navigation');
+              $showTeamRoster = class_exists('AccessControl') && AccessControl::hasAccess('team_roster', 'navigation');
+              $showTeamMenu   = $showSchedule || $showMyShifts || $showDepartments || $showTeamRoster;
+>>>>>>> 8ac5f9fa4948633eb21ed4160ef3f416d72b517b
             ?>
             <?php if ($showTeamMenu): ?>
             <!-- Team & Schedule (desktop dropdown) -->
@@ -344,6 +352,7 @@ if (!isset($_SESSION['auth']) && !in_array($__path, $__PUBLIC, true)) {
                 <i class="fas fa-users me-1"></i> Team &amp; Schedule
               </a>
               <ul class="dropdown-menu" aria-labelledby="teamSchedDropdown">
+<<<<<<< HEAD
                 <?php if ($showTimeClock): ?>
                 <li>
                   <a class="dropdown-item <?= preg_match('#^/timeclock\b#', $path) ? 'active' : '' ?>" href="/timeclock">
@@ -351,6 +360,8 @@ if (!isset($_SESSION['auth']) && !in_array($__path, $__PUBLIC, true)) {
                   </a>
                 </li>
                 <?php endif; ?>
+=======
+>>>>>>> 8ac5f9fa4948633eb21ed4160ef3f416d72b517b
                 <?php if ($showSchedule): ?>
                 <li>
                   <a class="dropdown-item <?= $isSched ? 'active' : '' ?>" href="/schedule">
@@ -470,6 +481,7 @@ if (!isset($_SESSION['auth']) && !in_array($__path, $__PUBLIC, true)) {
             <?php endif; ?>
 
             <!-- Team & Schedule (mobile links) -->
+<<<<<<< HEAD
             <?php if ($showTimeClock): ?>
             <li class="nav-item">
               <a class="nav-link <?= preg_match('#^/timeclock\\b#', $path) ? 'active' : '' ?>" href="/timeclock">
@@ -477,6 +489,8 @@ if (!isset($_SESSION['auth']) && !in_array($__path, $__PUBLIC, true)) {
               </a>
             </li>
             <?php endif; ?>
+=======
+>>>>>>> 8ac5f9fa4948633eb21ed4160ef3f416d72b517b
             <?php if ($showSchedule): ?>
             <li class="nav-item">
               <a class="nav-link <?= $isSched ? 'active' : '' ?>" href="/schedule">

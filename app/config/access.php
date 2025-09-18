@@ -25,7 +25,10 @@ return [
         'departments_roles' => 'role:manager,admin', // Only managers and admins
         'schedule' => 'role:manager,admin',      // Only managers and admins
         'my_shifts' => 'auth',                   // Available to all logged-in users
+<<<<<<< HEAD
         'time_clock' => 'auth',                  // Time Clock available to all logged-in users
+=======
+>>>>>>> 8ac5f9fa4948633eb21ed4160ef3f416d72b517b
         
         // Reports dropdown - only visible to Food Pantry managers
         'reports' => 'role:manager,admin & dept:Food Pantry',
@@ -43,7 +46,10 @@ return [
         'notes' => 'auth',                       // Reminders available to all
         'chat' => 'auth',                        // Chat available to all
         'home' => 'auth',                        // Dashboard available to all
+<<<<<<< HEAD
         'timeclock' => 'auth',                   // Time Clock controller
+=======
+>>>>>>> 8ac5f9fa4948633eb21ed4160ef3f416d72b517b
     ],
     
     // Specific action-level rules (if needed for finer control)
@@ -52,6 +58,7 @@ return [
         'reports.allReminders' => 'role:manager,admin & dept:Food Pantry',
         'reports.userStats' => 'role:manager,admin & dept:Food Pantry',
         'reports.loginReport' => 'role:manager,admin & dept:Food Pantry',
+<<<<<<< HEAD
         'reports.hours' => 'role:manager,admin & dept:Food Pantry',
         'reports.hoursEmployee' => 'role:manager,admin & dept:Food Pantry',
         'team.roster' => 'role:manager,admin',
@@ -59,5 +66,10 @@ return [
         'schedule.index' => 'role:manager,admin',
         'timeclock.index' => 'auth',
         'timeclock.api' => 'auth',
+=======
+        'team.roster' => 'role:manager,admin',
+        'departments.index' => 'role:manager,admin',
+        'schedule.index' => 'role:manager,admin',
+>>>>>>> 8ac5f9fa4948633eb21ed4160ef3f416d72b517b
     ],
 ];
