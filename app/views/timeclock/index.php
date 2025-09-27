@@ -19,7 +19,13 @@
         <div class="tw-card__body">
           <div class="tc-clock mb-3">
             <div class="tc-clock__time" id="tcTime">--:--:--</div>
-            <div class="tc-clock__date" id="tcDate">Loading date…</div>
+            <div class="tc-clock__meta">
+              <div class="tc-clock__date" id="tcDate">Loading date…</div>
+              <div class="tc-clock__duration text-secondary" id="tcDuration" style="display:none;">00:00:00</div>
+            </div>
+            <span class="tc-clock__badge" id="tcBreakBadge" style="display:none;">
+              <i class="fas fa-coffee me-1"></i> On Break
+            </span>
           </div>
           <div id="statusDetail" class="text-secondary mb-3" style="min-height:1.25rem;">
             <small>Fetching your current shift state…</small>

@@ -44,7 +44,7 @@
                     Remember me
                   </label>
                 </div>
-                <a href="#" class="small" onclick="alert('Password reset flow is not set up yet. Please contact your admin.'); return false;">Forgot password?</a>
+                <a href="/password/forgot" class="small">Forgot password?</a>
               </div>
 
               <button type="submit" class="btn btn-gradient btn-lg w-100">

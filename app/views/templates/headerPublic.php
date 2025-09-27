@@ -16,9 +16,9 @@
             <meta name="apple-mobile-web-app-capable" content="yes">
             <meta name="mobile-web-app-capable" content="yes">
             <?php
-                // Load page-specific stylesheet for login
+                // Load page-specific stylesheet for auth pages
                 $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
-                if (strpos($currentPath, '/login') === 0) {
+                if (strpos($currentPath, '/login') === 0 || strpos($currentPath, '/password') === 0) {
                     echo "\n            <link href=\"/assets/css/auth.css\" rel=\"stylesheet\">\n";
                 }
             ?>

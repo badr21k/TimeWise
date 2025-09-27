@@ -23,6 +23,7 @@
     const satisfactionModal = $('satisfactionModal') ? new bootstrap.Modal($('satisfactionModal')) : null;
 
     let lastStatus = null;
+    let durationTimer = null;
 
     // Robust date parsing (copied)
     function parseDateSmart(input) {
@@ -63,6 +64,38 @@
     }
 
     function setDetail(html){ const el = $('statusDetail'); if (el) el.innerHTML = html; }
+
+    function setBreakBadge(on){
+      const badge = $('tcBreakBadge');
+      if (!badge) return;
+      badge.style.display = on ? 'inline-flex' : 'none';
+    }
+
+    function setDurationVisible(on){
+      const d = $('tcDuration');
+      if (!d) return;
+      d.style.display = on ? 'block' : 'none';
+    }
+
+    function fmtHMS(ms){
+      const s = Math.max(0, Math.floor(ms/1000));
+      const hh = String(Math.floor(s/3600)).padStart(2,'0');
+      const mm = String(Math.floor((s%3600)/60)).padStart(2,'0');
+      const ss = String(s%60).padStart(2,'0');
+      return `${hh}:${mm}:${ss}`;
+    }
+
+    function updateDurationLoop(){
+      if (!lastStatus || !lastStatus.clocked_in || !lastStatus.entry) { setDurationVisible(false); return; }
+      const dEl = $('tcDuration'); if (!dEl) return;
+      setDurationVisible(true);
+      const start = parseDateSmart(lastStatus.entry.clock_in);
+      const breakMs = (Number(lastStatus.entry.total_break_minutes||0) * 60000);
+      if (!start) { dEl.textContent = '00:00:00'; return; }
+      const now = Date.now();
+      const elapsed = Math.max(0, now - start.getTime() - breakMs);
+      dEl.textContent = fmtHMS(elapsed);
+    }
 
     function lockControls(locked=true){
       ['btnClockIn','btnBreakStart','btnBreakEnd','btnClockOut','btnSubmit','btnSkip'].forEach(id=>{
@@ -182,6 +215,7 @@
       if (has('btnBreakStart'))$('btnBreakStart').disabled= !clockedIn || onBreak;
       if (has('btnBreakEnd'))  $('btnBreakEnd').disabled  = !clockedIn || !onBreak;
       if (has('btnClockOut'))  $('btnClockOut').disabled  = !clockedIn || onBreak;
+      setBreakBadge(onBreak);
     }
 
     async function refreshStatus(){
@@ -205,9 +239,19 @@
         fillSchedulePanels(s);
         renderTodayList(s);
         updateButtons(s);
+        // Restart duration timer
+        if (durationTimer) { clearInterval(durationTimer); durationTimer = null; }
+        if (s.clocked_in) {
+          updateDurationLoop();
+          durationTimer = setInterval(updateDurationLoop, 1000);
+          setBreakBadge(s.on_break);
+        } else {
+          setDurationVisible(false);
+          setBreakBadge(false);
+        }
       } catch(e){
         setPill('Status Error', 'danger');
-        setDetail(`<small class="text-danger">${e.message || 'Failed to load status'}</small>`);
+        setDetail(`<small class=\"text-danger\">${e.message || 'Failed to load status'}</small>`);
       }
     }
 
@@ -228,7 +272,7 @@
         busy(false);
       }
     }
-
+{{ ... }}
     function doClockIn(){
       const unsched = !(lastStatus && (lastStatus.scheduled_today === true || (lastStatus.today && lastStatus.today.scheduled)));
       const payload = { ...(unsched ? { unscheduled: 1 } : {}) };
