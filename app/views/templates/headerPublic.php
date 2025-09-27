@@ -10,7 +10,7 @@
             <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
             <link href="/assets/css/site.css" rel="stylesheet">
             <link rel="icon" href="/favicon.png">
-            <title>ReminderApp - Stay Organized</title>
+            <title>TimeWise - Stay Organized</title>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1">
             <meta name="apple-mobile-web-app-capable" content="yes">
@@ -31,7 +31,7 @@
                 <div class="container">
                     <a class="navbar-brand d-flex align-items-center" href="/">
                         <i class="fas fa-clipboard-list me-2 fa-lg"></i>
-                        <span>ReminderApp</span>
+                        <span>TimeWise</span>
                     </a>
 
                     <!-- Center Navigation -->

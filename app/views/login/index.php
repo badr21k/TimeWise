@@ -25,7 +25,7 @@
               <div class="mb-3 position-relative">
                 <i class="fas fa-user input-icon"></i>
                 <label for="username" class="form-label">Username</label>
-                <input type="text" class="form-control ps-40" id="username" name="username" autocomplete="username" required aria-required="true" placeholder="Your username">
+                <input type="text" class="form-control ps-40" id="username" name="username" autocomplete="username" required aria-required="true" placeholder="Your username" value="<?= isset($_COOKIE['remember_username']) ? htmlspecialchars($_COOKIE['remember_username']) : '' ?>">
               </div>
 
               <div class="mb-3 position-relative">
@@ -39,12 +39,12 @@
 
               <div class="d-flex justify-content-between align-items-center mb-4 helper-links">
                 <div class="form-check">
-                  <input class="form-check-input" type="checkbox" value="1" id="remember" name="remember">
+                  <input class="form-check-input" type="checkbox" value="1" id="remember" name="remember" <?= isset($_COOKIE['remember_username']) ? 'checked' : '' ?> >
                   <label class="form-check-label" for="remember">
                     Remember me
                   </label>
                 </div>
-                <a href="#" class="small">Forgot password?</a>
+                <a href="#" class="small" onclick="alert('Password reset flow is not set up yet. Please contact your admin.'); return false;">Forgot password?</a>
               </div>
 
               <button type="submit" class="btn btn-gradient btn-lg w-100">

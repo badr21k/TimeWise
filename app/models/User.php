@@ -74,6 +74,25 @@ class User {
 
             $_SESSION['toast'] = ['type'=>'success','title'=>'Welcome Back!','message'=>'You have successfully logged in.'];
 
+            // Simple "remember me" (remember username only)
+            $remember = isset($_POST['remember']) && $_POST['remember'] ? true : false;
+            if ($remember) {
+                // 30 days
+                setcookie('remember_username', $username, [
+                    'expires' => time() + (60*60*24*30),
+                    'path' => '/',
+                    'secure' => isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on',
+                    'httponly' => false,
+                    'samesite' => 'Lax',
+                ]);
+            } else {
+                // Clear cookie if previously set
+                setcookie('remember_username', '', [
+                    'expires' => time() - 3600,
+                    'path' => '/',
+                ]);
+            }
+
             // Intended URL support
             if (!empty($_SESSION['intended_url'])) {
                 $intendedUrl = $_SESSION['intended_url'];
