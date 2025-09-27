@@ -1,0 +1,87 @@
+/* Global site styles extracted from footer */
+html, body {
+  height: 100%;
+  margin: 0;
+}
+body {
+  display: flex;
+  flex-direction: column;
+}
+main {
+  flex: 1 0 auto;
+}
+footer {
+  flex-shrink: 0;
+}
+
+/* Footer theme */
+footer {
+  background: #f8f9fa;
+  color: #09194D;
+}
+footer h5,
+footer h6 {
+  color: #09194D;
+}
+.footer-link {
+  color: #6c757d;
+  text-decoration: none;
+  transition: color .3s ease, transform .3s ease;
+}
+.footer-link:hover {
+  color: #09194D;
+  transform: translateX(4px);
+}
+.social-icons {
+  font-size: 1.2rem;
+  color: #6c757d;
+  transition: color .3s ease, transform .3s ease;
+}
+.social-icons:hover {
+  color: #09194D;
+  transform: translateY(-2px);
+}
+footer hr {
+  border-color: #dee2e6;
+}
+
+/* Navbar theme (moved from headerPublic.php) */
+.navbar.bg-gradient {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+.navbar-brand {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+.navbar-center {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+.navbar-nav .nav-link {
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  transition: all 0.3s ease;
+}
+.navbar-nav .nav-link:hover {
+  transform: translateY(-2px);
+}
+.btn-gradient {
+  background: linear-gradient(45deg, #007bff, #6610f2);
+  border: none;
+  color: white;
+  transition: all 0.3s ease;
+}
+.btn-gradient:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+  color: white;
+}
+
+/* Toast container positioning */
+.toast-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1055;
+}

@@ -1,4 +1,4 @@
-        <?php
+<?php
         if (isset($_SESSION['auth']) == 1) {
             header('Location: /home');
         }
@@ -8,6 +8,7 @@
         <head>
             <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
             <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+            <link href="/assets/css/site.css" rel="stylesheet">
             <link rel="icon" href="/favicon.png">
             <title>ReminderApp - Stay Organized</title>
             <meta charset="UTF-8">
@@ -18,51 +19,15 @@
                 // Load page-specific stylesheet for login
                 $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
                 if (strpos($currentPath, '/login') === 0) {
-                    echo '\n            <link href="/assets/css/auth.css" rel="stylesheet">\n';
+                    echo "\n            <link href=\"/assets/css/auth.css\" rel=\"stylesheet\">\n";
                 }
             ?>
-            <style>
-                .navbar-brand {
-                    font-size: 1.5rem;
-                    font-weight: 700;
-                }
-                .navbar-center {
-                    position: absolute;
-                    left: 50%;
-                    transform: translateX(-50%);
-                }
-                .toast-container {
-                    position: fixed;
-                    top: 20px;
-                    right: 20px;
-                    z-index: 1055;
-                }
-                .navbar-nav .nav-link {
-                    font-weight: 500;
-                    padding: 0.5rem 1rem;
-                    transition: all 0.3s ease;
-                }
-                .navbar-nav .nav-link:hover {
-                    transform: translateY(-2px);
-                }
-                .btn-gradient {
-                    background: linear-gradient(45deg, #007bff, #6610f2);
-                    border: none;
-                    color: white;
-                    transition: all 0.3s ease;
-                }
-                .btn-gradient:hover {
-                    transform: translateY(-2px);
-                    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-                    color: white;
-                }
-            </style>
         </head>
         <body>
             <!-- Toast Container -->
             <div class="toast-container" id="toastContainer"></div>
 
-            <nav class="navbar navbar-expand-lg navbar-dark bg-gradient" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+            <nav class="navbar navbar-expand-lg navbar-dark bg-gradient">
                 <div class="container">
                     <a class="navbar-brand d-flex align-items-center" href="/">
                         <i class="fas fa-clipboard-list me-2 fa-lg"></i>
