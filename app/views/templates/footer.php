@@ -76,6 +76,10 @@
       if (strpos($currentPath, '/login') === 0) {
           echo "\n    <script src=\"/assets/js/auth.js\"></script>\n";
       }
+      // Load page-specific script for time clock
+      if (strpos($currentPath, '/timeclock') === 0) {
+          echo "\n    <script src=\"/assets/js/timeclock.js\"></script>\n";
+      }
     ?>
     <?php if (isset($_SESSION['toast'])): ?>
       <script>

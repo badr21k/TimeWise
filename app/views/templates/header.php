@@ -28,6 +28,13 @@ if (!isset($_SESSION['auth']) && !in_array($__path, $__PUBLIC, true)) {
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
+    <?php
+      // Load page-specific stylesheet for Time Clock
+      $___path_for_css = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
+      if (strpos($___path_for_css, '/timeclock') === 0) {
+        echo "\n    <link href=\"/assets/css/timeclock.css\" rel=\"stylesheet\">\n";
+      }
+    ?>
     <style>
       :root {
         --primary: #09194D;
