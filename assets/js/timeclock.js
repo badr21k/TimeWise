@@ -12,6 +12,15 @@
     if (dateEl) dateEl.textContent = now.toLocaleDateString(undefined, {weekday:'short', year:'numeric', month:'short', day:'numeric'});
   }
 
+  function pad2(n){ return String(n).padStart(2,'0'); }
+  function fmtDuration(ms){
+    if (ms < 0) ms = 0;
+    const h = Math.floor(ms/3600000);
+    const m = Math.floor((ms%3600000)/60000);
+    const s = Math.floor((ms%60000)/1000);
+    return `${pad2(h)}:${pad2(m)}:${pad2(s)}`;
+  }
+
   document.addEventListener('DOMContentLoaded', function(){
     // Start live clock interval if present
     updateLiveClock();
@@ -23,6 +32,7 @@
     const satisfactionModal = $('satisfactionModal') ? new bootstrap.Modal($('satisfactionModal')) : null;
 
     let lastStatus = null;
+    let durationTimer = null;
 
     // Robust date parsing (copied)
     function parseDateSmart(input) {
@@ -184,6 +194,32 @@
       if (has('btnClockOut'))  $('btnClockOut').disabled  = !clockedIn || onBreak;
     }
 
+    function refreshDurationTicker(){
+      const durEl = $('tcDuration');
+      const breakBadge = $('tcBreakBadge');
+      if (!durEl) return;
+      if (!lastStatus || !lastStatus.entry || !lastStatus.entry.clock_in){
+        durEl.style.display = 'none';
+        if (breakBadge) breakBadge.style.display = 'none';
+        if (durationTimer) { clearInterval(durationTimer); durationTimer = null; }
+        return;
+      }
+      const cin = lastStatus.entry.clock_in;
+      const onBreak = !!lastStatus.on_break;
+      durEl.style.display = '';
+      if (breakBadge) breakBadge.style.display = onBreak ? '' : 'none';
+
+      function tick(){
+        const now = Date.now();
+        const start = (new Date(cin)).getTime();
+        const ms = now - start - ((lastStatus.entry.total_break_minutes || 0) * 60000);
+        durEl.textContent = `⏱ ${fmtDuration(ms)}`;
+      }
+      tick();
+      if (durationTimer) clearInterval(durationTimer);
+      durationTimer = setInterval(tick, 1000);
+    }
+
     async function refreshStatus(){
       try{
         const s = await api('status');
@@ -205,6 +241,7 @@
         fillSchedulePanels(s);
         renderTodayList(s);
         updateButtons(s);
+        refreshDurationTicker();
       } catch(e){
         setPill('Status Error', 'danger');
         setDetail(`<small class="text-danger">${e.message || 'Failed to load status'}</small>`);

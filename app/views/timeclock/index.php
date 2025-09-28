@@ -20,6 +20,8 @@
           <div class="tc-clock mb-3">
             <div class="tc-clock__time" id="tcTime">--:--:--</div>
             <div class="tc-clock__date" id="tcDate">Loading date…</div>
+            <span class="tc-clock__duration" id="tcDuration" style="display:none">⏱ 00:00:00</span>
+            <span class="tc-break-badge" id="tcBreakBadge" style="display:none"><i class="fas fa-coffee"></i> On Break</span>
           </div>
           <div id="statusDetail" class="text-secondary mb-3" style="min-height:1.25rem;">
             <small>Fetching your current shift state…</small>

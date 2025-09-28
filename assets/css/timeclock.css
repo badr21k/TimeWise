@@ -48,6 +48,48 @@
 .tc-clock__time { font-variant-numeric: tabular-nums; font-weight: 800; font-size: 2rem; letter-spacing: 1px; }
 .tc-clock__date { color:#6b7280; font-weight:600; }
 
+/* Running duration */
+.tc-clock__duration {
+  margin-left: .5rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  color: #0f766e; /* teal-700 */
+  background: #ecfdf5; /* teal-50 */
+  border: 1px solid #a7f3d0; /* teal-200 */
+  border-radius: 999px;
+  padding: .25rem .6rem;
+}
+
+/* Break badge */
+.tc-break-badge {
+  margin-left: .5rem;
+  display: inline-flex; align-items: center; gap: .35rem;
+  font-weight: 700; font-size: .8rem;
+  color: #92400e; /* amber-800 */
+  background: #fef3c7; /* amber-100 */
+  border: 1px solid #fde68a; /* amber-200 */
+  border-radius: 999px; padding: .25rem .6rem;
+}
+.tc-break-badge i { color: #d97706; }
+
 @media (min-width: 992px) {
   .tc-clock__time { font-size: 2.4rem; }
+}
+
+/* Mobile tweaks */
+@media (max-width: 576px) {
+  .tw-card__body { padding: 16px; }
+  .tc-clock { padding: 12px; gap: .5rem; }
+  .tc-clock__time { font-size: 1.6rem; }
+  .tc-clock__date { font-size: .85rem; }
+}
+
+/* Dark mode (system) */
+@media (prefers-color-scheme: dark) {
+  .tw-card__header { background: linear-gradient(180deg, #0b1020, #0f1426); border-bottom-color: #22283a; }
+  .tw-mini { border-color: #22283a; }
+  .tc-clock { background: linear-gradient(180deg, #0b1020, #0f1426); border-color: #22283a; }
+  .tc-clock__date { color: #cbd5e1; }
+  .tc-clock__duration { color: #99f6e4; background: rgba(15,118,110,.15); border-color: rgba(45,212,191,.35); }
+  .tc-break-badge { color: #f59e0b; background: rgba(245,158,11,.12); border-color: rgba(245,158,11,.35); }
 }
