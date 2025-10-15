@@ -1331,34 +1331,36 @@ document.addEventListener('DOMContentLoaded', function() {
         if (todayBadgeEl) {
           todayBadgeEl.style.display = state.todaySchedule ? 'none' : 'inline-block';
         }
-
-      // Update shift status badge
-      const statusBadge = $('#shiftStatusBadge');
-      
-      if (statusBadge) {
-        const gate = canClockInNow(state.todaySchedule);
-
-        if (state.status === 'in' || state.status === 'break') {
-          statusBadge.className = 'shift-status shift-status--ontime';
-          statusBadge.innerHTML = '<i class="fas fa-play-circle"></i> In Progress';
-          statusBadge.style.display = 'inline-flex';
-        } else if (gate.allowed && !gate.unscheduled) {
-          if (gate.late) {
-            statusBadge.className = 'shift-status shift-status--late';
-            statusBadge.innerHTML = '<i class="fas fa-clock"></i> Late Clock-In';
-            statusBadge.style.display = 'inline-flex';
-          } else if (gate.onTime) {
-            statusBadge.className = 'shift-status shift-status--ontime';
-            statusBadge.innerHTML = '<i class="fas fa-check-circle"></i> On Time';
-            statusBadge.style.display = 'inline-flex';
-          }
-        } else {
-          statusBadge.style.display = 'none';
-        }
       }
-
-      updateShiftProgress();
     }
+
+    // Update shift status badge (independent of todayCard)
+    const statusBadge = $('#shiftStatusBadge');
+    
+    if (statusBadge) {
+      const gate = canClockInNow(state.todaySchedule);
+
+      if (state.status === 'in' || state.status === 'break') {
+        statusBadge.className = 'shift-status shift-status--ontime';
+        statusBadge.innerHTML = '<i class="fas fa-play-circle"></i> In Progress';
+        statusBadge.style.display = 'inline-flex';
+      } else if (gate.allowed && !gate.unscheduled) {
+        if (gate.late) {
+          statusBadge.className = 'shift-status shift-status--late';
+          statusBadge.innerHTML = '<i class="fas fa-clock"></i> Late Clock-In';
+          statusBadge.style.display = 'inline-flex';
+        } else if (gate.onTime) {
+          statusBadge.className = 'shift-status shift-status--ontime';
+          statusBadge.innerHTML = '<i class="fas fa-check-circle"></i> On Time';
+          statusBadge.style.display = 'inline-flex';
+        }
+      } else {
+        statusBadge.style.display = 'none';
+      }
+    }
+
+    // Update shift progress (independent of todayCard and statusBadge)
+    updateShiftProgress();
 
     // Update next shift info
     const nextShiftEl = $('#nextShift');
