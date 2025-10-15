@@ -1130,12 +1130,13 @@ body {
   let state = {
     status:'loading',
     clockIn:null,
-    breakStart:null,
+    breakStart:null, // Will be set to current time when we detect break status
     breakSeconds:0,
     today:[],
     todaySchedule:null,
     nextSchedule:null,
-    breakTimer: null
+    breakTimer: null,
+    lastBreakCheck: null // Track when we last checked break status
   };
 
   const ms = (m)=>m*60*1000;
@@ -1388,8 +1389,12 @@ body {
     }
 
     if(state.status==='in'){ 
-      btnIn.disabled=true; 
-      btnOut.disabled=false; 
+      btnIn.disabled=true;
+      btnIn.title = 'Already clocked in';
+      btnIn.innerHTML = '<i class="fas fa-play"></i> Clock In';
+      btnIn.className = 'btn btn-success';
+      btnOut.disabled=false;
+      btnOut.title = 'Clock out and end your shift';
       bS.disabled=false; 
       bE.disabled=true; 
       $('#clockHint').style.display='none';
@@ -1398,7 +1403,8 @@ body {
 
     if(state.status==='break'){ 
       btnIn.disabled=true; 
-      btnOut.disabled=false; 
+      btnOut.disabled=true; // Disable clock out while on break
+      btnOut.title = 'End your break before clocking out';
       bS.disabled=true; 
       bE.disabled=false; 
       $('#clockHint').style.display='none';
@@ -1444,26 +1450,127 @@ body {
     $('#todayTotalHours').textContent=(totalSec/3600).toFixed(2);
   }
 
-  async function api(fn, body={}){
-    const url='/timeclock/api'+(fn==='state'?`?fn=state&_=${Date.now()}`:'');
-    const opt= fn==='state'
-      ? {method:'GET',headers:{'Accept':'application/json'}}
-      : {method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify({fn,...body})};
-    const res=await fetch(url,opt); 
-    if(!res.ok) throw new Error('Request failed'); 
+  // Helper to get current timezone name
+  function getTimezoneName() {
+    try {
+      return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+    } catch {
+      return 'UTC';
+    }
+  }
+
+  // Helper to get client time in ISO format (UTC)
+  function getClientTimeISO() {
+    return new Date().toISOString();
+  }
+
+  async function api(action, extraData={}){
+    const url = `/timeclock/api?a=${action}&_=${Date.now()}`;
+    
+    // Prepare form data with timezone context
+    const formData = new FormData();
+    formData.append('tz', getTimezoneName());
+    formData.append('client_time_iso', getClientTimeISO());
+    
+    // Add any extra data (like satisfaction)
+    Object.keys(extraData).forEach(key => {
+      formData.append(key, extraData[key]);
+    });
+
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {'Accept': 'application/json'},
+      body: formData
+    });
+    
+    if(!res.ok) {
+      const text = await res.text();
+      try {
+        const json = JSON.parse(text);
+        throw new Error(json.error || 'Request failed');
+      } catch {
+        throw new Error('Request failed');
+      }
+    }
     return res.json();
   }
 
   async function loadState(){
     try{
-      const r=await api('state');
-      state.status       = r.status||'out';
-      state.clockIn      = r.clockInAt||null;
-      state.breakStart   = r.breakStartAt||null;
-      state.breakSeconds = r.breakSeconds||0;
-      state.today        = Array.isArray(r.today)?r.today:[];
-      state.todaySchedule= r.todaySchedule||null;
-      state.nextSchedule = r.nextSchedule||null;
+      const r = await api('status');
+      
+      // Map backend response to frontend state
+      // Backend returns: clocked_in, on_break, entry, entries_today, today_schedule, next_schedule
+      const prevStatus = state.status;
+      
+      if (r.clocked_in && r.on_break) {
+        state.status = 'break';
+        // If we just entered break state, record the start time
+        if (prevStatus !== 'break') {
+          state.breakStart = new Date().toISOString();
+        }
+      } else if (r.clocked_in) {
+        state.status = 'in';
+        state.breakStart = null; // Clear break start when not on break
+      } else {
+        state.status = 'out';
+        state.breakStart = null;
+      }
+      
+      state.clockIn = r.entry?.clock_in || null;
+      state.breakSeconds = r.entry?.total_break_minutes ? r.entry.total_break_minutes * 60 : 0;
+      
+      // Store schedule information
+      state.todaySchedule = r.today_schedule || null;
+      state.nextSchedule = r.next_schedule || null;
+      
+      // Process today's entries for the table
+      state.today = (r.entries_today || []).map(entry => {
+        const clockIn = entry.clock_in ? new Date(entry.clock_in + 'Z') : null;
+        const clockOut = entry.clock_out ? new Date(entry.clock_out + 'Z') : null;
+        const breakMins = entry.total_break_minutes || 0;
+        
+        let hours = '—';
+        let seconds = 0;
+        if (clockIn && clockOut) {
+          seconds = Math.floor((clockOut - clockIn) / 1000) - (breakMins * 60);
+          hours = (seconds / 3600).toFixed(2);
+        } else if (clockIn && !clockOut) {
+          // Still clocked in
+          const now = new Date();
+          seconds = Math.floor((now - clockIn) / 1000) - (breakMins * 60);
+          hours = (seconds / 3600).toFixed(2);
+        }
+        
+        // Determine if this entry was on-time or late based on schedule
+        let late = false;
+        let ontime = false;
+        if (state.todaySchedule && clockIn) {
+          const schedStart = parseISO(parseMaybe(state.todaySchedule, 'startAt', null));
+          if (schedStart) {
+            const gracePeriod = ms(GRACE_MINUTES);
+            const diff = clockIn - schedStart;
+            if (diff > gracePeriod) {
+              late = true;
+            } else if (diff >= -gracePeriod && diff <= gracePeriod) {
+              ontime = true;
+            }
+          }
+        }
+        
+        return {
+          in: clockIn ? tf.format(clockIn) : '—',
+          out: clockOut ? tf.format(clockOut) : '—',
+          break: breakMins > 0 ? `${breakMins} min` : '—',
+          type: state.todaySchedule ? 'Scheduled' : 'Unscheduled',
+          hours,
+          seconds,
+          satisfaction: entry.satisfaction,
+          late,
+          ontime
+        };
+      });
+      
       updateUI();
     }catch(e){
       console.error('Failed to load state:', e);
@@ -1473,20 +1580,20 @@ body {
     }
   }
 
-  async function doAction(kind,label){
-    setBusy(true,label+'…');
+  async function doAction(actionName, label, extraData={}){
+    setBusy(true, label+'…');
     try{
-      const r=await api(kind);
-      if(r && r.ok!==false){ 
+      const r = await api(actionName, extraData);
+      if(r && r.ok !== false){ 
         await loadState(); 
-        toast(r.message||'Action completed successfully'); 
+        toast(r.message || 'Action completed successfully'); 
       }
       else{ 
-        toast((r&&r.error)||'Action failed', 'error'); 
+        toast((r && r.error) || 'Action failed', 'error'); 
       }
     }catch(e){ 
       console.error('Action failed:', e);
-      toast('Network error - please try again', 'error'); 
+      toast(e.message || 'Network error - please try again', 'error'); 
     }
     finally{ setBusy(false); }
   }
@@ -1498,24 +1605,19 @@ body {
       toast(`Cannot clock in: ${gate.reason}`, 'warning');
       return;
     }
-    await doAction('clockIn','Clocking in');
+    await doAction('clock.in', 'Clocking in');
   });
 
   $('#btnClockOut').addEventListener('click', async ()=>{
     const modal = new bootstrap.Modal($('#satisfactionModal'));
     const submitFeedback = async (rating)=>{
       if (rating) {
-        setBusy(true, 'Submitting feedback…');
-        try {
-          await api('satisfaction', { rating });
-          toast('Thank you for your feedback!');
-        } catch {
-          toast('Feedback submission failed', 'error');
-        } finally {
-          setBusy(false);
-        }
+        // Clock out with satisfaction rating
+        await doAction('clock.out', 'Clocking out', { satisfaction: rating });
+      } else {
+        // Clock out without rating
+        await doAction('clock.out', 'Clocking out');
       }
-      await doAction('clockOut','Clocking out');
     };
 
     $('#btnSubmit').onclick = ()=> {
@@ -1536,8 +1638,8 @@ body {
     modal.show();
   });
 
-  $('#btnBreakStart').addEventListener('click', ()=> doAction('breakStart','Starting break'));
-  $('#btnBreakEnd').addEventListener('click', ()=> doAction('breakEnd','Ending break'));
+  $('#btnBreakStart').addEventListener('click', ()=> doAction('break.start', 'Starting break'));
+  $('#btnBreakEnd').addEventListener('click', ()=> doAction('break.end', 'Ending break'));
 
   // Initialize and start timers
   setInterval(() => {
