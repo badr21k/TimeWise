@@ -1320,41 +1320,41 @@ document.addEventListener('DOMContentLoaded', function() {
     const todayShiftEl = $('#todayShift');
     const todayBadgeEl = $('#todayBadge');
     
-    if (!todayCard) return; // Guard clause
-    
-    if (shouldHideTodaysShiftCard()) {
-      todayCard.style.display = 'none';
-    } else {
-      todayCard.style.display = '';
-      if (todayShiftEl) {
-        todayShiftEl.textContent = formatTimeRangeOrDash(state.todaySchedule);
-      }
-      if (todayBadgeEl) {
-        todayBadgeEl.style.display = state.todaySchedule ? 'none' : 'inline-block';
-      }
+    if (todayCard) {
+      if (shouldHideTodaysShiftCard()) {
+        todayCard.style.display = 'none';
+      } else {
+        todayCard.style.display = '';
+        if (todayShiftEl) {
+          todayShiftEl.textContent = formatTimeRangeOrDash(state.todaySchedule);
+        }
+        if (todayBadgeEl) {
+          todayBadgeEl.style.display = state.todaySchedule ? 'none' : 'inline-block';
+        }
 
       // Update shift status badge
       const statusBadge = $('#shiftStatusBadge');
-      if (!statusBadge) return; // Guard clause
       
-      const gate = canClockInNow(state.todaySchedule);
+      if (statusBadge) {
+        const gate = canClockInNow(state.todaySchedule);
 
-      if (state.status === 'in' || state.status === 'break') {
-        statusBadge.className = 'shift-status shift-status--ontime';
-        statusBadge.innerHTML = '<i class="fas fa-play-circle"></i> In Progress';
-        statusBadge.style.display = 'inline-flex';
-      } else if (gate.allowed && !gate.unscheduled) {
-        if (gate.late) {
-          statusBadge.className = 'shift-status shift-status--late';
-          statusBadge.innerHTML = '<i class="fas fa-clock"></i> Late Clock-In';
-          statusBadge.style.display = 'inline-flex';
-        } else if (gate.onTime) {
+        if (state.status === 'in' || state.status === 'break') {
           statusBadge.className = 'shift-status shift-status--ontime';
-          statusBadge.innerHTML = '<i class="fas fa-check-circle"></i> On Time';
+          statusBadge.innerHTML = '<i class="fas fa-play-circle"></i> In Progress';
           statusBadge.style.display = 'inline-flex';
+        } else if (gate.allowed && !gate.unscheduled) {
+          if (gate.late) {
+            statusBadge.className = 'shift-status shift-status--late';
+            statusBadge.innerHTML = '<i class="fas fa-clock"></i> Late Clock-In';
+            statusBadge.style.display = 'inline-flex';
+          } else if (gate.onTime) {
+            statusBadge.className = 'shift-status shift-status--ontime';
+            statusBadge.innerHTML = '<i class="fas fa-check-circle"></i> On Time';
+            statusBadge.style.display = 'inline-flex';
+          }
+        } else {
+          statusBadge.style.display = 'none';
         }
-      } else {
-        statusBadge.style.display = 'none';
       }
 
       updateShiftProgress();
@@ -1365,24 +1365,24 @@ document.addEventListener('DOMContentLoaded', function() {
     const nextShiftInfoEl = $('#nextShiftInfo');
     const nextShiftTimeEl = $('#nextShiftTime');
     
-    if (!nextShiftEl) return; // Guard clause
-    
-    if (state.status === 'out') {
-      if (state.nextSchedule) {
-        const nsStart = parseISO(parseMaybe(state.nextSchedule,'startAt',null));
-        const nsEnd   = parseISO(parseMaybe(state.nextSchedule,'endAt',null));
-        const dateLbl = state.nextSchedule.date || (nsStart ? df.format(nsStart) : '—');
-        const timeLbl = (nsStart && nsEnd) ? `${tf.format(nsStart)} — ${tf.format(nsEnd)}` : `${state.nextSchedule.start||'—'} — ${state.nextSchedule.end||'—'}`;
-        nextShiftEl.textContent = `${dateLbl}`;
-        if (nextShiftInfoEl) nextShiftInfoEl.style.display = 'block';
-        if (nextShiftTimeEl) nextShiftTimeEl.textContent = timeLbl;
+    if (nextShiftEl) {
+      if (state.status === 'out') {
+        if (state.nextSchedule) {
+          const nsStart = parseISO(parseMaybe(state.nextSchedule,'startAt',null));
+          const nsEnd   = parseISO(parseMaybe(state.nextSchedule,'endAt',null));
+          const dateLbl = state.nextSchedule.date || (nsStart ? df.format(nsStart) : '—');
+          const timeLbl = (nsStart && nsEnd) ? `${tf.format(nsStart)} — ${tf.format(nsEnd)}` : `${state.nextSchedule.start||'—'} — ${state.nextSchedule.end||'—'}`;
+          nextShiftEl.textContent = `${dateLbl}`;
+          if (nextShiftInfoEl) nextShiftInfoEl.style.display = 'block';
+          if (nextShiftTimeEl) nextShiftTimeEl.textContent = timeLbl;
+        } else {
+          nextShiftEl.textContent = 'No upcoming shifts';
+          if (nextShiftInfoEl) nextShiftInfoEl.style.display = 'none';
+        }
       } else {
-        nextShiftEl.textContent = 'No upcoming shifts';
+        nextShiftEl.textContent = '—';
         if (nextShiftInfoEl) nextShiftInfoEl.style.display = 'none';
       }
-    } else {
-      nextShiftEl.textContent = '—';
-      if (nextShiftInfoEl) nextShiftInfoEl.style.display = 'none';
     }
 
     // Update button states and tooltips
@@ -1668,67 +1668,80 @@ document.addEventListener('DOMContentLoaded', function() {
   const btnBreakStart = $('#btnBreakStart');
   const btnBreakEnd = $('#btnBreakEnd');
   
-  if (!btnClockIn || !btnClockOut || !btnBreakStart || !btnBreakEnd) {
-    console.error('Required button elements not found');
-    return;
+  // Bind event listeners only for buttons that exist
+  if (btnClockIn) {
+    btnClockIn.addEventListener('click', async ()=>{
+      const gate = canClockInNow(state.todaySchedule);
+      if (!gate.allowed && !gate.unscheduled) {
+        toast(`Cannot clock in: ${gate.reason}`, 'warning');
+        return;
+      }
+      await doAction('clock.in', 'Clocking in');
+    });
+  } else {
+    console.error('Clock In button not found');
+  }
+
+  if (btnClockOut) {
+    btnClockOut.addEventListener('click', async ()=>{
+      const modalEl = $('#satisfactionModal');
+      if (!modalEl || typeof bootstrap === 'undefined') {
+        // Fallback if modal not available
+        await doAction('clock.out', 'Clocking out');
+        return;
+      }
+      
+      const modal = new bootstrap.Modal(modalEl);
+      const submitFeedback = async (rating)=>{
+        if (rating) {
+          // Clock out with satisfaction rating
+          await doAction('clock.out', 'Clocking out', { satisfaction: rating });
+        } else {
+          // Clock out without rating
+          await doAction('clock.out', 'Clocking out');
+        }
+      };
+
+      const btnSubmit = $('#btnSubmit');
+      const btnSkip = $('#btnSkip');
+      const satisfactionSelect = $('#satisfactionSelect');
+      
+      if (btnSubmit && satisfactionSelect) {
+        btnSubmit.onclick = ()=> {
+          const rating = satisfactionSelect.value;
+          if (!rating) {
+            toast('Please select a satisfaction level', 'warning');
+            return;
+          }
+          modal.hide();
+          submitFeedback(rating);
+        };
+      }
+
+      if (btnSkip) {
+        btnSkip.onclick = ()=> {
+          modal.hide();
+          submitFeedback(null);
+        };
+      }
+
+      modal.show();
+    });
+  } else {
+    console.error('Clock Out button not found');
+  }
+
+  if (btnBreakStart) {
+    btnBreakStart.addEventListener('click', ()=> doAction('break.start', 'Starting break'));
+  } else {
+    console.error('Break Start button not found');
   }
   
-  btnClockIn.addEventListener('click', async ()=>{
-    const gate = canClockInNow(state.todaySchedule);
-    if (!gate.allowed && !gate.unscheduled) {
-      toast(`Cannot clock in: ${gate.reason}`, 'warning');
-      return;
-    }
-    await doAction('clock.in', 'Clocking in');
-  });
-
-  btnClockOut.addEventListener('click', async ()=>{
-    const modalEl = $('#satisfactionModal');
-    if (!modalEl || typeof bootstrap === 'undefined') {
-      // Fallback if modal not available
-      await doAction('clock.out', 'Clocking out');
-      return;
-    }
-    
-    const modal = new bootstrap.Modal(modalEl);
-    const submitFeedback = async (rating)=>{
-      if (rating) {
-        // Clock out with satisfaction rating
-        await doAction('clock.out', 'Clocking out', { satisfaction: rating });
-      } else {
-        // Clock out without rating
-        await doAction('clock.out', 'Clocking out');
-      }
-    };
-
-    const btnSubmit = $('#btnSubmit');
-    const btnSkip = $('#btnSkip');
-    const satisfactionSelect = $('#satisfactionSelect');
-    
-    if (btnSubmit && satisfactionSelect) {
-      btnSubmit.onclick = ()=> {
-        const rating = satisfactionSelect.value;
-        if (!rating) {
-          toast('Please select a satisfaction level', 'warning');
-          return;
-        }
-        modal.hide();
-        submitFeedback(rating);
-      };
-    }
-
-    if (btnSkip) {
-      btnSkip.onclick = ()=> {
-        modal.hide();
-        submitFeedback(null);
-      };
-    }
-
-    modal.show();
-  });
-
-  btnBreakStart.addEventListener('click', ()=> doAction('break.start', 'Starting break'));
-  btnBreakEnd.addEventListener('click', ()=> doAction('break.end', 'Ending break'));
+  if (btnBreakEnd) {
+    btnBreakEnd.addEventListener('click', ()=> doAction('break.end', 'Ending break'));
+  } else {
+    console.error('Break End button not found');
+  }
 
   // Initialize and start timers
   setInterval(() => {
