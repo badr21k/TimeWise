@@ -1495,7 +1495,7 @@ body {
       const r = await api('status');
       
       // Map backend response to frontend state
-      // Backend returns: clocked_in, on_break, entry, entries_today
+      // Backend returns: clocked_in, on_break, entry, entries_today, today_schedule, next_schedule
       const prevStatus = state.status;
       
       if (r.clocked_in && r.on_break) {
@@ -1515,6 +1515,10 @@ body {
       state.clockIn = r.entry?.clock_in || null;
       state.breakSeconds = r.entry?.total_break_minutes ? r.entry.total_break_minutes * 60 : 0;
       
+      // Store schedule information
+      state.todaySchedule = r.today_schedule || null;
+      state.nextSchedule = r.next_schedule || null;
+      
       // Process today's entries for the table
       state.today = (r.entries_today || []).map(entry => {
         const clockIn = entry.clock_in ? new Date(entry.clock_in + 'Z') : null;
@@ -1533,22 +1537,34 @@ body {
           hours = (seconds / 3600).toFixed(2);
         }
         
+        // Determine if this entry was on-time or late based on schedule
+        let late = false;
+        let ontime = false;
+        if (state.todaySchedule && clockIn) {
+          const schedStart = parseISO(parseMaybe(state.todaySchedule, 'startAt', null));
+          if (schedStart) {
+            const gracePeriod = ms(GRACE_MINUTES);
+            const diff = clockIn - schedStart;
+            if (diff > gracePeriod) {
+              late = true;
+            } else if (diff >= -gracePeriod && diff <= gracePeriod) {
+              ontime = true;
+            }
+          }
+        }
+        
         return {
           in: clockIn ? tf.format(clockIn) : '—',
           out: clockOut ? tf.format(clockOut) : '—',
           break: breakMins > 0 ? `${breakMins} min` : '—',
-          type: entry.scheduled === false ? 'Unscheduled' : 'Scheduled',
+          type: state.todaySchedule ? 'Scheduled' : 'Unscheduled',
           hours,
           seconds,
           satisfaction: entry.satisfaction,
-          late: false, // TODO: Determine from schedule
-          ontime: false // TODO: Determine from schedule
+          late,
+          ontime
         };
       });
-      
-      // For now, we don't have schedule integration, so set these to null
-      state.todaySchedule = null;
-      state.nextSchedule = null;
       
       updateUI();
     }catch(e){

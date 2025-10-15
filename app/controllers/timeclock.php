@@ -193,6 +193,9 @@ class timeclock extends Controller
         ]);
         $entries = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
+        // Get schedule information
+        $scheduleInfo = $this->getScheduleInfo($tzName);
+
         return [
             'clocked_in' => (bool)$entry,
             'on_break'   => $onBreak,
@@ -202,7 +205,6 @@ class timeclock extends Controller
                 'clock_out'=> $entry['clock_out'],
                 'total_break_minutes' => (int)$entry['total_break_minutes'],
                 'satisfaction' => $entry['satisfaction'] !== null ? (int)$entry['satisfaction'] : null,
-                // optional: you can compute scheduled/unscheduled if you add schedules table checks
             ] : null,
 
             // list for the "Today's Shifts" table
@@ -213,10 +215,103 @@ class timeclock extends Controller
                     'clock_out'=> $r['clock_out'],
                     'total_break_minutes' => (int)$r['total_break_minutes'],
                     'satisfaction' => $r['satisfaction'] !== null ? (int)$r['satisfaction'] : null,
-                    // 'scheduled' => null  // if you later mark it
                 ];
             }, $entries),
+
+            // Schedule information
+            'today_schedule' => $scheduleInfo['today'],
+            'next_schedule' => $scheduleInfo['next'],
         ];
+    }
+
+    /** Get today's and next scheduled shift for the current user */
+    private function getScheduleInfo(string $tzName): array
+    {
+        $emp = $this->resolveEmployeeForUser();
+        if (!$emp) {
+            return ['today' => null, 'next' => null];
+        }
+
+        $employeeId = (int)$emp['id'];
+        
+        try {
+            $tz = new DateTimeZone($tzName);
+        } catch (\Throwable $e) {
+            $tz = new DateTimeZone('UTC');
+        }
+
+        // Get today's date in user's timezone
+        $todayLocal = new DateTime('today 00:00:00', $tz);
+        $todayStr = $todayLocal->format('Y-m-d');
+
+        // Get tomorrow's date
+        $tomorrowLocal = clone $todayLocal;
+        $tomorrowLocal->modify('+1 day');
+        $tomorrowStr = $tomorrowLocal->format('Y-m-d');
+
+        // Find today's shift
+        $stmt = $this->db->prepare("
+            SELECT id, employee_id, start_dt, end_dt, notes, status
+            FROM shifts
+            WHERE employee_id = :emp AND DATE(start_dt) = :today
+            ORDER BY start_dt ASC
+            LIMIT 1
+        ");
+        $stmt->execute([':emp' => $employeeId, ':today' => $todayStr]);
+        $todayShift = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        // Find next shift (today after current time, or future days)
+        $nowUtc = new DateTime('now', new DateTimeZone('UTC'));
+        $stmt = $this->db->prepare("
+            SELECT id, employee_id, start_dt, end_dt, notes, status
+            FROM shifts
+            WHERE employee_id = :emp AND start_dt > :now
+            ORDER BY start_dt ASC
+            LIMIT 1
+        ");
+        $stmt->execute([':emp' => $employeeId, ':now' => $nowUtc->format('Y-m-d H:i:s')]);
+        $nextShift = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return [
+            'today' => $todayShift ? $this->formatShiftForFrontend($todayShift, $tz) : null,
+            'next' => $nextShift ? $this->formatShiftForFrontend($nextShift, $tz) : null,
+        ];
+    }
+
+    /** Format shift data for frontend consumption */
+    private function formatShiftForFrontend(array $shift, DateTimeZone $tz): array
+    {
+        try {
+            // Parse UTC times from database
+            $startUtc = new DateTime($shift['start_dt'], new DateTimeZone('UTC'));
+            $endUtc = new DateTime($shift['end_dt'], new DateTimeZone('UTC'));
+            
+            // Convert to user's timezone
+            $startUtc->setTimezone($tz);
+            $endUtc->setTimezone($tz);
+
+            return [
+                'id' => (int)$shift['id'],
+                'date' => $startUtc->format('Y-m-d'),
+                'startAt' => $startUtc->format('c'), // ISO 8601 format
+                'endAt' => $endUtc->format('c'),
+                'start' => $startUtc->format('g:i A'),
+                'end' => $endUtc->format('g:i A'),
+                'notes' => $shift['notes'],
+                'status' => $shift['status'],
+            ];
+        } catch (\Throwable $e) {
+            return [
+                'id' => (int)$shift['id'],
+                'date' => null,
+                'startAt' => null,
+                'endAt' => null,
+                'start' => '—',
+                'end' => '—',
+                'notes' => $shift['notes'],
+                'status' => $shift['status'],
+            ];
+        }
     }
 
     /** CLOCK IN: records UTC time using client instant; entry_date uses client's local date */
