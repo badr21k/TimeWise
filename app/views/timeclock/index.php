@@ -1389,8 +1389,12 @@ body {
     }
 
     if(state.status==='in'){ 
-      btnIn.disabled=true; 
-      btnOut.disabled=false; 
+      btnIn.disabled=true;
+      btnIn.title = 'Already clocked in';
+      btnIn.innerHTML = '<i class="fas fa-play"></i> Clock In';
+      btnIn.className = 'btn btn-success';
+      btnOut.disabled=false;
+      btnOut.title = 'Clock out and end your shift';
       bS.disabled=false; 
       bE.disabled=true; 
       $('#clockHint').style.display='none';
@@ -1399,7 +1403,8 @@ body {
 
     if(state.status==='break'){ 
       btnIn.disabled=true; 
-      btnOut.disabled=false; 
+      btnOut.disabled=true; // Disable clock out while on break
+      btnOut.title = 'End your break before clocking out';
       bS.disabled=true; 
       bE.disabled=false; 
       $('#clockHint').style.display='none';
