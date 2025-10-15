@@ -5,12 +5,23 @@ require 'app/views/templates/spinner.php';
 ?>
 <style>
 :root {
-  --primary: #3b82f6;
-  --primary-hover: #2563eb;
-  --danger: #ef4444;
-  --danger-hover: #dc2626;
+  --primary: #09194D;
+  --primary-hover: #1a2a6c;
+  --secondary: #D97F76;
+  --secondary-hover: #c96a61;
+  --light: #E4E4EF;
+  --lighter: #F4F5F0;
+  --neutral: #9B9498;
+  --dark: #2D2926;
+  --accent: #B59E5F;
+  --accent-hover: #a38d54;
+  --accent-secondary: #8D77AB;
+  --accent-tertiary: #DA70D6;
   --success: #10b981;
   --warning: #f59e0b;
+  --danger: #ef4444;
+  --danger-hover: #dc2626;
+  
   --gray-50: #f9fafb;
   --gray-100: #f3f4f6;
   --gray-200: #e5e7eb;
@@ -19,6 +30,7 @@ require 'app/views/templates/spinner.php';
   --gray-500: #6b7280;
   --gray-700: #374151;
   --gray-900: #111827;
+  
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
@@ -27,93 +39,443 @@ require 'app/views/templates/spinner.php';
   --transition: all 0.2s ease;
 }
 
-.schedule-container { background: var(--gray-50); min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
-.page-header { margin-bottom: 2rem; }
-.page-title { font-size: 1.875rem; font-weight: 700; color: var(--gray-900); margin-bottom: 0.5rem; }
-.page-subtitle { color: var(--gray-500); font-size: 1.125rem; }
+.schedule-container { 
+  background: linear-gradient(135deg, var(--lighter) 0%, var(--light) 100%); 
+  min-height: 100vh; 
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+}
 
-.btn { display: inline-flex; align-items: center; justify-content: center; border-radius: var(--radius); padding: 0.625rem 1.25rem; font-weight: 500; font-size: 0.875rem; border: 1px solid transparent; cursor: pointer; transition: var(--transition); gap: 0.5rem; }
+.page-header { margin-bottom: 2rem; }
+.page-title { 
+  font-size: 1.875rem; 
+  font-weight: 700; 
+  color: var(--primary); 
+  margin-bottom: 0.5rem; 
+}
+.page-subtitle { 
+  color: var(--neutral); 
+  font-size: 1.125rem; 
+}
+
+.btn { 
+  display: inline-flex; 
+  align-items: center; 
+  justify-content: center; 
+  border-radius: var(--radius); 
+  padding: 0.625rem 1.25rem; 
+  font-weight: 500; 
+  font-size: 0.875rem; 
+  border: 1px solid transparent; 
+  cursor: pointer; 
+  transition: var(--transition); 
+  gap: 0.5rem; 
+}
 .btn:hover { transform: translateY(-1px); }
 .btn-sm { padding: 0.5rem 0.875rem; font-size: 0.8125rem; }
-.btn-primary { background: var(--primary); color: white; box-shadow: var(--shadow-sm); }
-.btn-primary:hover { background: var(--primary-hover); box-shadow: var(--shadow); }
-.btn-outline { background: transparent; border: 1px solid var(--gray-300); color: var(--gray-700); }
-.btn-outline:hover { background: var(--gray-50); }
-.btn-danger { background: var(--danger); color: white; }
-.btn-danger:hover { background: var(--danger-hover); }
-.btn-success { background: var(--success); color: white; }
-.btn-success:hover { background: #0da271; }
-.btn-icon { padding: 0.5rem; border-radius: var(--radius); }
+.btn-primary { 
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%); 
+  color: white; 
+  box-shadow: var(--shadow-sm); 
+}
+.btn-primary:hover { 
+  background: linear-gradient(135deg, var(--primary-hover) 0%, var(--primary) 100%); 
+  box-shadow: var(--shadow); 
+}
+.btn-outline { 
+  background: transparent; 
+  border: 1px solid var(--gray-300); 
+  color: var(--gray-700); 
+}
+.btn-outline:hover { 
+  background: var(--gray-50); 
+  border-color: var(--primary);
+  color: var(--primary);
+}
+.btn-danger { 
+  background: var(--danger); 
+  color: white; 
+}
+.btn-danger:hover { 
+  background: var(--danger-hover); 
+}
+.btn-success { 
+  background: var(--success); 
+  color: white; 
+}
+.btn-success:hover { 
+  background: #0da271; 
+}
+.btn-icon { 
+  padding: 0.5rem; 
+  border-radius: var(--radius); 
+}
 
-.badge { display: inline-block; padding: 0.35rem 0.65rem; font-size: 0.75rem; font-weight: 600; line-height: 1; text-align: center; white-space: nowrap; vertical-align: baseline; border-radius: 9999px; }
-.badge-success { background: #e8f8ee; border: 1px solid #bfead3; color: #0f5132; }
-.badge-warning { background: #fef3c7; border: 1px solid #fde68a; color: #92400e; }
+.badge { 
+  display: inline-block; 
+  padding: 0.35rem 0.65rem; 
+  font-size: 0.75rem; 
+  font-weight: 600; 
+  line-height: 1; 
+  text-align: center; 
+  white-space: nowrap; 
+  vertical-align: baseline; 
+  border-radius: 9999px; 
+}
+.badge-success { 
+  background: linear-gradient(135deg, var(--success) 0%, #0da271 100%); 
+  color: white; 
+}
+.badge-warning { 
+  background: linear-gradient(135deg, var(--warning) 0%, #d97706 100%); 
+  color: white; 
+}
+.badge-accent {
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
+  color: white;
+}
 
-.week-controls { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
-.week-navigation { display: flex; align-items: center; gap: 0.5rem; }
-.week-nav-btn { background: var(--gray-100); border: 1px solid var(--gray-300); border-radius: var(--radius); padding: 0.5rem; color: var(--gray-700); cursor: pointer; transition: var(--transition); display: flex; align-items: center; justify-content: center; }
-.week-nav-btn:hover { background: var(--gray-200); }
-.week-display { font-weight: 500; color: var(--gray-900); min-width: 260px; text-align: center; font-size: 0.875rem; }
-.publish-section { display: flex; align-items: center; gap: 0.75rem; }
+.week-controls { 
+  display: flex; 
+  align-items: center; 
+  gap: 1rem; 
+  flex-wrap: wrap; 
+}
+.week-navigation { 
+  display: flex; 
+  align-items: center; 
+  gap: 0.5rem; 
+}
+.week-nav-btn { 
+  background: var(--light); 
+  border: 1px solid var(--gray-300); 
+  border-radius: var(--radius); 
+  padding: 0.5rem; 
+  color: var(--primary); 
+  cursor: pointer; 
+  transition: var(--transition); 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+}
+.week-nav-btn:hover { 
+  background: var(--lighter); 
+  border-color: var(--primary);
+}
+.week-display { 
+  font-weight: 600; 
+  color: var(--primary); 
+  min-width: 260px; 
+  text-align: center; 
+  font-size: 0.875rem; 
+}
+.publish-section { 
+  display: flex; 
+  align-items: center; 
+  gap: 0.75rem; 
+}
 
 /* tools dropdown */
 .tools-wrap { position: relative; }
-.tools-menu { display: none; position: absolute; right: 0; top: 110%; background:#fff; border:1px solid var(--gray-200); border-radius: .5rem; box-shadow: var(--shadow); min-width: 240px; z-index: 10; }
+.tools-menu { 
+  display: none; 
+  position: absolute; 
+  right: 0; 
+  top: 110%; 
+  background: var(--lighter);
+  border: 1px solid var(--light); 
+  border-radius: .5rem; 
+  box-shadow: var(--shadow); 
+  min-width: 240px; 
+  z-index: 10; 
+}
 .tools-menu.show { display: block; }
-.tools-item { width:100%; text-align:left; background:#fff; border:0; padding:.6rem .9rem; font-size:.875rem; color:var(--gray-700); }
-.tools-item:hover { background: var(--gray-50); }
+.tools-item { 
+  width:100%; 
+  text-align:left; 
+  background:var(--lighter); 
+  border:0; 
+  padding:.6rem .9rem; 
+  font-size:.875rem; 
+  color:var(--primary); 
+  transition: var(--transition);
+}
+.tools-item:hover { 
+  background: var(--light); 
+  color: var(--accent-secondary);
+}
 
-.schedule-grid { background: #fff; border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow); margin-bottom: 2rem; }
-.grid-header { display: grid; grid-template-columns: 240px repeat(7, 1fr); background: var(--gray-50); border-bottom: 1px solid var(--gray-200); }
-.grid-header-cell { padding: 1rem 0.75rem; font-weight: 600; color: var(--gray-700); font-size: 0.875rem; text-align: center; border-right: 1px solid var(--gray-200); }
-.grid-header-cell:first-child { text-align: left; background: var(--gray-100); }
+.schedule-grid { 
+  background: var(--lighter); 
+  border-radius: var(--radius-lg); 
+  overflow: hidden; 
+  box-shadow: var(--shadow); 
+  margin-bottom: 2rem; 
+  border: 1px solid var(--light);
+}
+.grid-header { 
+  display: grid; 
+  grid-template-columns: 240px repeat(7, 1fr); 
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%); 
+  border-bottom: 1px solid var(--light); 
+}
+.grid-header-cell { 
+  padding: 1rem 0.75rem; 
+  font-weight: 600; 
+  color: white; 
+  font-size: 0.875rem; 
+  text-align: center; 
+  border-right: 1px solid rgba(255,255,255,0.2); 
+}
+.grid-header-cell:first-child { 
+  text-align: left; 
+  background: rgba(255,255,255,0.1); 
+}
 .grid-body { max-height: 70vh; overflow-y: auto; }
-.grid-row { display: grid; grid-template-columns: 240px repeat(7, 1fr); border-bottom: 1px solid var(--gray-200); min-height: 120px; }
-.employee-cell { background: var(--gray-50); padding: 1rem 0.75rem; border-right: 1px solid var(--gray-200); display: flex; flex-direction: column; gap: 0.25rem; }
-.employee-name { font-weight: 600; color: var(--gray-900); font-size: 0.9rem; }
-.employee-role { color: var(--gray-500); font-size: 0.8rem; }
-.employee-hours { color: var(--gray-500); font-size: 0.75rem; margin-top: auto; }
+.grid-row { 
+  display: grid; 
+  grid-template-columns: 240px repeat(7, 1fr); 
+  border-bottom: 1px solid var(--light); 
+  min-height: 120px; 
+  background: var(--lighter);
+}
+.grid-row:nth-child(even) {
+  background: rgba(255,255,255,0.5);
+}
+.employee-cell { 
+  background: var(--light); 
+  padding: 1rem 0.75rem; 
+  border-right: 1px solid var(--light); 
+  display: flex; 
+  flex-direction: column; 
+  gap: 0.25rem; 
+}
+.employee-name { 
+  font-weight: 600; 
+  color: var(--primary); 
+  font-size: 0.9rem; 
+}
+.employee-role { 
+  color: var(--neutral); 
+  font-size: 0.8rem; 
+}
+.employee-hours { 
+  color: var(--neutral); 
+  font-size: 0.75rem; 
+  margin-top: auto; 
+}
 
-.day-cell { padding: 0.5rem; border-right: 1px solid var(--gray-200); position: relative; background: #fff; min-height: 120px; }
-.shift-block { background: var(--primary); color: #fff; border-radius: var(--radius); padding: 0.5rem; margin-bottom: 0.25rem; font-size: 0.75rem; position: relative; cursor: pointer; transition: var(--transition); box-shadow: var(--shadow-sm); }
-.shift-block:hover { background: var(--primary-hover); transform: translateY(-1px); box-shadow: var(--shadow); }
-.shift-time { font-weight: 700; margin-bottom: 0.25rem; }
-.shift-role { opacity: 0.95; font-size: 0.72rem; }
-.shift-actions { position:absolute; top:.25rem; right:.25rem; display:flex; gap:.25rem; opacity:0; transition:opacity .2s; }
+.day-cell { 
+  padding: 0.5rem; 
+  border-right: 1px solid var(--light); 
+  position: relative; 
+  background: transparent; 
+  min-height: 120px; 
+}
+
+.shift-block { 
+  background: linear-gradient(135deg, var(--accent-secondary) 0%, var(--accent-tertiary) 100%); 
+  color: #fff; 
+  border-radius: var(--radius); 
+  padding: 0.5rem; 
+  margin-bottom: 0.25rem; 
+  font-size: 0.75rem; 
+  position: relative; 
+  cursor: pointer; 
+  transition: var(--transition); 
+  box-shadow: var(--shadow-sm); 
+  border-left: 3px solid var(--accent);
+}
+.shift-block:hover { 
+  background: linear-gradient(135deg, var(--accent-tertiary) 0%, var(--accent-secondary) 100%); 
+  transform: translateY(-1px); 
+  box-shadow: var(--shadow); 
+}
+.shift-time { 
+  font-weight: 700; 
+  margin-bottom: 0.25rem; 
+}
+.shift-role { 
+  opacity: 0.95; 
+  font-size: 0.72rem; 
+}
+.shift-actions { 
+  position:absolute; 
+  top:.25rem; 
+  right:.25rem; 
+  display:flex; 
+  gap:.25rem; 
+  opacity:0; 
+  transition:opacity .2s; 
+}
 .shift-block:hover .shift-actions { opacity:1; }
-.shift-mini { border:0; background:rgba(255,255,255,.25); color:#fff; width:22px; height:22px; border-radius:999px; font-size:.75rem; display:flex; align-items:center; justify-content:center; }
+.shift-mini { 
+  border:0; 
+  background:rgba(255,255,255,.3); 
+  color:#fff; 
+  width:22px; 
+  height:22px; 
+  border-radius:999px; 
+  font-size:.75rem; 
+  display:flex; 
+  align-items:center; 
+  justify-content:center; 
+  transition: var(--transition);
+}
+.shift-mini:hover {
+  background: rgba(255,255,255,.5);
+  transform: scale(1.1);
+}
 
-.add-shift-area { position: absolute; bottom: 0.5rem; left: 0.5rem; right: 0.5rem; }
-.add-shift-btn { width: 100%; background: transparent; border: 2px dashed var(--gray-300); color: var(--gray-500); border-radius: var(--radius); padding: 0.5rem; font-size: 0.75rem; cursor: pointer; transition: var(--transition); display: flex; align-items: center; justify-content: center; gap: 0.25rem; }
-.add-shift-btn:hover { border-color: var(--primary); color: var(--primary); background: #eff6ff; }
+.add-shift-area { 
+  position: absolute; 
+  bottom: 0.5rem; 
+  left: 0.5rem; 
+  right: 0.5rem; 
+}
+.add-shift-btn { 
+  width: 100%; 
+  background: transparent; 
+  border: 2px dashed var(--neutral); 
+  color: var(--neutral); 
+  border-radius: var(--radius); 
+  padding: 0.5rem; 
+  font-size: 0.75rem; 
+  cursor: pointer; 
+  transition: var(--transition); 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  gap: 0.25rem; 
+}
+.add-shift-btn:hover { 
+  border-color: var(--accent-secondary); 
+  color: var(--accent-secondary); 
+  background: rgba(141, 119, 171, 0.1); 
+}
 
-.modal-content { border: none; border-radius: var(--radius-lg); box-shadow: var(--shadow-md); }
-.modal-header { border-bottom: 1px solid var(--gray-200); padding: 1.25rem 1.5rem; }
-.modal-title { margin-bottom: 0; line-height: 1.5; font-weight: 600; color: var(--gray-900); display: flex; align-items: center; gap: 0.5rem; }
+.modal-content { 
+  border: none; 
+  border-radius: var(--radius-lg); 
+  box-shadow: var(--shadow-md); 
+  background: var(--lighter);
+}
+.modal-header { 
+  border-bottom: 1px solid var(--light); 
+  padding: 1.25rem 1.5rem; 
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+  color: white;
+}
+.modal-title { 
+  margin-bottom: 0; 
+  line-height: 1.5; 
+  font-weight: 600; 
+  color: white;
+  display: flex; 
+  align-items: center; 
+  gap: 0.5rem; 
+}
 .modal-body { padding: 1.5rem; }
-.modal-footer { border-top: 1px solid var(--gray-200); padding: 1rem 1.5rem; gap: 0.75rem; }
+.modal-footer { 
+  border-top: 1px solid var(--light); 
+  padding: 1rem 1.5rem; 
+  gap: 0.75rem; 
+}
 
 .form-group { margin-bottom: 1rem; }
-.form-label { display: block; font-size: 0.875rem; font-weight: 600; color: var(--gray-700); margin-bottom: 0.5rem; }
-.form-control { width: 100%; border: 1px solid var(--gray-300); border-radius: var(--radius); padding: 0.625rem 0.875rem; font-size: 0.875rem; transition: var(--transition); }
-.form-control:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15); }
-.role-select { appearance: none; background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e"); background-position: right 0.5rem center; background-repeat: no-repeat; background-size: 1.2em 1.2em; padding-right: 2.5rem; }
-.time-input-group { display: flex; gap: 0.5rem; align-items: center; }
-.time-separator { color: var(--gray-500); font-weight: 600; }
-.day-selector { padding: 0.375rem 0.75rem; border-radius: var(--radius); font-size: 0.75rem; font-weight: 500; cursor: pointer; transition: var(--transition); }
+.form-label { 
+  display: block; 
+  font-size: 0.875rem; 
+  font-weight: 600; 
+  color: var(--primary); 
+  margin-bottom: 0.5rem; 
+}
+.form-control { 
+  width: 100%; 
+  border: 1px solid var(--light); 
+  border-radius: var(--radius); 
+  padding: 0.625rem 0.875rem; 
+  font-size: 0.875rem; 
+  transition: var(--transition); 
+  background: white;
+}
+.form-control:focus { 
+  outline: none; 
+  border-color: var(--accent-secondary); 
+  box-shadow: 0 0 0 3px rgba(141, 119, 171, 0.15); 
+}
+.role-select { 
+  appearance: none; 
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e"); 
+  background-position: right 0.5rem center; 
+  background-repeat: no-repeat; 
+  background-size: 1.2em 1.2em; 
+  padding-right: 2.5rem; 
+}
+.time-input-group { 
+  display: flex; 
+  gap: 0.5rem; 
+  align-items: center; 
+}
+.time-separator { 
+  color: var(--neutral); 
+  font-weight: 600; 
+}
+.day-selector { 
+  padding: 0.375rem 0.75rem; 
+  border-radius: var(--radius); 
+  font-size: 0.75rem; 
+  font-weight: 500; 
+  cursor: pointer; 
+  transition: var(--transition); 
+  border: 1px solid var(--light);
+  background: white;
+  color: var(--primary);
+}
+.day-selector:hover,
+.day-selector.active {
+  background: linear-gradient(135deg, var(--accent-secondary) 0%, var(--accent-tertiary) 100%);
+  color: white;
+  border-color: var(--accent-secondary);
+}
 
-.empty-state { padding: 3rem 1rem; text-align: center; color: var(--gray-500); }
-.empty-state-icon { font-size: 2.5rem; margin-bottom: 1rem; opacity: 0.5; }
+.empty-state { 
+  padding: 3rem 1rem; 
+  text-align: center; 
+  color: var(--neutral); 
+}
+.empty-state-icon { 
+  font-size: 2.5rem; 
+  margin-bottom: 1rem; 
+  opacity: 0.5; 
+}
 .empty-state-text { margin-bottom: 1.5rem; }
-.loading-shimmer { background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: loading 1.5s infinite; border-radius: var(--radius); height: 1rem; margin-bottom: 0.5rem; }
-@keyframes loading { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+.loading-shimmer { 
+  background: linear-gradient(90deg, var(--light) 25%, var(--lighter) 50%, var(--light) 75%); 
+  background-size: 200% 100%; 
+  animation: loading 1.5s infinite; 
+  border-radius: var(--radius); 
+  height: 1rem; 
+  margin-bottom: 0.5rem; 
+}
+@keyframes loading { 
+  0% { background-position: 200% 0; } 
+  100% { background-position: -200% 0; } 
+}
 
 .fade-in { animation: fadeIn 0.3s ease-in; }
-@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fadeIn { 
+  from { opacity: 0; transform: translateY(10px); } 
+  to { opacity: 1; transform: translateY(0); } 
+}
 
 /* Responsive */
-@media (max-width: 1200px) { .grid-header, .grid-row { grid-template-columns: 200px repeat(7, 1fr); } }
-@media (max-width: 1024px) { .schedule-grid { overflow-x: auto; } .grid-header, .grid-row { min-width: 1000px; } }
+@media (max-width: 1200px) { 
+  .grid-header, .grid-row { grid-template-columns: 200px repeat(7, 1fr); } 
+}
+@media (max-width: 1024px) { 
+  .schedule-grid { overflow-x: auto; } 
+  .grid-header, .grid-row { min-width: 1000px; } 
+}
 @media (max-width: 768px) {
   .week-controls { flex-direction: column; align-items: flex-start; gap: 1rem; }
   .publish-section { width: 100%; justify-content: space-between; }
@@ -130,36 +492,48 @@ require 'app/views/templates/spinner.php';
   <div class="container-fluid px-3 px-md-4 py-4">
     <div class="d-flex align-items-center justify-content-between page-header">
       <div>
-        <h1 class="page-title">Schedule</h1>
+        <h1 class="page-title">
+          <i class="fas fa-calendar-alt me-2"></i>Schedule
+        </h1>
         <p class="page-subtitle">Manage your team's work schedule</p>
       </div>
 
       <div class="week-controls">
         <div class="week-navigation" role="group" aria-label="Week navigation">
           <button class="week-nav-btn" id="prevWeekBtn" title="Previous week" aria-label="Previous week">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M11.354 1.646a.5.5 0 0 1 0 .708L5.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0z"/></svg>
+            <i class="fas fa-chevron-left"></i>
           </button>
           <div class="week-display" id="weekDisplay" aria-live="polite"></div>
           <button class="week-nav-btn" id="nextWeekBtn" title="Next week" aria-label="Next week">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/></svg>
+            <i class="fas fa-chevron-right"></i>
           </button>
         </div>
 
         <div class="publish-section">
           <div class="tools-wrap" id="toolsWrap" style="display:none;">
             <button class="btn btn-outline btn-sm" id="toolsBtn">
-              <i class="bi bi-tools"></i> Tools
+              <i class="fas fa-tools me-1"></i> Tools
             </button>
             <div class="tools-menu" id="toolsMenu">
-              <button class="tools-item" id="copyPrevToThisBtn">Copy from previous week → this</button>
-              <button class="tools-item" id="copyThisToNextBtn">Copy this week → next</button>
-              <button class="tools-item" id="openCopyWeekModalBtn">Copy week… (pick weeks)</button>
+              <button class="tools-item" id="copyPrevToThisBtn">
+                <i class="fas fa-copy me-2"></i>Copy from previous week → this
+              </button>
+              <button class="tools-item" id="copyThisToNextBtn">
+                <i class="fas fa-forward me-2"></i>Copy this week → next
+              </button>
+              <button class="tools-item" id="openCopyWeekModalBtn">
+                <i class="fas fa-calendar-week me-2"></i>Copy week… (pick weeks)
+              </button>
               <hr class="m-0">
-              <button class="tools-item" id="openCopyUserModalBtn">Copy shifts: User → User</button>
+              <button class="tools-item" id="openCopyUserModalBtn">
+                <i class="fas fa-users me-2"></i>Copy shifts: User → User
+              </button>
             </div>
           </div>
           <span class="badge badge-warning" id="statusIndicator">Draft</span>
-          <button class="btn btn-primary" id="publishBtn">Publish</button>
+          <button class="btn btn-primary" id="publishBtn">
+            <i class="fas fa-paper-plane me-1"></i>Publish
+          </button>
         </div>
       </div>
     </div>
@@ -180,7 +554,7 @@ require 'app/views/templates/spinner.php';
 
     <div id="emptyState" class="empty-state" style="display: none;">
       <div class="empty-state-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" viewBox="0 0 16 16"><path d="M6.5 1A1.5 1.5 0 0 0 5 2.5V3H1.5A1.5 1.5 0 0 0 0 4.5v8A1.5 1.5 0 0 0 1.5 14h13a1.5 1.5 0 0 0 1.5-1.5v-8A1.5 1.5 0 0 0 14.5 3H11v-.5A1.5 1.5 0 0 0 9.5 1h-3zm0 1h3a.5.5 0 0 1 .5.5V3H6v-.5a.5.5 0 0 1 .5-.5zm1.886 6.914L15 7.151V12.5a.5.5 0 0 1-.5.5h-13a.5.5 0 0 1-.5-.5V7.15l6.614 1.764a1.5 1.5 0 0 0 .772 0zM1.5 4h13a.5.5 0 0 1 .5.5v1.616L8.129 7.948a.5.5 0 0 1-.258 0L1 6.116V4.5a.5.5 0 0 1 .5-.5z"/></svg>
+        <i class="fas fa-users-slash"></i>
       </div>
       <div class="empty-state-text">No team members available for scheduling</div>
     </div>
@@ -193,10 +567,9 @@ require 'app/views/templates/spinner.php';
     <div class="modal-content">
       <div class="modal-header">
         <h5 id="shiftModalLabel" class="modal-title">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/></svg>
-          Add Shift
+          <i class="fas fa-plus-circle me-2"></i>Add Shift
         </h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" title="Close"></button>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" title="Close"></button>
       </div>
       <div class="modal-body">
         <div class="form-group">
@@ -230,7 +603,9 @@ require 'app/views/templates/spinner.php';
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-outline" data-bs-dismiss="modal">Cancel</button>
-        <button type="button" class="btn btn-primary" id="saveShiftBtn">Add Shift</button>
+        <button type="button" class="btn btn-primary" id="saveShiftBtn">
+          <i class="fas fa-save me-1"></i>Add Shift
+        </button>
       </div>
     </div>
   </div>
@@ -241,8 +616,10 @@ require 'app/views/templates/spinner.php';
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 id="copyWeekModalLabel" class="modal-title">Copy Week</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        <h5 id="copyWeekModalLabel" class="modal-title">
+          <i class="fas fa-copy me-2"></i>Copy Week
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
         <div class="form-group">
@@ -261,7 +638,9 @@ require 'app/views/templates/spinner.php';
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-outline" data-bs-dismiss="modal">Cancel</button>
-        <button type="button" class="btn btn-primary" id="cwDoCopyBtn">Copy</button>
+        <button type="button" class="btn btn-primary" id="cwDoCopyBtn">
+          <i class="fas fa-copy me-1"></i>Copy
+        </button>
       </div>
     </div>
   </div>
@@ -272,8 +651,10 @@ require 'app/views/templates/spinner.php';
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 id="copyUserModalLabel" class="modal-title">Copy Shifts: User → User (this week)</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        <h5 id="copyUserModalLabel" class="modal-title">
+          <i class="fas fa-users me-2"></i>Copy Shifts: User → User (this week)
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
         <div class="form-group">
@@ -298,12 +679,14 @@ require 'app/views/templates/spinner.php';
         </div>
         <div class="form-check mt-1">
           <input class="form-check-input" type="checkbox" id="cuOverwrite">
-          <label class="form-check-label" for="cuOverwrite">Overwrite target user’s shifts for chosen days</label>
+          <label class="form-check-label" for="cuOverwrite">Overwrite target user's shifts for chosen days</label>
         </div>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-outline" data-bs-dismiss="modal">Cancel</button>
-        <button type="button" class="btn btn-primary" id="cuDoCopyBtn">Copy shifts</button>
+        <button type="button" class="btn btn-primary" id="cuDoCopyBtn">
+          <i class="fas fa-copy me-1"></i>Copy shifts
+        </button>
       </div>
     </div>
   </div>
@@ -314,8 +697,10 @@ require 'app/views/templates/spinner.php';
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 id="copyOneModalLabel" class="modal-title">Copy This Shift</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        <h5 id="copyOneModalLabel" class="modal-title">
+          <i class="fas fa-copy me-2"></i>Copy This Shift
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
         <input type="hidden" id="coShiftId">
@@ -331,7 +716,9 @@ require 'app/views/templates/spinner.php';
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-outline" data-bs-dismiss="modal">Cancel</button>
-        <button type="button" class="btn btn-primary" id="coDoCopyBtn">Copy</button>
+        <button type="button" class="btn btn-primary" id="coDoCopyBtn">
+          <i class="fas fa-copy me-1"></i>Copy
+        </button>
       </div>
     </div>
   </div>
@@ -422,9 +809,13 @@ document.addEventListener('DOMContentLoaded', async () => {
       const b = e.currentTarget;
       const day = b.dataset.day;
       if (selectedDays.has(day)) {
-        selectedDays.delete(day); b.classList.remove('btn-primary'); b.classList.add('btn-outline');
+        selectedDays.delete(day); 
+        b.classList.remove('active'); 
+        b.classList.add('btn-outline');
       } else {
-        selectedDays.add(day); b.classList.remove('btn-outline'); b.classList.add('btn-primary');
+        selectedDays.add(day); 
+        b.classList.remove('btn-outline'); 
+        b.classList.add('active');
       }
     });
   });
@@ -450,8 +841,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.querySelectorAll('.cu-day').forEach((b) => {
     b.addEventListener('click', () => { 
       const d = b.dataset.day;
-      if (cuSelectedDays.has(d)) { cuSelectedDays.delete(d); b.classList.remove('btn-primary'); b.classList.add('btn-outline'); }
-      else { cuSelectedDays.add(d); b.classList.remove('btn-outline'); b.classList.add('btn-primary'); }
+      if (cuSelectedDays.has(d)) { 
+        cuSelectedDays.delete(d); 
+        b.classList.remove('active'); 
+        b.classList.add('btn-outline'); 
+      } else { 
+        cuSelectedDays.add(d); 
+        b.classList.remove('btn-outline'); 
+        b.classList.add('active'); 
+      }
     });
   });
 
@@ -497,8 +895,15 @@ async function loadPublishStatus() {
     const status = await fetchJSON(`/schedule/api?a=publish.status&week=${currentWeekStart}`);
     const ind = document.getElementById('statusIndicator');
     const btn = document.getElementById('publishBtn');
-    if (status.published) { ind.textContent = 'Published'; ind.className = 'badge badge-success'; btn.textContent = 'Unpublish'; }
-    else { ind.textContent = 'Draft'; ind.className = 'badge badge-warning'; btn.textContent = 'Publish'; }
+    if (status.published) { 
+      ind.textContent = 'Published'; 
+      ind.className = 'badge badge-success'; 
+      btn.innerHTML = '<i class="fas fa-undo me-1"></i>Unpublish'; 
+    } else { 
+      ind.textContent = 'Draft'; 
+      ind.className = 'badge badge-warning'; 
+      btn.innerHTML = '<i class="fas fa-paper-plane me-1"></i>Publish'; 
+    }
     btn.style.display = isAdmin ? 'block' : 'none';
   } catch (e) { console.error('Error loading publish status:', e); }
 }
@@ -541,7 +946,9 @@ function renderGrid() {
           <div class="employee-name">${escapeHtml(emp.name)}</div>
           <div class="employee-role">${escapeHtml(emp.role_title || '')}</div>
         </div>
-        ${isAdmin ? `<button class="btn btn-outline btn-sm" title="Copy this user’s shifts to another user" onclick="openCopyUserModal(${emp.id})">Copy →</button>` : ''}
+        ${isAdmin ? `<button class="btn btn-outline btn-sm" title="Copy this user's shifts to another user" onclick="openCopyUserModal(${emp.id})">
+          <i class="fas fa-copy me-1"></i>Copy
+        </button>` : ''}
       </div>
       <div class="employee-hours">${hours.toFixed(2)} hrs</div>
     `;
@@ -560,8 +967,7 @@ function renderGrid() {
         const btn = document.createElement('button');
         btn.className = 'add-shift-btn';
         btn.innerHTML = `
-          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16"><path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/></svg>
-          Add shift
+          <i class="fas fa-plus"></i> Add shift
         `;
         btn.addEventListener('click', () => openShiftModal(emp, day.date));
         add.appendChild(btn);
@@ -583,8 +989,12 @@ function shiftBlock(shift) {
     <div class="shift-role">${escapeHtml(shift.notes || shift.employee_role || '')}</div>
     ${isAdmin ? `
       <div class="shift-actions">
-        <button class="shift-mini" title="Copy" onclick="openCopyOne(${shift.id}, '${(shift.start_dt||'').slice(0,10)}')">⎘</button>
-        <button class="shift-mini" title="Delete" onclick="deleteShift(${shift.id})">×</button>
+        <button class="shift-mini" title="Copy" onclick="openCopyOne(${shift.id}, '${(shift.start_dt||'').slice(0,10)}')">
+          <i class="fas fa-copy"></i>
+        </button>
+        <button class="shift-mini" title="Delete" onclick="deleteShift(${shift.id})">
+          <i class="fas fa-times"></i>
+        </button>
       </div>` : ''}
   `;
   return div;
@@ -604,11 +1014,11 @@ async function openShiftModal(emp, ymd) {
   if (!isAdmin) return;
   currentEmployee = emp;
   selectedDays.clear();
-  document.querySelectorAll('.day-selector').forEach((b) => { b.classList.remove('btn-primary'); b.classList.add('btn-outline'); });
+  document.querySelectorAll('.day-selector').forEach((b) => { b.classList.remove('active'); b.classList.add('btn-outline'); });
 
   const dow = new Date(ymd + 'T12:00:00').getDay();
   const pre = document.querySelector(`.day-selector[data-day="${dow}"]`);
-  if (pre) { selectedDays.add(String(dow)); pre.classList.add('btn-primary'); pre.classList.remove('btn-outline'); }
+  if (pre) { selectedDays.add(String(dow)); pre.classList.add('active'); pre.classList.remove('btn-outline'); }
 
   await loadRolesIntoModal();
 
@@ -709,7 +1119,7 @@ function openCopyUserModal(prefillFromId = null) {
   });
   if (prefillFromId) fromSel.value = String(prefillFromId);
   cuSelectedDays = new Set(['1','2','3','4','5','6','0']); // all days default
-  document.querySelectorAll('.cu-day').forEach(b => { b.classList.remove('btn-outline'); b.classList.add('btn-primary'); });
+  document.querySelectorAll('.cu-day').forEach(b => { b.classList.remove('btn-outline'); b.classList.add('active'); });
   document.getElementById('cuOverwrite').checked = false;
   copyUserModal.show();
 }

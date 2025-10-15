@@ -16,7 +16,8 @@ define('FILES', ROOT . DS. 'files');
 // ---------------------  NEW DATABASE TABLE -------------------------
 define('DB_HOST',         'e7eh7.h.filess.io');
 define('DB_USER',         'TimeWise_bushnearby'); 
-define('DB_PASS',         $_ENV['DB_PASS']);
+// define('DB_PASS',         $_ENV['DB_PASS']);
+define('DB_PASS',     'b9250b127b46e200ef002859cacc76928186b0f3');
 define('DB_DATABASE',     'TimeWise_bushnearby');
 define('DB_PORT',         '3305');
 
