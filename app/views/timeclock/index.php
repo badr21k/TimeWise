@@ -1334,7 +1334,7 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     }
 
-    // Update shift status badge (independent of todayCard)
+    // Update shift status badge (independent DOM element check)
     const statusBadge = $('#shiftStatusBadge');
     
     if (statusBadge) {
@@ -1359,7 +1359,7 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     }
 
-    // Update shift progress (independent of todayCard and statusBadge)
+    // Update shift progress (independent DOM element check - will execute regardless of other elements)
     updateShiftProgress();
 
     // Update next shift info
