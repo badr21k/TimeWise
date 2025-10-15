@@ -1119,6 +1119,8 @@ body {
 </div>
 
 <script>
+// Ensure DOM is fully loaded before running any code
+document.addEventListener('DOMContentLoaded', function() {
 (function(){
   const $ = (s)=>document.querySelector(s);
   const $$ = (s)=>document.querySelectorAll(s);
@@ -1164,20 +1166,32 @@ body {
   }
 
   function setBusy(on,msg){ 
-    $('#busyOverlay').style.display = on?'grid':'none'; 
-    if(msg) $('#busyText').textContent = msg; 
+    const overlay = $('#busyOverlay');
+    const textEl = $('#busyText');
+    if (!overlay) return;
+    overlay.style.display = on?'grid':'none'; 
+    if(msg && textEl) textEl.textContent = msg; 
   }
 
   function toast(msg, type = 'success'){ 
+    const toastEl = $('#toaster');
+    const toastMsgEl = $('#toastMsg');
+    if (!toastEl || !toastMsgEl) {
+      console.error('Toast elements not found');
+      return;
+    }
     const icon = type === 'error' ? 'fas fa-exclamation-circle' : 
                 type === 'warning' ? 'fas fa-exclamation-triangle' : 
                 'fas fa-check-circle';
-    $('#toastMsg').innerHTML = `<i class="${icon} me-2"></i> ${msg}`;
-    new bootstrap.Toast($('#toaster'),{delay:3000}).show(); 
+    toastMsgEl.innerHTML = `<i class="${icon} me-2"></i> ${msg}`;
+    if (typeof bootstrap !== 'undefined') {
+      new bootstrap.Toast(toastEl,{delay:3000}).show();
+    }
   }
 
   function pill(cls,html){ 
-    const el=$('#statusPill'); 
+    const el=$('#statusPill');
+    if (!el) return;
     el.className='tw-status '+cls; 
     el.innerHTML=html; 
   }
@@ -1239,24 +1253,30 @@ body {
     const now = new Date();
 
     // Main session timer
-    if(state.status==='in' && state.clockIn){
+    const durationEl = $('#tcDuration');
+    const liveTimerEl = $('#liveTimer');
+    if(state.status==='in' && state.clockIn && durationEl && liveTimerEl){
       const base = Math.max(0, ((now - new Date(state.clockIn))/1000) - (state.breakSeconds||0));
-      $('#tcDuration').style.display = 'inline-flex';
-      $('#liveTimer').textContent = secToHms(Math.floor(base));
-    } else {
-      $('#tcDuration').style.display = 'none';
+      durationEl.style.display = 'inline-flex';
+      liveTimerEl.textContent = secToHms(Math.floor(base));
+    } else if (durationEl) {
+      durationEl.style.display = 'none';
     }
 
     // Break timer
-    if(state.status==='break' && state.breakStart){
+    const breakTimerEl = $('#breakTimer');
+    if(state.status==='break' && state.breakStart && breakTimerEl){
       const breakTime = Math.floor((now - new Date(state.breakStart))/1000);
-      $('#breakTimer').textContent = secToHm(breakTime);
+      breakTimerEl.textContent = secToHm(breakTime);
     }
   }
 
   function updateShiftProgress(){
     const progressBar = $('#shiftProgressBar');
     const progressContainer = $('#shiftProgress');
+    
+    if (!progressBar || !progressContainer) return;
+    
     const { startISO, endISO } = scheduleWindowInfo(state.todaySchedule);
 
     if (!startISO || !endISO || state.status === 'out') {
@@ -1275,32 +1295,49 @@ body {
 
   function updateUI(){
     // Update status pill and details
+    const statusDetailEl = $('#statusDetail');
+    const breakBadgeEl = $('#tcBreakBadge');
+    
     if(state.status==='in'){
       pill('tw-status--in','<i class="fas fa-check-circle"></i> Clocked In'); 
-      $('#statusDetail').textContent='Active shift in progress. Your time is being tracked.';
+      if (statusDetailEl) statusDetailEl.textContent='Active shift in progress. Your time is being tracked.';
     }
     else if(state.status==='break'){
       pill('tw-status--break','<i class="fas fa-mug-hot"></i> On Break'); 
-      $('#statusDetail').textContent='Break in progress. Remember to end break when ready.';
+      if (statusDetailEl) statusDetailEl.textContent='Break in progress. Remember to end break when ready.';
     }
     else { 
       pill('tw-status--out','<i class="far fa-circle"></i> Clocked Out'); 
-      $('#statusDetail').textContent='You are currently clocked out. Ready for your next shift.';
+      if (statusDetailEl) statusDetailEl.textContent='You are currently clocked out. Ready for your next shift.';
     }
 
-    $('#tcBreakBadge').style.display = state.status==='break' ? 'inline-flex' : 'none';
+    if (breakBadgeEl) {
+      breakBadgeEl.style.display = state.status==='break' ? 'inline-flex' : 'none';
+    }
 
     // Update today's shift card
     const todayCard = $('#todayShiftCard');
-    if (shouldHideTodaysShiftCard()) {
-      todayCard.style.display = 'none';
-    } else {
-      todayCard.style.display = '';
-      $('#todayShift').textContent = formatTimeRangeOrDash(state.todaySchedule);
-      $('#todayBadge').style.display = state.todaySchedule ? 'none' : 'inline-block';
+    const todayShiftEl = $('#todayShift');
+    const todayBadgeEl = $('#todayBadge');
+    
+    if (todayCard) {
+      if (shouldHideTodaysShiftCard()) {
+        todayCard.style.display = 'none';
+      } else {
+        todayCard.style.display = '';
+        if (todayShiftEl) {
+          todayShiftEl.textContent = formatTimeRangeOrDash(state.todaySchedule);
+        }
+        if (todayBadgeEl) {
+          todayBadgeEl.style.display = state.todaySchedule ? 'none' : 'inline-block';
+        }
+      }
+    }
 
-      // Update shift status badge
-      const statusBadge = $('#shiftStatusBadge');
+    // Update shift status badge (independent DOM element check)
+    const statusBadge = $('#shiftStatusBadge');
+    
+    if (statusBadge) {
       const gate = canClockInNow(state.todaySchedule);
 
       if (state.status === 'in' || state.status === 'break') {
@@ -1320,31 +1357,46 @@ body {
       } else {
         statusBadge.style.display = 'none';
       }
-
-      updateShiftProgress();
     }
 
+    // Update shift progress (independent DOM element check - will execute regardless of other elements)
+    updateShiftProgress();
+
     // Update next shift info
-    if (state.status === 'out') {
-      if (state.nextSchedule) {
-        const nsStart = parseISO(parseMaybe(state.nextSchedule,'startAt',null));
-        const nsEnd   = parseISO(parseMaybe(state.nextSchedule,'endAt',null));
-        const dateLbl = state.nextSchedule.date || (nsStart ? df.format(nsStart) : '—');
-        const timeLbl = (nsStart && nsEnd) ? `${tf.format(nsStart)} — ${tf.format(nsEnd)}` : `${state.nextSchedule.start||'—'} — ${state.nextSchedule.end||'—'}`;
-        $('#nextShift').textContent = `${dateLbl}`;
-        $('#nextShiftInfo').style.display = 'block';
-        $('#nextShiftTime').textContent = timeLbl;
+    const nextShiftEl = $('#nextShift');
+    const nextShiftInfoEl = $('#nextShiftInfo');
+    const nextShiftTimeEl = $('#nextShiftTime');
+    
+    if (nextShiftEl) {
+      if (state.status === 'out') {
+        if (state.nextSchedule) {
+          const nsStart = parseISO(parseMaybe(state.nextSchedule,'startAt',null));
+          const nsEnd   = parseISO(parseMaybe(state.nextSchedule,'endAt',null));
+          const dateLbl = state.nextSchedule.date || (nsStart ? df.format(nsStart) : '—');
+          const timeLbl = (nsStart && nsEnd) ? `${tf.format(nsStart)} — ${tf.format(nsEnd)}` : `${state.nextSchedule.start||'—'} — ${state.nextSchedule.end||'—'}`;
+          nextShiftEl.textContent = `${dateLbl}`;
+          if (nextShiftInfoEl) nextShiftInfoEl.style.display = 'block';
+          if (nextShiftTimeEl) nextShiftTimeEl.textContent = timeLbl;
+        } else {
+          nextShiftEl.textContent = 'No upcoming shifts';
+          if (nextShiftInfoEl) nextShiftInfoEl.style.display = 'none';
+        }
       } else {
-        $('#nextShift').textContent = 'No upcoming shifts';
-        $('#nextShiftInfo').style.display = 'none';
+        nextShiftEl.textContent = '—';
+        if (nextShiftInfoEl) nextShiftInfoEl.style.display = 'none';
       }
-    } else {
-      $('#nextShift').textContent = '—';
-      $('#nextShiftInfo').style.display = 'none';
     }
 
     // Update button states and tooltips
     const btnIn=$('#btnClockIn'), btnOut=$('#btnClockOut'), bS=$('#btnBreakStart'), bE=$('#btnBreakEnd');
+    const clockHintEl = $('#clockHint');
+    const graceIndicatorEl = $('#graceIndicator');
+    const graceTextEl = $('#graceText');
+    
+    if (!btnIn || !btnOut || !bS || !bE) {
+      console.error('Button elements not found');
+      return;
+    }
 
     if(state.status==='out'){ 
       const allow = canClockInNow(state.todaySchedule);
@@ -1366,26 +1418,26 @@ body {
 
         // Show grace period indicator
         if (allow.withinGrace) {
-          $('#graceIndicator').style.display = 'flex';
-          $('#graceText').textContent = `Within ${GRACE_MINUTES}-min grace period`;
+          if (graceIndicatorEl) graceIndicatorEl.style.display = 'flex';
+          if (graceTextEl) graceTextEl.textContent = `Within ${GRACE_MINUTES}-min grace period`;
         } else {
-          $('#graceIndicator').style.display = 'none';
+          if (graceIndicatorEl) graceIndicatorEl.style.display = 'none';
         }
       } else {
         btnIn.title = allow.reason;
-        $('#graceIndicator').style.display = 'flex';
-        $('#graceText').textContent = allow.reason;
+        if (graceIndicatorEl) graceIndicatorEl.style.display = 'flex';
+        if (graceTextEl) graceTextEl.textContent = allow.reason;
 
         if (allow.timeUntil) {
           const minutes = Math.ceil(allow.timeUntil / (60 * 1000));
-          $('#graceText').textContent = `Opens in ${minutes} minutes`;
+          if (graceTextEl) graceTextEl.textContent = `Opens in ${minutes} minutes`;
         }
       }
 
       btnOut.disabled=true; 
       bS.disabled=true; 
       bE.disabled=true;
-      $('#clockHint').style.display = state.todaySchedule ? 'none' : 'block';
+      if (clockHintEl) clockHintEl.style.display = state.todaySchedule ? 'none' : 'block';
     }
 
     if(state.status==='in'){ 
@@ -1397,8 +1449,8 @@ body {
       btnOut.title = 'Clock out and end your shift';
       bS.disabled=false; 
       bE.disabled=true; 
-      $('#clockHint').style.display='none';
-      $('#graceIndicator').style.display = 'none';
+      if (clockHintEl) clockHintEl.style.display='none';
+      if (graceIndicatorEl) graceIndicatorEl.style.display = 'none';
     }
 
     if(state.status==='break'){ 
@@ -1407,25 +1459,39 @@ body {
       btnOut.title = 'End your break before clocking out';
       bS.disabled=true; 
       bE.disabled=false; 
-      $('#clockHint').style.display='none';
-      $('#graceIndicator').style.display = 'none';
+      if (clockHintEl) clockHintEl.style.display='none';
+      if (graceIndicatorEl) graceIndicatorEl.style.display = 'none';
     }
 
     renderToday();
 
     // Initialize tooltips
-    $$('[data-bs-toggle="tooltip"]').forEach(el => {
-      new bootstrap.Tooltip(el);
-    });
+    if (typeof bootstrap !== 'undefined') {
+      $$('[data-bs-toggle="tooltip"]').forEach(el => {
+        // Dispose existing tooltip first
+        const existingTooltip = bootstrap.Tooltip.getInstance(el);
+        if (existingTooltip) {
+          existingTooltip.dispose();
+        }
+        new bootstrap.Tooltip(el);
+      });
+    }
   }
 
   function renderToday(){
-    const tb=$('#todayList'); 
+    const tb=$('#todayList');
+    const totalHoursEl = $('#todayTotalHours');
+    
+    if (!tb) {
+      console.error('Today list element not found');
+      return;
+    }
+    
     tb.innerHTML='';
 
     if(!state.today.length){ 
       tb.innerHTML='<tr><td colspan="6" class="small text-center py-5"><i class="fas fa-inbox me-2"></i>No time entries recorded today</td></tr>'; 
-      $('#todayTotalHours').textContent='0.00'; 
+      if (totalHoursEl) totalHoursEl.textContent='0.00'; 
       return; 
     }
 
@@ -1447,7 +1513,7 @@ body {
       if(r.seconds) totalSec+=r.seconds;
     });
 
-    $('#todayTotalHours').textContent=(totalSec/3600).toFixed(2);
+    if (totalHoursEl) totalHoursEl.textContent=(totalSec/3600).toFixed(2);
   }
 
   // Helper to get current timezone name
@@ -1599,53 +1665,94 @@ body {
   }
 
   // Event Listeners
-  $('#btnClockIn').addEventListener('click', async ()=>{
-    const gate = canClockInNow(state.todaySchedule);
-    if (!gate.allowed && !gate.unscheduled) {
-      toast(`Cannot clock in: ${gate.reason}`, 'warning');
-      return;
-    }
-    await doAction('clock.in', 'Clocking in');
-  });
-
-  $('#btnClockOut').addEventListener('click', async ()=>{
-    const modal = new bootstrap.Modal($('#satisfactionModal'));
-    const submitFeedback = async (rating)=>{
-      if (rating) {
-        // Clock out with satisfaction rating
-        await doAction('clock.out', 'Clocking out', { satisfaction: rating });
-      } else {
-        // Clock out without rating
-        await doAction('clock.out', 'Clocking out');
-      }
-    };
-
-    $('#btnSubmit').onclick = ()=> {
-      const rating = $('#satisfactionSelect').value;
-      if (!rating) {
-        toast('Please select a satisfaction level', 'warning');
+  const btnClockIn = $('#btnClockIn');
+  const btnClockOut = $('#btnClockOut');
+  const btnBreakStart = $('#btnBreakStart');
+  const btnBreakEnd = $('#btnBreakEnd');
+  
+  // Bind event listeners only for buttons that exist
+  if (btnClockIn) {
+    btnClockIn.addEventListener('click', async ()=>{
+      const gate = canClockInNow(state.todaySchedule);
+      if (!gate.allowed && !gate.unscheduled) {
+        toast(`Cannot clock in: ${gate.reason}`, 'warning');
         return;
       }
-      modal.hide();
-      submitFeedback(rating);
-    };
+      await doAction('clock.in', 'Clocking in');
+    });
+  } else {
+    console.error('Clock In button not found');
+  }
 
-    $('#btnSkip').onclick = ()=> {
-      modal.hide();
-      submitFeedback(null);
-    };
+  if (btnClockOut) {
+    btnClockOut.addEventListener('click', async ()=>{
+      const modalEl = $('#satisfactionModal');
+      if (!modalEl || typeof bootstrap === 'undefined') {
+        // Fallback if modal not available
+        await doAction('clock.out', 'Clocking out');
+        return;
+      }
+      
+      const modal = new bootstrap.Modal(modalEl);
+      const submitFeedback = async (rating)=>{
+        if (rating) {
+          // Clock out with satisfaction rating
+          await doAction('clock.out', 'Clocking out', { satisfaction: rating });
+        } else {
+          // Clock out without rating
+          await doAction('clock.out', 'Clocking out');
+        }
+      };
 
-    modal.show();
-  });
+      const btnSubmit = $('#btnSubmit');
+      const btnSkip = $('#btnSkip');
+      const satisfactionSelect = $('#satisfactionSelect');
+      
+      if (btnSubmit && satisfactionSelect) {
+        btnSubmit.onclick = ()=> {
+          const rating = satisfactionSelect.value;
+          if (!rating) {
+            toast('Please select a satisfaction level', 'warning');
+            return;
+          }
+          modal.hide();
+          submitFeedback(rating);
+        };
+      }
 
-  $('#btnBreakStart').addEventListener('click', ()=> doAction('break.start', 'Starting break'));
-  $('#btnBreakEnd').addEventListener('click', ()=> doAction('break.end', 'Ending break'));
+      if (btnSkip) {
+        btnSkip.onclick = ()=> {
+          modal.hide();
+          submitFeedback(null);
+        };
+      }
+
+      modal.show();
+    });
+  } else {
+    console.error('Clock Out button not found');
+  }
+
+  if (btnBreakStart) {
+    btnBreakStart.addEventListener('click', ()=> doAction('break.start', 'Starting break'));
+  } else {
+    console.error('Break Start button not found');
+  }
+  
+  if (btnBreakEnd) {
+    btnBreakEnd.addEventListener('click', ()=> doAction('break.end', 'Ending break'));
+  } else {
+    console.error('Break End button not found');
+  }
 
   // Initialize and start timers
   setInterval(() => {
+    const tcTimeEl = $('#tcTime');
+    const tcDateEl = $('#tcDate');
+    
     const now = new Date();
-    $('#tcTime').textContent = tf.format(now);
-    $('#tcDate').textContent = df.format(now);
+    if (tcTimeEl) tcTimeEl.textContent = tf.format(now);
+    if (tcDateEl) tcDateEl.textContent = df.format(now);
     updateLiveTimers();
     updateShiftProgress();
   }, 1000);
@@ -1685,6 +1792,7 @@ body {
     });
   }
 })();
+}); // End DOMContentLoaded
 </script>
 
 <?php require 'app/views/templates/footer.php'; ?>
