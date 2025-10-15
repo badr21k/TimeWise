@@ -197,6 +197,28 @@ Shows current state with color coding:
 ### Modals
 - **Satisfaction Modal**: Appears on clock out, optional rating 1-5
 
+## Business Rules
+
+### Clock In Rules
+1. User cannot clock in if already clocked in
+2. User cannot clock in before their employee start date (if set)
+3. Grace period: ±30 minutes from scheduled shift start
+4. Unscheduled work is allowed (no schedule required)
+
+### Break Rules
+1. Cannot start break if not clocked in
+2. Cannot start break if already on break
+3. **Cannot clock out while on an active break** - Must end break first
+   - This ensures accurate break time tracking
+   - Prevents data inconsistencies in time calculations
+4. Total break time is automatically calculated and deducted from hours worked
+
+### Clock Out Rules
+1. Cannot clock out if not clocked in
+2. Must end active break before clocking out (see Break Rules)
+3. Satisfaction rating is optional (1-5 scale)
+4. Final hours are calculated: (clock_out - clock_in) - break_time
+
 ## Troubleshooting
 
 ### Clock In Not Working
