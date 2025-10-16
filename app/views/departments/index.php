@@ -246,8 +246,8 @@ body {
 /* Department Grid Layout */
 .dept-row {
   display: grid;
-  grid-template-columns: minmax(200px, 1fr) minmax(300px, 2fr) minmax(250px, 1.5fr) auto;
-  gap: 2rem;
+  grid-template-columns: minmax(180px, 1fr) minmax(250px, 1.5fr) minmax(200px, 1.25fr) minmax(250px, 1.5fr) auto;
+  gap: 1.5rem;
   align-items: start;
   padding: 2rem;
   border-bottom: 2px solid var(--border);
@@ -260,8 +260,8 @@ body {
 
 .dept-header {
   display: grid;
-  grid-template-columns: minmax(200px, 1fr) minmax(300px, 2fr) minmax(250px, 1.5fr) auto;
-  gap: 2rem;
+  grid-template-columns: minmax(180px, 1fr) minmax(250px, 1.5fr) minmax(200px, 1.25fr) minmax(250px, 1.5fr) auto;
+  gap: 1.5rem;
   padding: 1.5rem 2rem;
   background: var(--lighter);
   border-bottom: 2px solid var(--border);
@@ -401,19 +401,22 @@ body {
     grid-template-columns: 1fr 1fr;
     grid-template-areas: 
       "name actions"
-      "roles managers";
+      "roles managers"
+      "members members";
     gap: 1.5rem;
   }
   
   .dept-row > div:nth-child(1) { grid-area: name; }
   .dept-row > div:nth-child(2) { grid-area: roles; }
   .dept-row > div:nth-child(3) { grid-area: managers; }
-  .dept-row > div:nth-child(4) { grid-area: actions; }
+  .dept-row > div:nth-child(4) { grid-area: members; }
+  .dept-row > div:nth-child(5) { grid-area: actions; }
   
   .dept-header > div:nth-child(1) { grid-area: name; }
   .dept-header > div:nth-child(2) { grid-area: roles; }
   .dept-header > div:nth-child(3) { grid-area: managers; }
-  .dept-header > div:nth-child(4) { grid-area: actions; }
+  .dept-header > div:nth-child(4) { grid-area: members; }
+  .dept-header > div:nth-child(5) { grid-area: actions; }
 }
 
 @media (max-width: 768px) {
@@ -431,6 +434,7 @@ body {
       "name"
       "roles"
       "managers"
+      "members"
       "actions";
     gap: 1rem;
     padding: 1.5rem;
@@ -503,6 +507,7 @@ body {
         <div>Department</div>
         <div>Roles</div>
         <div>Managers</div>
+        <div>Members & Access</div>
         <div>Actions</div>
       </div>
       <div id="deptList"></div>
@@ -760,42 +765,54 @@ function deptRow(d) {
     }
   });
 
+  /* members section with access level management */
+  const membersCol = document.createElement('div');
+  const membersBox = document.createElement('div');
+  membersBox.className = 'select-multi';
+  membersBox.style.fontSize = '0.875rem';
+  membersCol.appendChild(membersBox);
+
   /* delete */
   const delCol = document.createElement('div');
   delCol.className = 'd-flex justify-content-end';
   
-  const del = document.createElement('button');
-  del.className = 'btn btn-icon btn-danger';
-  del.innerHTML = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
-      <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
-      <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
-    </svg>
-  `;
-  del.title = 'Delete department';
-  
-  del.addEventListener('click', async () => {
-    if (!confirm('Are you sure you want to delete this department? This action cannot be undone.')) return;
+  if (!IS_VIEW_ONLY) {
+    const del = document.createElement('button');
+    del.className = 'btn btn-icon btn-danger';
+    del.innerHTML = `
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+        <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+        <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+      </svg>
+    `;
+    del.title = 'Delete department';
     
-    try {
-      await fetchJSON(`/departments/api?a=department.delete&id=${d.id}`);
-      DEPTS = DEPTS.filter(x => x.id !== d.id);
-      renderList();
-    } catch (error) {
-      alert('Failed to delete department: ' + error.message);
-    }
-  });
+    del.addEventListener('click', async () => {
+      if (!confirm('Are you sure you want to delete this department? This action cannot be undone.')) return;
+      
+      try {
+        await fetchJSON(`/departments/api?a=department.delete&id=${d.id}`);
+        DEPTS = DEPTS.filter(x => x.id !== d.id);
+        renderList();
+      } catch (error) {
+        alert('Failed to delete department: ' + error.message);
+      }
+    });
+    
+    delCol.appendChild(del);
+  }
   
-  delCol.appendChild(del);
-  row.append(left, mid, right, delCol);
+  row.append(left, mid, right, membersCol, delCol);
 
-  // initial role & manager chips with loading state
+  // initial role, manager, and member chips with loading state
   showLoadingRoles(chips);
   showLoadingManagers(mgrBox);
+  showLoadingMembers(membersBox);
   
   // load actual data
   refreshRoles(d.id, chips, count, d);
   refreshManagers(d.id, mgrBox);
+  refreshMembers(d.id, membersBox);
 
   return row;
 }
@@ -887,6 +904,85 @@ async function refreshManagers(deptId, boxEl) {
   } catch (error) {
     boxEl.innerHTML = '<span class="small-text" style="color: var(--danger)">Failed to load managers</span>';
     console.error('Failed to refresh managers:', error);
+  }
+}
+
+function showLoadingMembers(container) {
+  container.innerHTML = `
+    <div class="loading-shimmer" style="width: 75%"></div>
+  `;
+}
+
+async function refreshMembers(deptId, boxEl) {
+  try {
+    const members = await fetchJSON(`/departments/api?a=members.list&dept_id=${deptId}`);
+    boxEl.innerHTML = '';
+    
+    if (members && members.length > 0) {
+      members.forEach(m => {
+        const memberDiv = document.createElement('div');
+        memberDiv.style.cssText = 'margin-bottom: 0.75rem; padding: 0.5rem; background: var(--lighter); border-radius: var(--radius-sm);';
+        
+        const nameDiv = document.createElement('div');
+        nameDiv.style.cssText = 'font-weight: 500; margin-bottom: 0.25rem;';
+        nameDiv.textContent = m.label;
+        
+        const accessDiv = document.createElement('div');
+        accessDiv.style.cssText = 'display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem;';
+        
+        const levelLabel = document.createElement('span');
+        levelLabel.textContent = 'Level:';
+        levelLabel.style.color = 'var(--text-secondary)';
+        
+        if (IS_VIEW_ONLY) {
+          const levelValue = document.createElement('span');
+          levelValue.style.cssText = 'font-weight: 600; color: var(--accent);';
+          levelValue.textContent = m.access_level;
+          accessDiv.append(levelLabel, levelValue);
+        } else {
+          const levelSelect = document.createElement('select');
+          levelSelect.className = 'input';
+          levelSelect.style.cssText = 'padding: 0.25rem 0.5rem; font-size: 0.8rem; width: 50px;';
+          levelSelect.innerHTML = `
+            <option value="0" ${m.access_level === 0 ? 'selected' : ''}>0</option>
+            <option value="1" ${m.access_level === 1 ? 'selected' : ''}>1</option>
+            <option value="2" ${m.access_level === 2 ? 'selected' : ''}>2</option>
+            <option value="3" ${m.access_level === 3 ? 'selected' : ''}>3</option>
+            <option value="4" ${m.access_level === 4 ? 'selected' : ''}>4</option>
+          `;
+          
+          levelSelect.addEventListener('change', async () => {
+            const newLevel = parseInt(levelSelect.value, 10);
+            if (!confirm(`Change ${m.label}'s access level to ${newLevel}?`)) {
+              levelSelect.value = m.access_level;
+              return;
+            }
+            
+            try {
+              await fetchJSON('/departments/api?a=member.update_access', {
+                method: 'POST',
+                body: JSON.stringify({ user_id: m.id, access_level: newLevel })
+              });
+              m.access_level = newLevel;
+              alert(`Access level updated to ${newLevel}`);
+            } catch (error) {
+              levelSelect.value = m.access_level;
+              alert('Failed to update access level: ' + error.message);
+            }
+          });
+          
+          accessDiv.append(levelLabel, levelSelect);
+        }
+        
+        memberDiv.append(nameDiv, accessDiv);
+        boxEl.appendChild(memberDiv);
+      });
+    } else {
+      boxEl.innerHTML = '<span class="small-text">No members in this department</span>';
+    }
+  } catch (error) {
+    boxEl.innerHTML = '<span class="small-text" style="color: var(--danger)">Failed to load members</span>';
+    console.error('Failed to refresh members:', error);
   }
 }
 

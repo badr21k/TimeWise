@@ -141,6 +141,47 @@ class departments extends Controller
                     echo json_encode(['ok'=>true]);
                     break;
 
+                /* ---------- Department Members ---------- */
+                case 'members.list':
+                    $deptId = (int)($_GET['dept_id'] ?? 0);
+                    if (!$deptId) throw new Exception('dept_id required');
+                    
+                    // Get all employees in this department with their access levels
+                    $sql = "
+                        SELECT DISTINCT 
+                            u.id,
+                            u.label,
+                            u.access_level,
+                            e.id as employee_id
+                        FROM employee_department ed
+                        JOIN employees e ON e.id = ed.employee_id
+                        JOIN users u ON u.id = e.user_id
+                        WHERE ed.department_id = :dept_id
+                        AND e.is_active = 1
+                        ORDER BY u.label ASC
+                    ";
+                    $stmt = $this->db->prepare($sql);
+                    $stmt->execute([':dept_id' => $deptId]);
+                    echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
+                    break;
+
+                case 'member.update_access':
+                    $this->guardAdmin();
+                    $in = $this->json();
+                    $userId = (int)($in['user_id'] ?? 0);
+                    $accessLevel = (int)($in['access_level'] ?? 1);
+                    
+                    if (!$userId) throw new Exception('user_id required');
+                    if ($accessLevel < 0 || $accessLevel > 4) {
+                        throw new Exception('access_level must be 0-4');
+                    }
+                    
+                    $stmt = $this->db->prepare("UPDATE users SET access_level = :level WHERE id = :id");
+                    $stmt->execute([':level' => $accessLevel, ':id' => $userId]);
+                    
+                    echo json_encode(['ok' => true]);
+                    break;
+
                 /* ---------- Managers (users) ---------- */
                 case 'manager.add':
                     $this->guardAdmin();
