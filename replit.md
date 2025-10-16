@@ -33,9 +33,27 @@ The application implements a 5-tier access level system stored in `users.access_
 
 ### Department Scoping
 
-- **employee_department table**: Junction table linking employees to departments
-- **Level 4 Behavior**: Department Admins only see departments they're assigned to
-- **View-Only**: Level 4 users can view departments/roles but cannot create, modify, or delete
+Level 4 (Department Admin) users have department-scoped access across the application:
+
+- **Departments View**: 
+  - Can only view departments they're assigned to
+  - View-only access (cannot create, modify, or delete departments/roles)
+  - Can manage department members and change their access levels (0-4)
+  - Server-side guardAdmin() blocks all mutation endpoints for Level 4
+
+- **Schedule View**:
+  - Employee list filtered to only show employees in assigned departments
+  - Shift calendar filtered to only show shifts for employees in assigned departments
+  - Cannot view or manage schedules for other departments
+
+- **Reports View**:
+  - User satisfaction reports: Only shows users from assigned departments
+  - Department satisfaction reports: Only shows assigned departments
+  - Hours reports: Only shows employees from assigned departments
+  - Employee detail reports: Blocked for employees outside assigned departments
+  - All queries use secure parameterized SQL with department filtering
+
+- **Implementation**: employee_department junction table links employees to departments
 
 ### Database Schema
 
