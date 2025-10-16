@@ -1,8 +1,8 @@
 run = "bash start.sh"
-modules = ["php-8.2", "nodejs-20", "web", "bash"]
+modules = ["nix", "nodejs-20", "php-8.2"]
 
 [nix]
-channel = "stable-25_05"
+channel = "stable-24_05"
 
 [deployment]
 run = ["sh", "-c", "bash start.sh"]

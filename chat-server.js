@@ -1,7 +1,7 @@
 // chat-server.js — Socket.IO server with in-memory rooms/messages for Replit
 
-import http from "http";
-import { Server } from "socket.io";
+const http = require("http");
+const { Server } = require("socket.io");
 
 const CHAT_PORT = process.env.CHAT_PORT || 3001;
 
