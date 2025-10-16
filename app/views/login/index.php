@@ -243,12 +243,15 @@ h1 {
 .input-icon {
   position: absolute;
   left: 16px;
-  top: 50%;
+  top: calc(50% + 14px);
   transform: translateY(-50%);
   color: var(--accent);
   font-size: 1.1rem;
   z-index: 2;
   transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .form-control:focus + .input-icon {
@@ -490,6 +493,7 @@ h1 {
   
   .input-icon {
     left: 14px;
+    top: calc(50% + 12px);
   }
   
   .helper-links {
