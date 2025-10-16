@@ -4,38 +4,115 @@ require 'app/views/templates/spinner.php';
 
 <style>
 :root {
-  --primary: #3b82f6;
-  --primary-hover: #2563eb;
-  --danger: #ef4444;
-  --danger-hover: #dc2626;
+  /* Primary Brand Colors */
+  --primary: #09194D;
+  --primary-light: #1A2A6C;
+  --primary-dark: #060F2E;
+
+  /* Secondary Colors */
+  --secondary: #D97F76;
+  --secondary-light: #E8A8A2;
+  --secondary-dark: #C46A61;
+
+  /* Neutral & Background Colors */
+  --light: #E4E4EF;
+  --lighter: #F4F5F0;
+  --neutral: #9B9498;
+  --neutral-light: #B8B3B6;
+  --neutral-dark: #7A7478;
+
+  /* Accent Colors */
+  --accent: #B59E5F;
+  --accent-light: #D4C191;
+  --accent-dark: #8F7D4C;
+  --accent-secondary: #8D77AB;
+  --accent-tertiary: #DA70D6;
+
+  /* Semantic Colors */
   --success: #10b981;
-  --gray-50: #f9fafb;
-  --gray-100: #f3f4f6;
-  --gray-200: #e5e7eb;
-  --gray-300: #d1d5db;
-  --gray-400: #9ca3af;
-  --gray-500: #6b7280;
-  --gray-700: #374151;
-  --gray-900: #111827;
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  --radius: 0.375rem;
-  --radius-lg: 0.5rem;
-  --transition: all 0.2s ease;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --info: #3b82f6;
+
+  /* UI Variables */
+  --bg: linear-gradient(135deg, var(--lighter) 0%, var(--light) 100%);
+  --card: #ffffff;
+  --ink: var(--primary);
+  --muted: var(--neutral);
+  --border: var(--light);
+  --ring: var(--accent-light);
+  --shadow: 0 8px 32px rgba(9, 25, 77, 0.08);
+  --shadow-lg: 0 16px 48px rgba(9, 25, 77, 0.12);
+  --shadow-xl: 0 24px 64px rgba(9, 25, 77, 0.15);
+  --radius: 24px;
+  --radius-sm: 16px;
+  --radius-lg: 32px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', sans-serif;
+  min-height: 100vh;
+  line-height: 1.6;
 }
 
 .page-wrap { 
-  background: var(--gray-50); 
+  background: var(--bg); 
   min-height: 100vh; 
-  padding: 1rem 0;
+  padding: 2rem 0;
+  position: relative;
+}
+
+.page-wrap::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(circle at 20% 80%, rgba(181, 158, 95, 0.05) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(141, 119, 171, 0.05) 0%, transparent 50%);
+  pointer-events: none;
 }
 
 .card { 
-  background: #fff; 
+  background: var(--card);
+  border: 2px solid var(--border);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow-xl);
+  backdrop-filter: blur(20px);
   overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-secondary), var(--accent-tertiary));
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.card:hover::before {
+  opacity: 1;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-xl);
 }
 
 .page-header {
@@ -43,87 +120,108 @@ require 'app/views/templates/spinner.php';
 }
 
 .page-title {
-  font-size: 1.875rem;
-  font-weight: 700;
-  color: var(--gray-900);
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--primary);
   margin-bottom: 0.5rem;
+  letter-spacing: -0.02em;
 }
 
 .page-subtitle {
-  color: var(--gray-500);
-  font-size: 1.125rem;
+  color: var(--muted);
+  font-size: 1.1rem;
+  font-weight: 500;
 }
 
+/* Enhanced Buttons */
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: var(--radius);
-  padding: 0.625rem 1.25rem;
-  font-weight: 500;
-  font-size: 0.875rem;
-  border: 1px solid transparent;
+  border-radius: var(--radius-lg);
+  padding: 14px 28px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  border: 2px solid transparent;
   cursor: pointer;
-  transition: var(--transition);
+  transition: all 0.3s ease;
   gap: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  position: relative;
+  overflow: hidden;
 }
 
 .btn:hover {
-  transform: translateY(-1px);
+  transform: translateY(-2px);
 }
 
 .btn-sm {
-  padding: 0.5rem 0.875rem;
-  font-size: 0.8125rem;
+  padding: 10px 20px;
+  font-size: 0.85rem;
 }
 
 .btn-primary {
-  background: var(--primary);
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
   color: white;
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 8px 32px rgba(9, 25, 77, 0.3);
 }
 
 .btn-primary:hover {
-  background: var(--primary-hover);
-  box-shadow: var(--shadow);
+  box-shadow: 0 12px 40px rgba(9, 25, 77, 0.4);
 }
 
 .btn-outline {
   background: transparent;
-  border: 1px solid var(--gray-300);
-  color: var(--gray-700);
+  border: 2px solid var(--border);
+  color: var(--primary);
 }
 
 .btn-outline:hover {
-  background: var(--gray-50);
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(181, 158, 95, 0.05);
 }
 
 .btn-danger {
-  background: var(--danger);
+  background: linear-gradient(135deg, var(--danger) 0%, #dc2626 100%);
   color: white;
+  box-shadow: 0 8px 32px rgba(239, 68, 68, 0.3);
 }
 
 .btn-danger:hover {
-  background: var(--danger-hover);
+  box-shadow: 0 12px 40px rgba(239, 68, 68, 0.4);
 }
 
 .btn-icon {
-  padding: 0.5rem;
+  padding: 12px;
   border-radius: var(--radius);
+  width: 44px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
+/* Enhanced Badges */
 .badge {
   display: inline-flex;
   align-items: center;
-  gap: 0.375rem;
-  background: #eef2ff;
-  border: 1px solid #c7d2fe;
-  color: #3730a3;
-  border-radius: 9999px;
-  padding: 0.25rem 0.625rem;
-  font-size: 0.75rem;
-  margin: 0.25rem 0.25rem 0.25rem 0;
-  transition: var(--transition);
+  gap: 0.5rem;
+  background: linear-gradient(135deg, var(--lighter) 0%, var(--light) 100%);
+  border: 2px solid var(--border);
+  color: var(--primary);
+  border-radius: var(--radius);
+  padding: 8px 16px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  margin: 0.25rem 0.5rem 0.25rem 0;
+  transition: all 0.3s ease;
+}
+
+.badge:hover {
+  border-color: var(--accent);
+  transform: translateY(-1px);
 }
 
 .badge .remove {
@@ -132,77 +230,93 @@ require 'app/views/templates/spinner.php';
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
-  background: rgba(0,0,0,0.1);
+  background: var(--neutral-light);
+  color: var(--primary);
+  transition: all 0.3s ease;
 }
 
 .badge .remove:hover {
-  background: rgba(0,0,0,0.2);
+  background: var(--danger);
+  color: white;
 }
 
+/* Department Grid Layout */
 .dept-row {
   display: grid;
   grid-template-columns: minmax(200px, 1fr) minmax(300px, 2fr) minmax(250px, 1.5fr) auto;
-  gap: 1.5rem;
+  gap: 2rem;
   align-items: start;
-  padding: 1.5rem;
-  border-bottom: 1px solid var(--gray-200);
-  transition: var(--transition);
+  padding: 2rem;
+  border-bottom: 2px solid var(--border);
+  transition: all 0.3s ease;
 }
 
 .dept-row:hover {
-  background: var(--gray-50);
+  background: var(--lighter);
 }
 
 .dept-header {
   display: grid;
   grid-template-columns: minmax(200px, 1fr) minmax(300px, 2fr) minmax(250px, 1.5fr) auto;
-  gap: 1.5rem;
-  padding: 1rem 1.5rem;
-  background: var(--gray-50);
-  border-bottom: 1px solid var(--gray-200);
-  font-weight: 600;
-  color: var(--gray-700);
-  font-size: 0.875rem;
+  gap: 2rem;
+  padding: 1.5rem 2rem;
+  background: var(--lighter);
+  border-bottom: 2px solid var(--border);
+  font-weight: 700;
+  color: var(--primary);
+  font-size: 0.9rem;
   text-transform: uppercase;
-  letter-spacing: 0.025em;
+  letter-spacing: 0.5px;
 }
 
 .dept-name {
-  font-weight: 600;
-  color: var(--gray-900);
-  margin-bottom: 0.5rem;
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 0.75rem;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.75rem;
+  font-size: 1.1rem;
 }
 
 .dept-count {
-  font-size: 0.875rem;
-  color: var(--gray-500);
+  font-size: 0.9rem;
+  color: var(--muted);
+  font-weight: 500;
 }
 
+/* Enhanced Form Controls */
 .input, select {
   width: 100%;
-  border: 1px solid var(--gray-300);
-  border-radius: var(--radius);
-  padding: 0.625rem 0.875rem;
-  font-size: 0.875rem;
-  transition: var(--transition);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 14px 20px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  background: var(--lighter);
+  color: var(--primary);
 }
 
 .input:focus, select:focus {
   outline: none;
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px rgba(181, 158, 95, 0.15);
+  background: white;
+}
+
+.input::placeholder {
+  color: var(--neutral-light);
+  font-weight: 400;
 }
 
 .input-group {
   display: flex;
-  gap: 0.5rem;
-  margin-top: 0.75rem;
+  gap: 0.75rem;
+  margin-top: 1rem;
 }
 
 .input-group .input {
@@ -212,30 +326,73 @@ require 'app/views/templates/spinner.php';
 .select-multi {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-bottom: 0.75rem;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
 }
 
 .small-text {
-  font-size: 0.75rem;
-  color: var(--gray-500);
-  margin-top: 0.25rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin-top: 0.5rem;
+  font-weight: 500;
 }
 
+/* Empty State */
 .empty-state {
-  padding: 3rem 1rem;
+  padding: 4rem 2rem;
   text-align: center;
-  color: var(--gray-500);
+  color: var(--muted);
 }
 
 .empty-state-icon {
-  font-size: 2.5rem;
-  margin-bottom: 1rem;
-  opacity: 0.5;
+  font-size: 3rem;
+  margin-bottom: 1.5rem;
+  opacity: 0.7;
 }
 
 .empty-state-text {
-  margin-bottom: 1.5rem;
+  margin-bottom: 2rem;
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+/* Animations */
+.fade-in {
+  animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+  from { 
+    opacity: 0; 
+    transform: translateY(20px); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0); 
+  }
+}
+
+@keyframes float {
+  0%, 100% { 
+    transform: translateY(0px); 
+  }
+  50% { 
+    transform: translateY(-8px); 
+  }
+}
+
+.loading-shimmer {
+  background: linear-gradient(90deg, var(--light) 25%, var(--lighter) 50%, var(--light) 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+  border-radius: var(--radius-sm);
+  height: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+@keyframes loading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }
 
 /* Responsive styles */
@@ -245,7 +402,7 @@ require 'app/views/templates/spinner.php';
     grid-template-areas: 
       "name actions"
       "roles managers";
-    gap: 1rem;
+    gap: 1.5rem;
   }
   
   .dept-row > div:nth-child(1) { grid-area: name; }
@@ -259,7 +416,15 @@ require 'app/views/templates/spinner.php';
   .dept-header > div:nth-child(4) { grid-area: actions; }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 768px) {
+  .page-wrap {
+    padding: 1rem 0;
+  }
+  
+  .card-body {
+    padding: 1.5rem;
+  }
+  
   .dept-row, .dept-header {
     grid-template-columns: 1fr;
     grid-template-areas: 
@@ -267,6 +432,8 @@ require 'app/views/templates/spinner.php';
       "roles"
       "managers"
       "actions";
+    gap: 1rem;
+    padding: 1.5rem;
   }
   
   .input-group {
@@ -283,30 +450,37 @@ require 'app/views/templates/spinner.php';
     width: 100%;
     justify-content: center;
   }
+  
+  .page-title {
+    font-size: 1.75rem;
+  }
 }
 
-.fade-in {
-  animation: fadeIn 0.3s ease-in;
+@media (max-width: 480px) {
+  .dept-row, .dept-header {
+    padding: 1rem;
+  }
+  
+  .input, select {
+    padding: 12px 16px;
+  }
+  
+  .empty-state {
+    padding: 3rem 1rem;
+  }
+  
+  .page-title {
+    font-size: 1.5rem;
+  }
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.loading-shimmer {
-  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-  background-size: 200% 100%;
-  animation: loading 1.5s infinite;
-  border-radius: var(--radius);
-  height: 1rem;
-  margin-bottom: 0.5rem;
-}
-
-@keyframes loading {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
-}
+/* Utility Classes */
+.d-flex { display: flex; }
+.align-items-center { align-items: center; }
+.justify-content-between { justify-content: space-between; }
+.justify-content-end { justify-content: flex-end; }
+.mt-2 { margin-top: 0.5rem; }
+.mb-2 { margin-bottom: 0.5rem; }
 </style>
 
 <div class="page-wrap">
@@ -317,7 +491,7 @@ require 'app/views/templates/spinner.php';
         <p class="page-subtitle">Create departments, attach roles, and assign managers</p>
       </div>
       <button class="btn btn-primary" id="btnAddDept">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
           <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
         </svg>
         Add Department
@@ -334,14 +508,14 @@ require 'app/views/templates/spinner.php';
       <div id="deptList"></div>
       <div id="emptyState" class="empty-state" style="display: none;">
         <div class="empty-state-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" viewBox="0 0 16 16">
+          <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="currentColor" viewBox="0 0 16 16">
             <path d="M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h12zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H2z"/>
             <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
           </svg>
         </div>
         <div class="empty-state-text">No departments yet. Create your first department to get started.</div>
         <button class="btn btn-primary" id="btnAddFirstDept">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
             <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
           </svg>
           Add Department
@@ -429,7 +603,7 @@ function deptRow(d) {
   const name = document.createElement('div');
   name.className = 'dept-name';
   name.innerHTML = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16" style="color: var(--accent);">
       <path d="M6.5 14.5v-3.505c0-.245.25-.495.5-.495h2c.25 0 .5.25.5.5v3.5a.5.5 0 0 0 .5.5h4a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293L8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4a.5.5 0 0 0 .5-.5z"/>
     </svg>
     ${escapeHtml(d.name)}
@@ -440,7 +614,7 @@ function deptRow(d) {
   const rename = document.createElement('button');
   rename.className = 'btn btn-outline btn-sm mt-2';
   rename.innerHTML = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
+    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
       <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207 11.207 2.5zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293l6.5-6.5zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325z"/>
     </svg>
     Rename
@@ -455,7 +629,7 @@ function deptRow(d) {
       });
       d.name = nn; 
       name.innerHTML = `
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16" style="color: var(--accent);">
           <path d="M6.5 14.5v-3.505c0-.245.25-.495.5-.495h2c.25 0 .5.25.5.5v3.5a.5.5 0 0 0 .5.5h4a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293L8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4a.5.5 0 0 0 .5-.5z"/>
         </svg>
         ${escapeHtml(d.name)}
@@ -484,9 +658,9 @@ function deptRow(d) {
   txt.placeholder='Or enter new role name';
   
   const addBtn = document.createElement('button'); 
-  addBtn.className='btn btn-primary';
+  addBtn.className='btn btn-primary btn-sm';
   addBtn.innerHTML = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
       <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
     </svg>
   `;
@@ -534,9 +708,9 @@ function deptRow(d) {
     ALL_USERS.map(u => `<option value="${u.id}">${escapeHtml(u.label)}</option>`).join('');
   
   const addManagerBtn = document.createElement('button');
-  addManagerBtn.className = 'btn btn-primary';
+  addManagerBtn.className = 'btn btn-primary btn-sm';
   addManagerBtn.innerHTML = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
       <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
     </svg>
   `;
@@ -571,7 +745,7 @@ function deptRow(d) {
   const del = document.createElement('button');
   del.className = 'btn btn-icon btn-danger';
   del.innerHTML = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
       <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
       <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
     </svg>
