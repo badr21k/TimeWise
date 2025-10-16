@@ -1,7 +1,6 @@
 {
   "name": "timewise",
   "private": true,
-  "type": "module",
   "dependencies": {
     "socket.io": "^4.7.5"
   }
