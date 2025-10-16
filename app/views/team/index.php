@@ -706,17 +706,39 @@ body::before {
             <input class="form-control" id="h_phone" placeholder="(555) 555-5555">
           </div>
 
-          <div class="col-md-5">
+          <div class="col-12">
+            <label class="form-label">Access Level *</label>
+            <select class="form-select" id="h_access">
+              <option value="0">Level 0 - Inactive</option>
+              <option value="1" selected>Level 1 - Regular User</option>
+              <option value="2">Level 2 - Power User</option>
+              <option value="3">Level 3 - Team Lead</option>
+              <option value="4">Level 4 - Department Admin</option>
+            </select>
+            <div id="accessSummary" class="alert alert-info mt-2" style="display:none; font-size: 0.9rem;">
+              <!-- Will be populated by JavaScript -->
+            </div>
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">Departments (optional)</label>
+            <select class="form-select" id="h_departments" multiple size="4">
+              <!-- Will be populated by JavaScript -->
+            </select>
+            <div class="form-text">Hold Ctrl/Cmd to select multiple</div>
+          </div>
+
+          <div class="col-md-6">
             <label class="form-label">Role</label>
             <select class="form-select" id="h_role"></select>
-            <div class="form-text">Manage options in <b>roles</b> table.</div>
+            <div class="form-text">Filtered by selected departments</div>
           </div>
           
           <div class="col-md-3">
             <label class="form-label">Wage</label>
             <input class="form-control" id="h_wage" type="number" step="0.01" value="0.00">
           </div>
-          <div class="col-md-4">
+          <div class="col-md-3">
             <label class="form-label d-block">Rate</label>
             <select class="form-select" id="h_rate">
               <option value="hourly">Hourly</option>
@@ -724,18 +746,11 @@ body::before {
             </select>
           </div>
 
-          <div class="col-md-4">
+          <div class="col-md-3">
             <label class="form-label">Start date</label>
             <input class="form-control" id="h_start" type="date" value="<?= date('Y-m-d') ?>">
           </div>
-          <div class="col-md-4">
-            <label class="form-label d-block">Access level</label>
-            <select class="form-select" id="h_access">
-              <option value="0">Employee</option>
-              <option value="1">Manager (Admin)</option>
-            </select>
-          </div>
-          <div class="col-md-4">
+          <div class="col-md-3">
             <label class="form-label">Password (optional)</label>
             <input class="form-control" id="h_password" type="text" placeholder="Auto if blank">
           </div>
@@ -814,17 +829,23 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('btnAdd').addEventListener('click', async () => {
     if (!IS_ADMIN) return alert('Admin only');
     clearHireForm();
+    await loadDepartments();
     await loadRolesForHire();
+    updateAccessLevelSummary();
     M_hire.show();
   });
   
   document.getElementById('btnAddEmpty').addEventListener('click', async () => {
     if (!IS_ADMIN) return alert('Admin only');
     clearHireForm();
+    await loadDepartments();
     await loadRolesForHire();
+    updateAccessLevelSummary();
     M_hire.show();
   });
 
+  document.getElementById('h_access').addEventListener('change', updateAccessLevelSummary);
+  document.getElementById('h_departments').addEventListener('change', filterRolesByDepartments);
   document.getElementById('hireSave').addEventListener('click', onHireSave);
   document.getElementById('termSave').addEventListener('click', onTermSave);
 });
@@ -883,6 +904,50 @@ async function post(url, data) {
   }
 }
 
+/* ---------- Access Level Summary ---------- */
+const ACCESS_LEVEL_DESCRIPTIONS = {
+  0: 'Inactive - No access (cannot login)',
+  1: 'Regular User - Dashboard, Chat, Time Clock, My Shifts, Reminders',
+  2: 'Power User - Dashboard, Chat, Time Clock, My Shifts, Reminders',
+  3: 'Team Lead - Dashboard, Chat, Team, Schedule, Reminders, Admin Reports',
+  4: 'Department Admin - Dashboard, Chat, Time Clock, My Shifts, Reminders, Admin Reports, Departments & Roles (View Only)'
+};
+
+function updateAccessLevelSummary() {
+  const level = document.getElementById('h_access').value;
+  const summary = document.getElementById('accessSummary');
+  const description = ACCESS_LEVEL_DESCRIPTIONS[level] || '';
+  
+  if (description) {
+    summary.innerHTML = `<strong>Access:</strong> ${description}`;
+    summary.style.display = 'block';
+  } else {
+    summary.style.display = 'none';
+  }
+}
+
+/* ---------- Departments ---------- */
+let ALL_DEPARTMENTS = [];
+let ALL_ROLES = [];
+
+async function loadDepartments() {
+  try {
+    const data = await get('/departments/api?a=list');
+    ALL_DEPARTMENTS = data.departments || [];
+    
+    const sel = document.getElementById('h_departments');
+    sel.innerHTML = '';
+    ALL_DEPARTMENTS.forEach(dept => {
+      const opt = document.createElement('option');
+      opt.value = dept.id;
+      opt.textContent = dept.name;
+      sel.appendChild(opt);
+    });
+  } catch (e) {
+    console.error('Failed to load departments:', e);
+  }
+}
+
 /* ---------- Roles ---------- */
 async function loadRolesForHire() {
   const sel = document.getElementById('h_role');
@@ -903,10 +968,28 @@ async function loadRolesForHire() {
 
   let roles = await tryFetch('/schedule/api?a=roles.list');
   if (!roles) roles = await tryFetch('/team/api?a=roles.list');
+  
+  ALL_ROLES = Array.isArray(roles) ? roles : [];
+  filterRolesByDepartments();
+}
 
+function filterRolesByDepartments() {
+  const sel = document.getElementById('h_role');
+  const deptSel = document.getElementById('h_departments');
+  const selectedDepts = Array.from(deptSel.selectedOptions).map(opt => parseInt(opt.value));
+  
   sel.innerHTML = '';
-  if (Array.isArray(roles) && roles.length) {
-    for (const r of roles) {
+  
+  let filteredRoles = ALL_ROLES;
+  if (selectedDepts.length > 0) {
+    filteredRoles = ALL_ROLES.filter(r => {
+      if (!r.department_id) return false;
+      return selectedDepts.includes(parseInt(r.department_id));
+    });
+  }
+  
+  if (filteredRoles.length) {
+    for (const r of filteredRoles) {
       const name = (r && (r.name ?? r.title ?? r.role ?? '')).toString();
       if (!name) continue;
       const opt = document.createElement('option');
@@ -915,8 +998,12 @@ async function loadRolesForHire() {
       sel.appendChild(opt);
     }
   }
+  
   if (!sel.options.length) {
-    sel.innerHTML = '<option value="">— No roles found (check API / DB) —</option>';
+    const msg = selectedDepts.length > 0 
+      ? '— No roles for selected departments —' 
+      : '— No roles found (check API / DB) —';
+    sel.innerHTML = `<option value="">${msg}</option>`;
   }
 }
 
@@ -968,9 +1055,17 @@ function render() {
         <div class="small-text">${escapeHtml(r.phone||'')}</div>
       </td>
       <td>
-        ${r.is_admin==1
-          ? '<span class="badge badge-dark">Manager</span>'
-          : '<span class="badge badge-secondary">Employee</span>'}
+        ${(() => {
+          const level = parseInt(r.access_level ?? 1);
+          const labels = {
+            0: '<span class="badge badge-danger">Inactive</span>',
+            1: '<span class="badge badge-secondary">Regular User</span>',
+            2: '<span class="badge badge-info">Power User</span>',
+            3: '<span class="badge badge-warning">Team Lead</span>',
+            4: '<span class="badge badge-dark">Dept Admin</span>'
+          };
+          return labels[level] ?? '<span class="badge badge-secondary">Level ' + level + '</span>';
+        })()}
       </td>
       <td>${escapeHtml(r.role_title||'')}</td>
       <td>
@@ -1008,8 +1103,11 @@ function clearHireForm() {
   ['h_username','h_fullname','h_email','h_phone','h_password'].forEach(id => document.getElementById(id).value='');
   document.getElementById('h_wage').value = '0.00';
   document.getElementById('h_rate').value = 'hourly';
-  document.getElementById('h_access').value = '0';
+  document.getElementById('h_access').value = '1';
   document.getElementById('h_start').value = (new Date()).toISOString().slice(0,10);
+  
+  const deptSel = document.getElementById('h_departments');
+  Array.from(deptSel.options).forEach(opt => opt.selected = false);
 }
 
 async function onHireSave(){
@@ -1018,6 +1116,9 @@ async function onHireSave(){
     showError('Username is required');
     return;
   }
+  
+  const deptSel = document.getElementById('h_departments');
+  const selectedDepts = Array.from(deptSel.selectedOptions).map(opt => parseInt(opt.value));
   
   try {
     const payload = {
@@ -1028,7 +1129,8 @@ async function onHireSave(){
       role_title: v('h_role'),
       wage:      parseFloat(v('h_wage')||0),
       rate:      v('h_rate'),
-      is_admin:  parseInt(v('h_access'),10),
+      access_level: parseInt(v('h_access'),10),
+      departments: selectedDepts,
       start_date:v('h_start'),
       password:  v('h_password')
     };

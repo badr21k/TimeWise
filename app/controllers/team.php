@@ -63,7 +63,8 @@ class Team extends Controller
                     $role      = trim($in['role_title'] ?? '');
                     $wage      = (float)($in['wage'] ?? 0);
                     $rate      = in_array(($in['rate'] ?? 'hourly'), ['hourly','salary']) ? $in['rate'] : 'hourly';
-                    $is_admin  = (int)($in['is_admin'] ?? 0);
+                    $access_level = (int)($in['access_level'] ?? 1);
+                    $departments = $in['departments'] ?? [];
                     $start_dt  = trim($in['start_date'] ?? '') ?: date('Y-m-d');
 
                     if ($username === '') throw new Exception('Username is required');
@@ -79,10 +80,10 @@ class Team extends Controller
                     if ($stmt->fetchColumn()) throw new Exception('Username already exists');
 
                     $this->db->prepare("
-                        INSERT INTO users (username, full_name, password, is_admin)
-                        VALUES (:u, NULLIF(:fn,''), :p, :adm)
+                        INSERT INTO users (username, full_name, password, access_level)
+                        VALUES (:u, NULLIF(:fn,''), :p, :al)
                     ")->execute([
-                        ':u'=>$username, ':fn'=>$full_name, ':p'=>$phash, ':adm'=>$is_admin
+                        ':u'=>$username, ':fn'=>$full_name, ':p'=>$phash, ':al'=>$access_level
                     ]);
                     $user_id = (int)$this->db->lastInsertId();
 
@@ -110,6 +111,27 @@ class Team extends Controller
                         ':uid'=>$user_id, ':n'=>$full_name, ':e'=>$email, ':ph'=>$phone,
                         ':r'=>$role, ':wage'=>$wage, ':rate'=>$rate, ':sd'=>$start_dt
                     ]);
+                    
+                    $employee_id = (int)$this->db->lastInsertId();
+                    
+                    // 3) Assign departments if provided
+                    if (!empty($departments) && is_array($departments) && $employee_id > 0) {
+                        // First clear existing department assignments
+                        $this->db->prepare("DELETE FROM employee_department WHERE employee_id = :eid")
+                                 ->execute([':eid' => $employee_id]);
+                        
+                        // Then insert new assignments
+                        $stmt = $this->db->prepare("
+                            INSERT INTO employee_department (employee_id, department_id) 
+                            VALUES (:eid, :did)
+                        ");
+                        foreach ($departments as $dept_id) {
+                            $dept_id = (int)$dept_id;
+                            if ($dept_id > 0) {
+                                $stmt->execute([':eid' => $employee_id, ':did' => $dept_id]);
+                            }
+                        }
+                    }
 
                     echo json_encode([
                         'ok'=>true,
@@ -244,7 +266,8 @@ class Team extends Controller
                 COALESCE(e.termination_note, '')   AS termination_note,
                 COALESCE(e.eligible_for_rehire, 1) AS eligible_for_rehire,
                 COALESCE(e.is_active, 1) AS is_active,
-                u.is_admin
+                u.is_admin,
+                COALESCE(u.access_level, 1) AS access_level
             FROM users u
             LEFT JOIN employees e ON e.user_id = u.id
             ORDER BY is_active DESC, name ASC
