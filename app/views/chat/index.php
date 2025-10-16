@@ -488,10 +488,17 @@ $CHAT_TOKEN = isset($data['chat_token']) ? $data['chat_token'] : '';
     }
 
     openDM(targetUid, targetName) {
+      // Add immediate visual feedback
+      document.querySelectorAll('.people .item').forEach(i => i.classList.remove('active'));
+      const clickedItem = document.querySelector(`.people .item[data-uid="${targetUid}"]`);
+      if (clickedItem) clickedItem.classList.add('active');
+      
       this.emit('dm:open', targetUid, (res) => {
         if (res?.ok) {
           this.emit('rooms:refresh');
           this.openRoom({ id: res.room_id, is_group: 0, name: targetName || 'Direct Message' });
+        } else {
+          alert(res?.error || 'Failed to open chat');
         }
       });
     }
@@ -652,8 +659,10 @@ $CHAT_TOKEN = isset($data['chat_token']) ? $data['chat_token'] : '';
           `📎 <a href="${attachment.url}" target="_blank">${attachment.name}</a>`}
       </div>` : '';
       
+      const avatarLetter = (msg.username && msg.username[0]) ? msg.username[0].toUpperCase() : '?';
+      
       div.innerHTML = `
-        <div class="avatar">${msg.username?.[0]?.toUpperCase() || '?'}</div>
+        <div class="avatar">${avatarLetter}</div>
         <div class="msg-content">
           <div class="bubble" data-body="${escapeHtml(msg.body)}">${escapeHtml(msg.body)}${attachmentHtml}</div>
           <div class="meta">
