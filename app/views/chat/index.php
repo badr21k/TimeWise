@@ -461,6 +461,25 @@ $CHAT_TOKEN = isset($data['chat_token']) ? $data['chat_token'] : '';
         document.getElementById('btnEmoji').parentElement.appendChild(picker);
         setTimeout(() => picker.remove(), 5000);
       });
+
+      el.messages.addEventListener('click', (e) => {
+        const btn = e.target.closest('button[data-action]');
+        if (!btn) return;
+        
+        const action = btn.dataset.action;
+        const msgId = btn.dataset.msgId;
+        
+        if (action === 'edit') {
+          const bubble = btn.closest('.msg').querySelector('.bubble');
+          const body = bubble.dataset.body || bubble.textContent;
+          this.editMessage(msgId, body);
+        } else if (action === 'delete') {
+          this.deleteMessage(msgId);
+        } else if (action === 'react') {
+          const emoji = btn.dataset.emoji;
+          this.quickReact(msgId, emoji);
+        }
+      });
     }
 
     adjustTextareaHeight() {
@@ -636,20 +655,20 @@ $CHAT_TOKEN = isset($data['chat_token']) ? $data['chat_token'] : '';
       div.innerHTML = `
         <div class="avatar">${msg.username?.[0]?.toUpperCase() || '?'}</div>
         <div class="msg-content">
-          <div class="bubble">${escapeHtml(msg.body)}${attachmentHtml}</div>
+          <div class="bubble" data-body="${escapeHtml(msg.body)}">${escapeHtml(msg.body)}${attachmentHtml}</div>
           <div class="meta">
             <span>${escapeHtml(msg.username || '')}</span>
             <span>${formatTime(msg.created_at)}</span>
           </div>
           <div class="reactions"></div>
           ${isMe ? `<div class="msg-actions">
-            <button onclick="chat.editMessage('${msg.id}', '${escapeHtml(msg.body).replace(/'/g, "\\'")}')">✏️ Edit</button>
-            <button onclick="chat.deleteMessage('${msg.id}')">🗑️ Delete</button>
-            <button onclick="chat.quickReact('${msg.id}', '👍')">👍</button>
+            <button data-action="edit" data-msg-id="${msg.id}">✏️ Edit</button>
+            <button data-action="delete" data-msg-id="${msg.id}">🗑️ Delete</button>
+            <button data-action="react" data-msg-id="${msg.id}" data-emoji="👍">👍</button>
           </div>` : `<div class="msg-actions">
-            <button onclick="chat.quickReact('${msg.id}', '👍')">👍</button>
-            <button onclick="chat.quickReact('${msg.id}', '❤️')">❤️</button>
-            <button onclick="chat.quickReact('${msg.id}', '😂')">😂</button>
+            <button data-action="react" data-msg-id="${msg.id}" data-emoji="👍">👍</button>
+            <button data-action="react" data-msg-id="${msg.id}" data-emoji="❤️">❤️</button>
+            <button data-action="react" data-msg-id="${msg.id}" data-emoji="😂">😂</button>
           </div>`}
         </div>
       `;
