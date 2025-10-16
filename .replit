@@ -1,5 +1,5 @@
 run = "bash start.sh"
-modules = ["nix", "nodejs-20", "php-8.2"]
+modules = ["nix", "nodejs-20", "php-8.2", "postgresql-16"]
 
 [nix]
 channel = "stable-24_05"
@@ -15,10 +15,6 @@ externalPort = 3001
 [[ports]]
 localPort = 5000
 externalPort = 80
-
-[[ports]]
-localPort = 38563
-externalPort = 3000
 
 [workflows]
 runButton = "Project"

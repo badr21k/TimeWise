@@ -47,9 +47,9 @@ class AccessControl
         try {
             $db = db_connect();
             
-            // Get user basic info
+            // Get user basic info with access_level
             $userStmt = $db->prepare("
-                SELECT u.id, u.username, u.is_admin, u.full_name
+                SELECT u.id, u.username, u.is_admin, u.access_level, u.full_name
                 FROM users u 
                 WHERE u.id = :user_id
             ");
@@ -59,6 +59,9 @@ class AccessControl
             if (!$user) {
                 return null;
             }
+            
+            // Set access_level - use access_level if available, otherwise fallback to is_admin
+            $user['access_level'] = (int)($user['access_level'] ?? ($user['is_admin'] ? 4 : 1));
             
             // Try to find linked employee record to get a role title
             $employee = self::findEmployeeForUser($userId, $user);
@@ -293,6 +296,11 @@ class AccessControl
             return in_array($allowedDept, $user['departments']);
         }
         
+        if (strpos($rule, 'level:') === 0) {
+            $requiredLevel = (int)trim(substr($rule, 6));
+            return ($user['access_level'] ?? 0) >= $requiredLevel;
+        }
+        
         // Unknown rule type - deny access
         return false;
     }
@@ -349,6 +357,71 @@ class AccessControl
     {
         $user = self::getCurrentUser();
         return $user ? $user['departments'] : [];
+    }
+    
+    /**
+     * Get current user's access level (0-4)
+     */
+    public static function getCurrentUserAccessLevel(): int
+    {
+        $user = self::getCurrentUser();
+        return $user ? (int)($user['access_level'] ?? 0) : 0;
+    }
+    
+    /**
+     * Check if user has minimum access level
+     */
+    public static function hasMinimumLevel(int $requiredLevel): bool
+    {
+        return self::getCurrentUserAccessLevel() >= $requiredLevel;
+    }
+    
+    /**
+     * Get current user's allowed department IDs
+     */
+    public static function getUserDepartmentIds(): array
+    {
+        $user = self::getCurrentUser();
+        if (!$user || !isset($user['employee_id'])) {
+            return [];
+        }
+        
+        try {
+            $db = db_connect();
+            $stmt = $db->prepare("
+                SELECT department_id 
+                FROM employee_department 
+                WHERE employee_id = :emp_id
+            ");
+            $stmt->execute([':emp_id' => $user['employee_id']]);
+            return $stmt->fetchAll(PDO::FETCH_COLUMN) ?: [];
+        } catch (Exception $e) {
+            error_log("AccessControl: Error getting user departments: " . $e->getMessage());
+            return [];
+        }
+    }
+    
+    /**
+     * Get access level description
+     */
+    public static function getAccessLevelDescription(int $level): string
+    {
+        $descriptions = [
+            0 => 'Inactive - No access',
+            1 => 'Regular User - Dashboard, Chat, Time Clock, My Shifts, Reminders',
+            2 => 'Power User - Dashboard, Chat, Time Clock, My Shifts, Reminders',
+            3 => 'Team Lead - Dashboard, Chat, Team, Schedule, Reminders, Admin Reports',
+            4 => 'Department Admin - Dashboard, Chat, Time Clock, My Shifts, Reminders, Admin Reports, Departments & Roles (View Only)'
+        ];
+        return $descriptions[$level] ?? 'Unknown';
+    }
+    
+    /**
+     * Check if user can access inactive status (level 0 means cannot login)
+     */
+    public static function canLogin(): bool
+    {
+        return self::getCurrentUserAccessLevel() > 0;
     }
     
     /**

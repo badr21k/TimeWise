@@ -1,0 +1,87 @@
+TASK: Implement role-based access levels (0–4) and department-scoped permissions across the app.
+
+ACCESS LEVELS
+
+0 = Inactive/No access (cannot log in).
+
+1 = Regular user: access Dashboard, Chat, Time Clock, My Shifts, Reminders.
+
+2 = Power user (same as 1): access Dashboard, Chat, Time Clock, My Shifts, Reminders.
+
+3 = Team Lead: access Dashboard, Chat, Team (entire team), Schedule (entire schedule), Reminders, Admin Reports.
+
+4 = Department Admin (view-only for Depts/Roles): access Dashboard, Chat, Time Clock, My Shifts, Reminders, Admin Reports, Departments & Roles (VIEW-ONLY).
+
+WHERE ACCESS IS SET
+
+Set/modify a user’s access_level in:
+
+app/views/team/index.php (during hiring/adding a member).
+
+app/views/departments/index.php (when managing department members).
+
+UX REQUIREMENT
+
+When setting access_level, show a short summary under the selector that lists exactly what that level grants (update live as the level changes) before saving.
+
+TEAM (app/views/team/index.php)
+
+Hiring form changes:
+
+Add Access Level selector (0–4) with live “This level gives access to: …” summary.
+
+Add Departments multi-select dropdown listing all available departments.
+
+Add Role dropdown that filters to roles from the selected department(s). If multiple departments are chosen, show roles grouped or require one primary department for role selection.
+
+On submit, save:
+
+access_level
+
+assigned department_ids
+
+role_id (constrained to selected department).
+
+Enforce navigation visibility and route guards based on access_level.
+
+DEPARTMENTS (app/views/departments/index.php)
+
+Users with permission can only view/edit/manage their own department(s).
+
+If access_level = 4, Departments & Roles is view-only (no create/update/delete; hide or disable action buttons).
+
+Prevent cross-department edits: never show or allow actions on departments the current user isn’t assigned to.
+
+SCHEDULE (app/views/schedule/index.php)
+
+Users with permission can only create/edit schedules for users within their own department(s).
+
+User pickers, calendars, and lists must be filtered to department members only. No visibility of other departments.
+
+GLOBAL ENFORCEMENT
+
+Add server-side middleware/guards so URLs cannot be accessed by typing the path directly.
+
+Update the header/nav to only show tabs the user is allowed to access based on access_level.
+
+In all controllers/queries, scope data by:
+
+access_level rules above, and
+
+intersection of the current user’s department_ids where applicable.
+
+ACCEPTANCE CRITERIA
+
+Changing access_level in Team/Departments immediately reflects allowed tabs and blocks disallowed routes.
+
+Level 1 & 2 see only: Dashboard, Chat, Time Clock, My Shifts, Reminders.
+
+Level 3 sees Team, Schedule (entire org), Reminders, Admin Reports in addition to Dashboard/Chat.
+
+Level 4 sees Departments & Roles read-only; cannot modify them.
+
+Department scoping works in Departments and Schedule: users can’t see or act on other departments.
+
+Role dropdown in the Team hiring form dynamically filters based on selected department(s).
+
+The access-level summary clearly tells the admin what a user will get before saving.
