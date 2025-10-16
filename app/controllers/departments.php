@@ -202,10 +202,23 @@ class departments extends Controller
     /* ===== helpers ===== */
 
     private function guardAdmin() {
-        // Level 4 users can view but not modify
-        // Only admins (legacy) or higher access levels can modify
-        if (!isset($_SESSION['is_admin']) || (int)$_SESSION['is_admin'] !== 1) {
-            throw new Exception('Admin access required for modifications');
+        $accessLevel = $this->getUserAccessLevel();
+        
+        // Level 4 users have view-only access, cannot mutate data
+        if ($accessLevel === 4) {
+            http_response_code(403);
+            echo json_encode(['error' => 'Forbidden: Department Admins (Level 4) have view-only access']);
+            exit;
+        }
+        
+        // Require level 3+ (Team Lead or above, but not level 4)
+        if ($accessLevel < 3) {
+            // Also check legacy is_admin for backward compatibility
+            if (!isset($_SESSION['is_admin']) || (int)$_SESSION['is_admin'] !== 1) {
+                http_response_code(403);
+                echo json_encode(['error' => 'Forbidden: Requires Team Lead (Level 3) access or higher']);
+                exit;
+            }
         }
     }
     
