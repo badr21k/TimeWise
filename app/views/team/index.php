@@ -4,32 +4,84 @@ require 'app/views/templates/spinner.php';
 
 <style>
 :root {
-  --primary: #3b82f6;
-  --primary-hover: #2563eb;
-  --danger: #ef4444;
-  --danger-hover: #dc2626;
+  /* Primary Brand Colors */
+  --primary: #09194D;
+  --primary-light: #1A2A6C;
+  --primary-dark: #060F2E;
+
+  /* Secondary Colors */
+  --secondary: #D97F76;
+  --secondary-light: #E8A8A2;
+  --secondary-dark: #C46A61;
+
+  /* Neutral & Background Colors */
+  --light: #E4E4EF;
+  --lighter: #F4F5F0;
+  --neutral: #9B9498;
+  --neutral-light: #B8B3B6;
+  --neutral-dark: #7A7478;
+
+  /* Accent Colors */
+  --accent: #B59E5F;
+  --accent-light: #D4C191;
+  --accent-dark: #8F7D4C;
+  --accent-secondary: #8D77AB;
+  --accent-tertiary: #DA70D6;
+
+  /* Semantic Colors */
   --success: #10b981;
   --warning: #f59e0b;
-  --gray-50: #f9fafb;
-  --gray-100: #f3f4f6;
-  --gray-200: #e5e7eb;
-  --gray-300: #d1d5db;
-  --gray-400: #9ca3af;
-  --gray-500: #6b7280;
-  --gray-700: #374151;
-  --gray-900: #111827;
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  --radius: 0.375rem;
-  --radius-lg: 0.5rem;
-  --transition: all 0.2s ease;
+  --danger: #ef4444;
+  --info: #3b82f6;
+
+  /* UI Variables */
+  --bg: linear-gradient(135deg, var(--lighter) 0%, var(--light) 100%);
+  --card: #ffffff;
+  --ink: var(--primary);
+  --muted: var(--neutral);
+  --border: var(--light);
+  --ring: var(--accent-light);
+  --shadow: 0 8px 32px rgba(9, 25, 77, 0.08);
+  --shadow-lg: 0 16px 48px rgba(9, 25, 77, 0.12);
+  --shadow-xl: 0 24px 64px rgba(9, 25, 77, 0.15);
+  --radius: 24px;
+  --radius-sm: 16px;
+  --radius-lg: 32px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', sans-serif;
+  min-height: 100vh;
+  line-height: 1.6;
+  position: relative;
+}
+
+body::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(circle at 20% 80%, rgba(181, 158, 95, 0.05) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(141, 119, 171, 0.05) 0%, transparent 50%);
+  pointer-events: none;
 }
 
 .page-wrap { 
-  background: var(--gray-50); 
+  background: var(--bg); 
   min-height: 100vh; 
-  padding: 1rem 0;
+  padding: 2rem 0;
+  position: relative;
 }
 
 .page-header {
@@ -37,127 +89,172 @@ require 'app/views/templates/spinner.php';
 }
 
 .page-title {
-  font-size: 1.875rem;
-  font-weight: 700;
-  color: var(--gray-900);
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--primary);
   margin-bottom: 0.5rem;
+  letter-spacing: -0.02em;
 }
 
 .page-subtitle {
-  color: var(--gray-500);
-  font-size: 1.125rem;
+  color: var(--muted);
+  font-size: 1.1rem;
+  font-weight: 500;
 }
 
 .card { 
-  background: #fff; 
+  background: var(--card);
+  border: 2px solid var(--border);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow-xl);
+  backdrop-filter: blur(20px);
   overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
 }
 
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-secondary), var(--accent-tertiary));
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.card:hover::before {
+  opacity: 1;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-xl);
+}
+
+/* Enhanced Buttons */
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: var(--radius);
-  padding: 0.625rem 1.25rem;
-  font-weight: 500;
-  font-size: 0.875rem;
-  border: 1px solid transparent;
+  border-radius: var(--radius-lg);
+  padding: 14px 28px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  border: 2px solid transparent;
   cursor: pointer;
-  transition: var(--transition);
+  transition: all 0.3s ease;
   gap: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  position: relative;
+  overflow: hidden;
 }
 
 .btn:hover {
-  transform: translateY(-1px);
+  transform: translateY(-2px);
 }
 
 .btn-sm {
-  padding: 0.5rem 0.875rem;
-  font-size: 0.8125rem;
+  padding: 10px 20px;
+  font-size: 0.85rem;
 }
 
 .btn-primary {
-  background: var(--primary);
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
   color: white;
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 8px 32px rgba(9, 25, 77, 0.3);
 }
 
 .btn-primary:hover {
-  background: var(--primary-hover);
-  box-shadow: var(--shadow);
+  box-shadow: 0 12px 40px rgba(9, 25, 77, 0.4);
 }
 
 .btn-outline {
   background: transparent;
-  border: 1px solid var(--gray-300);
-  color: var(--gray-700);
+  border: 2px solid var(--border);
+  color: var(--primary);
 }
 
 .btn-outline:hover {
-  background: var(--gray-50);
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(181, 158, 95, 0.05);
 }
 
 .btn-danger {
-  background: var(--danger);
+  background: linear-gradient(135deg, var(--danger) 0%, #dc2626 100%);
   color: white;
+  box-shadow: 0 8px 32px rgba(239, 68, 68, 0.3);
 }
 
 .btn-danger:hover {
-  background: var(--danger-hover);
+  box-shadow: 0 12px 40px rgba(239, 68, 68, 0.4);
 }
 
 .btn-success {
-  background: var(--success);
+  background: linear-gradient(135deg, var(--success) 0%, #0da271 100%);
   color: white;
+  box-shadow: 0 8px 32px rgba(16, 185, 129, 0.3);
 }
 
 .btn-success:hover {
-  background: #0da271;
+  box-shadow: 0 12px 40px rgba(16, 185, 129, 0.4);
 }
 
 .btn-icon {
-  padding: 0.5rem;
+  padding: 12px;
   border-radius: var(--radius);
+  width: 44px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
+/* Enhanced Badges */
 .badge {
   display: inline-block;
-  padding: 0.35rem 0.65rem;
-  font-size: 0.75rem;
+  padding: 8px 16px;
+  font-size: 0.8rem;
   font-weight: 600;
   line-height: 1;
   text-align: center;
   white-space: nowrap;
   vertical-align: baseline;
-  border-radius: 9999px;
+  border-radius: var(--radius);
+  border: 2px solid;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .badge-success {
-  background: #e8f8ee;
-  border: 1px solid #bfead3;
-  color: #0f5132;
+  background: rgba(16, 185, 129, 0.1);
+  border-color: rgba(16, 185, 129, 0.3);
+  color: var(--success);
 }
 
 .badge-danger {
-  background: #fde2e1;
-  border: 1px solid #f5b5b4;
-  color: #842029;
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: var(--danger);
 }
 
 .badge-dark {
-  background: #e5e7eb;
-  border: 1px solid #d1d5db;
-  color: #374151;
+  background: rgba(9, 25, 77, 0.1);
+  border-color: rgba(9, 25, 77, 0.3);
+  color: var(--primary);
 }
 
 .badge-secondary {
-  background: #f3f4f6;
-  border: 1px solid #e5e7eb;
-  color: #6b7280;
+  background: rgba(157, 148, 152, 0.1);
+  border-color: rgba(157, 148, 152, 0.3);
+  color: var(--muted);
 }
 
+/* Enhanced Table */
 .table {
   width: 100%;
   border-collapse: separate;
@@ -165,31 +262,34 @@ require 'app/views/templates/spinner.php';
 }
 
 .table th {
-  font-weight: 600;
-  color: var(--gray-700);
-  background: var(--gray-50);
-  padding: 0.875rem 1rem;
-  border-bottom: 1px solid var(--gray-200);
+  font-weight: 700;
+  color: var(--primary);
+  background: var(--lighter);
+  padding: 1.25rem 1.5rem;
+  border-bottom: 2px solid var(--border);
   text-align: left;
-  font-size: 0.875rem;
+  font-size: 0.9rem;
   text-transform: uppercase;
-  letter-spacing: 0.025em;
+  letter-spacing: 0.5px;
 }
 
 .table td {
-  padding: 1rem;
-  border-bottom: 1px solid var(--gray-200);
+  padding: 1.5rem;
+  border-bottom: 2px solid var(--border);
   vertical-align: middle;
+  font-weight: 500;
 }
 
 .table tbody tr {
-  transition: var(--transition);
+  transition: all 0.3s ease;
 }
 
 .table tbody tr:hover {
-  background: var(--gray-50);
+  background: var(--lighter);
+  transform: translateX(4px);
 }
 
+/* Enhanced Form Controls */
 .input-group {
   position: relative;
   display: flex;
@@ -201,16 +301,15 @@ require 'app/views/templates/spinner.php';
 .input-group-text {
   display: flex;
   align-items: center;
-  padding: 0.625rem 0.875rem;
-  font-size: 0.875rem;
-  font-weight: 400;
-  line-height: 1.5;
-  color: var(--gray-500);
+  padding: 14px 20px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--muted);
   text-align: center;
   white-space: nowrap;
-  background-color: var(--gray-100);
-  border: 1px solid var(--gray-300);
-  border-radius: var(--radius);
+  background: var(--lighter);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-sm);
   border-right: 0;
   border-top-right-radius: 0;
   border-bottom-right-radius: 0;
@@ -219,191 +318,217 @@ require 'app/views/templates/spinner.php';
 .form-control {
   display: block;
   width: 100%;
-  padding: 0.625rem 0.875rem;
-  font-size: 0.875rem;
-  font-weight: 400;
+  padding: 14px 20px;
+  font-size: 0.95rem;
+  font-weight: 500;
   line-height: 1.5;
-  color: var(--gray-700);
-  background-color: #fff;
-  background-clip: padding-box;
-  border: 1px solid var(--gray-300);
-  border-radius: var(--radius);
-  transition: var(--transition);
+  color: var(--primary);
+  background: var(--lighter);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-sm);
+  transition: all 0.3s ease;
 }
 
 .form-control:focus {
-  outline: 0;
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px rgba(181, 158, 95, 0.15);
+  background: white;
 }
 
 .form-select {
   display: block;
   width: 100%;
-  padding: 0.625rem 2.25rem 0.625rem 0.875rem;
-  font-size: 0.875rem;
-  font-weight: 400;
+  padding: 14px 20px 14px 20px;
+  font-size: 0.95rem;
+  font-weight: 500;
   line-height: 1.5;
-  color: var(--gray-700);
-  background-color: #fff;
-  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+  color: var(--primary);
+  background: var(--lighter);
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%2309194D' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
   background-repeat: no-repeat;
-  background-position: right 0.875rem center;
+  background-position: right 20px center;
   background-size: 16px 12px;
-  border: 1px solid var(--gray-300);
-  border-radius: var(--radius);
-  transition: var(--transition);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-sm);
+  transition: all 0.3s ease;
+  appearance: none;
 }
 
 .form-select:focus {
-  border-color: var(--primary);
-  outline: 0;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+  border-color: var(--accent);
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(181, 158, 95, 0.15);
+  background: white;
 }
 
 .form-check {
-  display: block;
-  min-height: 1.5rem;
-  padding-left: 1.5em;
-  margin-bottom: 0.125rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
 }
 
 .form-check-input {
-  width: 1em;
-  height: 1em;
-  margin-top: 0.25em;
-  vertical-align: top;
-  background-color: #fff;
-  background-repeat: no-repeat;
-  background-position: center;
-  background-size: contain;
-  border: 1px solid var(--gray-300);
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s ease;
   appearance: none;
-  print-color-adjust: exact;
-  transition: var(--transition);
   position: relative;
-  margin-left: -1.5em;
+  flex-shrink: 0;
 }
 
 .form-check-input:checked {
-  background-color: var(--primary);
-  border-color: var(--primary);
+  background-color: var(--accent);
+  border-color: var(--accent);
+}
+
+.form-check-input:checked::after {
+  content: '✓';
+  position: absolute;
+  color: white;
+  font-size: 12px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 }
 
 .form-check-input:focus {
-  border-color: var(--primary);
-  outline: 0;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(181, 158, 95, 0.15);
 }
 
 .form-check-label {
   cursor: pointer;
-  font-size: 0.875rem;
-  color: var(--gray-700);
+  font-size: 0.9rem;
+  color: var(--primary);
+  font-weight: 500;
 }
 
 .form-label {
   display: block;
-  margin-bottom: 0.5rem;
-  font-weight: 500;
-  color: var(--gray-700);
-  font-size: 0.875rem;
+  margin-bottom: 0.75rem;
+  font-weight: 600;
+  color: var(--primary);
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .form-text {
-  margin-top: 0.25rem;
-  font-size: 0.75rem;
-  color: var(--gray-500);
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+  font-weight: 500;
 }
 
 .text-muted {
-  color: var(--gray-500) !important;
+  color: var(--muted) !important;
 }
 
 .small-text {
-  font-size: 0.75rem;
-  color: var(--gray-500);
-  margin-top: 0.25rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-top: 0.5rem;
+  font-weight: 500;
 }
 
+/* Enhanced Modals */
 .modal-header {
-  padding: 1.25rem 1.5rem;
-  border-bottom: 1px solid var(--gray-200);
+  padding: 1.5rem 2rem;
+  border-bottom: 2px solid var(--border);
+  background: var(--lighter);
 }
 
 .modal-title {
   margin-bottom: 0;
   line-height: 1.5;
-  font-weight: 600;
-  color: var(--gray-900);
+  font-weight: 700;
+  color: var(--primary);
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.75rem;
+  font-size: 1.25rem;
 }
 
 .modal-body {
-  padding: 1.5rem;
+  padding: 2rem;
 }
 
 .modal-footer {
-  padding: 1rem 1.5rem;
-  border-top: 1px solid var(--gray-200);
+  padding: 1.5rem 2rem;
+  border-top: 2px solid var(--border);
+  background: var(--lighter);
 }
 
 .btn-close {
   box-sizing: content-box;
   width: 1em;
   height: 1em;
-  padding: 0.25em;
-  color: #000;
-  background: transparent url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23000'%3e%3cpath d='M.293.293a1 1 0 0 1 1.414 0L8 6.586 14.293.293a1 1 0 1 1 1.414 1.414L9.414 8l6.293 6.293a1 1 0 0 1-1.414 1.414L8 9.414l-6.293 6.293a1 1 0 0 1-1.414-1.414L6.586 8 .293 1.707a1 1 0 0 1 0-1.414z'/%3e%3c/svg%3e") center/1em auto no-repeat;
+  padding: 0.5em;
+  color: var(--primary);
+  background: transparent url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%2309194D'%3e%3cpath d='M.293.293a1 1 0 0 1 1.414 0L8 6.586 14.293.293a1 1 0 1 1 1.414 1.414L9.414 8l6.293 6.293a1 1 0 0 1-1.414 1.414L8 9.414l-6.293 6.293a1 1 0 0 1-1.414-1.414L6.586 8 .293 1.707a1 1 0 0 1 0-1.414z'/%3e%3c/svg%3e") center/1em auto no-repeat;
   border: 0;
-  border-radius: var(--radius);
-  opacity: 0.5;
+  border-radius: var(--radius-sm);
+  opacity: 0.7;
   cursor: pointer;
+  transition: all 0.3s ease;
 }
 
 .btn-close:hover {
-  opacity: 0.75;
+  opacity: 1;
+  background-color: var(--light);
 }
 
+/* Empty State */
 .empty-state {
-  padding: 3rem 1rem;
+  padding: 4rem 2rem;
   text-align: center;
-  color: var(--gray-500);
+  color: var(--muted);
 }
 
 .empty-state-icon {
-  font-size: 2.5rem;
-  margin-bottom: 1rem;
-  opacity: 0.5;
+  font-size: 3rem;
+  margin-bottom: 1.5rem;
+  opacity: 0.7;
 }
 
 .empty-state-text {
-  margin-bottom: 1.5rem;
+  margin-bottom: 2rem;
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+/* Animations */
+.fade-in {
+  animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+  from { 
+    opacity: 0; 
+    transform: translateY(20px); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0); 
+  }
 }
 
 .loading-shimmer {
-  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background: linear-gradient(90deg, var(--light) 25%, var(--lighter) 50%, var(--light) 75%);
   background-size: 200% 100%;
   animation: loading 1.5s infinite;
-  border-radius: var(--radius);
+  border-radius: var(--radius-sm);
   height: 1rem;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
 }
 
 @keyframes loading {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
-}
-
-.fade-in {
-  animation: fadeIn 0.3s ease-in;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
 }
 
 /* Responsive styles */
@@ -418,6 +543,10 @@ require 'app/views/templates/spinner.php';
 }
 
 @media (max-width: 768px) {
+  .page-wrap {
+    padding: 1rem 0;
+  }
+  
   .page-header {
     flex-direction: column;
     align-items: flex-start !important;
@@ -432,6 +561,14 @@ require 'app/views/templates/spinner.php';
     width: 100%;
     justify-content: center;
   }
+  
+  .card-body {
+    padding: 1.5rem;
+  }
+  
+  .page-title {
+    font-size: 1.75rem;
+  }
 }
 
 @media (max-width: 640px) {
@@ -440,12 +577,35 @@ require 'app/views/templates/spinner.php';
     padding-right: 1rem;
   }
   
-  .card {
-    border-radius: 0;
-    margin-left: -1rem;
-    margin-right: -1rem;
+  .table th,
+  .table td {
+    padding: 1rem;
+  }
+  
+  .modal-body {
+    padding: 1.5rem;
+  }
+  
+  .empty-state {
+    padding: 3rem 1rem;
+  }
+  
+  .page-title {
+    font-size: 1.5rem;
   }
 }
+
+/* Utility Classes */
+.d-flex { display: flex; }
+.align-items-center { align-items: center; }
+.justify-content-between { justify-content: space-between; }
+.justify-content-end { justify-content: flex-end; }
+.text-end { text-align: right; }
+.me-3 { margin-right: 1rem; }
+.mb-3 { margin-bottom: 1rem; }
+.mt-3 { margin-top: 1rem; }
+.border-bottom { border-bottom: 2px solid var(--border); }
+.p-3 { padding: 1.5rem; }
 </style>
 
 <div class="page-wrap">
@@ -456,7 +616,7 @@ require 'app/views/templates/spinner.php';
         <p class="page-subtitle">Add (hire) or terminate team members. Hiring creates rows in <b>users</b> and <b>employees</b> tables.</p>
       </div>
       <button class="btn btn-primary" id="btnAdd">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
           <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
         </svg>
         Add Team Member
@@ -467,13 +627,13 @@ require 'app/views/templates/spinner.php';
       <div class="d-flex align-items-center p-3 border-bottom">
         <div class="input-group me-3" style="max-width:420px">
           <span class="input-group-text">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
               <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
             </svg>
           </span>
           <input id="q" class="form-control" placeholder="Search team members…">
         </div>
-        <div class="form-check form-switch">
+        <div class="form-check">
           <input class="form-check-input" type="checkbox" id="showTerminated">
           <label class="form-check-label" for="showTerminated">Show terminated</label>
         </div>
@@ -498,13 +658,13 @@ require 'app/views/templates/spinner.php';
       
       <div id="emptyState" class="empty-state" style="display: none;">
         <div class="empty-state-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" viewBox="0 0 16 16">
+          <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="currentColor" viewBox="0 0 16 16">
             <path d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1H7Zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm-5.784 6A2.238 2.238 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.325 6.325 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1h4.216ZM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z"/>
           </svg>
         </div>
         <div class="empty-state-text">No team members found</div>
         <button class="btn btn-primary" id="btnAddEmpty">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
             <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
           </svg>
           Add Team Member
@@ -520,7 +680,7 @@ require 'app/views/templates/spinner.php';
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
             <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
           </svg>
           Add Team Member
@@ -596,7 +756,7 @@ require 'app/views/templates/spinner.php';
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
             <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
             <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
           </svg>
@@ -792,7 +952,7 @@ function render() {
       <td>
         <div class="d-flex align-items-center">
           <div class="me-3">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16" style="color: var(--gray-400)">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="currentColor" viewBox="0 0 16 16" style="color: var(--neutral-light)">
               <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/>
               <path fill-rule="evenodd" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8zm8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1z"/>
             </svg>
@@ -826,13 +986,13 @@ function render() {
       <td class="text-end">
         ${r.is_active==1
             ? `<button class="btn btn-sm btn-outline-danger" ${IS_ADMIN?'':'disabled'} onclick="openTerminate(${r.user_id})">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
                   <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
                   <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
                 </svg>
                </button>`
             : `<button class="btn btn-sm btn-outline-success" ${IS_ADMIN?'':'disabled'} onclick="rehire(${r.user_id})">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
                   <path fill-rule="evenodd" d="M8 3a5 5 0 1 1-4.546 2.914.5.5 0 0 0-.908-.417A6 6 0 1 0 8 2v1z"/>
                   <path d="M8 4.466V.534a.25.25 0 0 0-.41-.192L5.23 2.308a.25.25 0 0 0 0 .384l2.36 1.966A.25.25 0 0 0 8 4.466z"/>
                 </svg>

@@ -242,9 +242,12 @@ $CHAT_TOKEN = isset($data['chat_token']) ? $data['chat_token'] : '';
 <script src="https://cdn.socket.io/4.7.5/socket.io.min.js" crossorigin="anonymous"></script>
 <script>
 (function() {
-  const UID = Number(document.querySelector('meta[name="tw-user-id"]')?.content || 0);
-  const UNAME = document.querySelector('meta[name="tw-user-name"]')?.content || 'User';
-  const CHAT_TOKEN = document.querySelector('meta[name="tw-chat-token"]')?.content || '';
+  const uidMeta = document.querySelector('meta[name="tw-user-id"]');
+  const unameMeta = document.querySelector('meta[name="tw-user-name"]');
+  const tokenMeta = document.querySelector('meta[name="tw-chat-token"]');
+  const UID = Number(uidMeta ? uidMeta.content : 0);
+  const UNAME = unameMeta ? unameMeta.content : 'User';
+  const CHAT_TOKEN = tokenMeta ? tokenMeta.content : '';
 
   const el = {
     people: document.getElementById('people'),
@@ -311,7 +314,7 @@ $CHAT_TOKEN = isset($data['chat_token']) ? $data['chat_token'] : '';
     }
 
     onConnectError(e) {
-      console.warn('[ChatManager] Connection error:', e?.message || e);
+      console.warn('[ChatManager] Connection error:', e && e.message ? e.message : e);
       this.scheduleReconnect();
     }
 
@@ -339,17 +342,22 @@ $CHAT_TOKEN = isset($data['chat_token']) ? $data['chat_token'] : '';
       this.on('presence:update', (data) => this.onPresenceUpdate(data));
       this.on('message:read_receipt', (data) => this.onReadReceipt(data));
       this.on('fatal', (m) => {
-        console.error('[ChatManager] Fatal error:', m?.error);
-        alert(m?.error || 'Chat error occurred');
+        console.error('[ChatManager] Fatal error:', m && m.error ? m.error : '');
+        alert(m && m.error ? m.error : 'Chat error occurred');
       });
     }
 
     on(event, handler) {
       if (!this.eventHandlers.has(event)) {
         this.eventHandlers.set(event, new Set());
-        this.socket?.on(event, (...args) => {
-          this.eventHandlers.get(event)?.forEach(h => h(...args));
-        });
+        if (this.socket) {
+          this.socket.on(event, (...args) => {
+            const handlers = this.eventHandlers.get(event);
+            if (handlers) {
+              handlers.forEach(h => h(...args));
+            }
+          });
+        }
       }
       this.eventHandlers.get(event).add(handler);
     }
@@ -494,11 +502,11 @@ $CHAT_TOKEN = isset($data['chat_token']) ? $data['chat_token'] : '';
       if (clickedItem) clickedItem.classList.add('active');
       
       this.emit('dm:open', targetUid, (res) => {
-        if (res?.ok) {
+        if (res && res.ok) {
           this.emit('rooms:refresh');
           this.openRoom({ id: res.room_id, is_group: 0, name: targetName || 'Direct Message' });
         } else {
-          alert(res?.error || 'Failed to open chat');
+          alert(res && res.error ? res.error || 'Failed to open chat');
         }
       });
     }
@@ -514,7 +522,7 @@ $CHAT_TOKEN = isset($data['chat_token']) ? $data['chat_token'] : '';
       }
 
       this.emit('room:create', { name, description: desc, members }, (res) => {
-        if (res?.ok) {
+        if (res && res.ok) {
           document.getElementById('groupModal').classList.remove('show');
           document.getElementById('groupName').value = '';
           document.getElementById('groupDesc').value = '';
@@ -522,7 +530,7 @@ $CHAT_TOKEN = isset($data['chat_token']) ? $data['chat_token'] : '';
           this.emit('rooms:refresh');
           this.openRoom({ id: res.room_id, is_group: 1, name });
         } else {
-          alert(res?.error || 'Failed to create group');
+          alert(res && res.error ? res.error || 'Failed to create group');
         }
       });
     }
@@ -574,7 +582,7 @@ $CHAT_TOKEN = isset($data['chat_token']) ? $data['chat_token'] : '';
       el.messages.innerHTML = '<div style="text-align:center;padding:2rem;color:#9ca3af;">Loading...</div>';
       
       this.emit('room:join', r.id, (res) => {
-        if (res?.ok) {
+        if (res && res.ok) {
           el.messages.innerHTML = '';
           this.currentRoomData = res.room;
           (res.messages || []).forEach(msg => this.appendMessage(msg));
@@ -699,7 +707,7 @@ $CHAT_TOKEN = isset($data['chat_token']) ? $data['chat_token'] : '';
           message_id: this.editingMessage,
           body: text
         }, (res) => {
-          if (res?.ok) {
+          if (res && res.ok) {
             el.input.value = '';
             this.editingMessage = null;
             this.adjustTextareaHeight();
@@ -710,7 +718,7 @@ $CHAT_TOKEN = isset($data['chat_token']) ? $data['chat_token'] : '';
           room_id: this.currentRoom,
           body: text
         }, (res) => {
-          if (res?.ok) {
+          if (res && res.ok) {
             el.input.value = '';
             this.adjustTextareaHeight();
           }
@@ -776,7 +784,7 @@ $CHAT_TOKEN = isset($data['chat_token']) ? $data['chat_token'] : '';
         description: document.getElementById('settingsDesc').value.trim(),
         avatar: document.getElementById('settingsAvatar').value.trim()
       }, (res) => {
-        if (res?.ok) {
+        if (res && res.ok) {
           document.getElementById('settingsModal').classList.remove('show');
           this.emit('rooms:refresh');
           alert('Settings saved!');
@@ -792,7 +800,7 @@ $CHAT_TOKEN = isset($data['chat_token']) ? $data['chat_token'] : '';
         room_id: this.currentRoom,
         user_id: userId
       }, (res) => {
-        if (res?.ok) {
+        if (res && res.ok) {
           alert('Member added!');
           this.emit('rooms:refresh');
         }
@@ -803,13 +811,13 @@ $CHAT_TOKEN = isset($data['chat_token']) ? $data['chat_token'] : '';
       if (!confirm('Leave this room?')) return;
       
       this.emit('room:leave', this.currentRoom, (res) => {
-        if (res?.ok) {
+        if (res && res.ok) {
           document.getElementById('settingsModal').classList.remove('show');
           this.currentRoom = null;
           this.emit('rooms:refresh');
           el.messages.innerHTML = '<div class="empty-state">You left the room</div>';
         } else {
-          alert(res?.error || 'Cannot leave room');
+          alert(res && res.error ? res.error || 'Cannot leave room');
         }
       });
     }
@@ -818,13 +826,13 @@ $CHAT_TOKEN = isset($data['chat_token']) ? $data['chat_token'] : '';
       if (!confirm('Delete this room? This cannot be undone!')) return;
       
       this.emit('room:delete', this.currentRoom, (res) => {
-        if (res?.ok) {
+        if (res && res.ok) {
           document.getElementById('settingsModal').classList.remove('show');
           this.currentRoom = null;
           this.emit('rooms:refresh');
           el.messages.innerHTML = '<div class="empty-state">Room deleted</div>';
         } else {
-          alert(res?.error || 'Cannot delete room');
+          alert(res && res.error ? res.error || 'Cannot delete room');
         }
       });
     }
@@ -836,7 +844,7 @@ $CHAT_TOKEN = isset($data['chat_token']) ? $data['chat_token'] : '';
         room_id: this.currentRoom,
         muted: !this.currentRoomData.muted
       }, (res) => {
-        if (res?.ok) {
+        if (res && res.ok) {
           this.emit('rooms:refresh');
         }
       });
