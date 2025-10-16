@@ -551,12 +551,28 @@ async function fetchJSON(url, options = {}) {
 let ALL_ROLES = [];
 let ALL_USERS = [];
 let DEPTS     = [];
+let IS_VIEW_ONLY = false;
+let ACCESS_LEVEL = 1;
 
 /* Init */
 document.addEventListener('DOMContentLoaded', async () => {
   await bootstrapData();
-  document.getElementById('btnAddDept').addEventListener('click', onAddDept);
-  document.getElementById('btnAddFirstDept').addEventListener('click', onAddDept);
+  
+  const btnAddDept = document.getElementById('btnAddDept');
+  const btnAddFirstDept = document.getElementById('btnAddFirstDept');
+  
+  btnAddDept.addEventListener('click', onAddDept);
+  btnAddFirstDept.addEventListener('click', onAddDept);
+  
+  if (IS_VIEW_ONLY) {
+    btnAddDept.style.display = 'none';
+    btnAddFirstDept.style.display = 'none';
+    
+    const subtitle = document.querySelector('.page-subtitle');
+    if (subtitle) {
+      subtitle.textContent = 'View departments and roles (Read-only access for Level 4 users)';
+    }
+  }
 });
 
 async function bootstrapData() {
@@ -565,6 +581,8 @@ async function bootstrapData() {
     ALL_ROLES = data.roles || [];
     ALL_USERS = data.users || [];
     DEPTS     = data.departments || [];
+    IS_VIEW_ONLY = data.is_view_only || false;
+    ACCESS_LEVEL = data.access_level || 1;
     renderList();
   } catch (error) {
     console.error('Failed to load data:', error);
@@ -611,34 +629,38 @@ function deptRow(d) {
   const count = document.createElement('div');
   count.className = 'dept-count';
   count.textContent = `${d.role_count} role${d.role_count !== 1 ? 's' : ''}`;
-  const rename = document.createElement('button');
-  rename.className = 'btn btn-outline btn-sm mt-2';
-  rename.innerHTML = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
-      <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207 11.207 2.5zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293l6.5-6.5zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325z"/>
-    </svg>
-    Rename
-  `;
-  rename.addEventListener('click', async () => {
-    const nn = prompt('New department name', d.name);
-    if (!nn || nn === d.name) return;
-    try {
-      await fetchJSON('/departments/api?a=department.rename', { 
-        method:'POST', 
-        body: JSON.stringify({ id:d.id, name: nn }) 
-      });
-      d.name = nn; 
-      name.innerHTML = `
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16" style="color: var(--accent);">
-          <path d="M6.5 14.5v-3.505c0-.245.25-.495.5-.495h2c.25 0 .5.25.5.5v3.5a.5.5 0 0 0 .5.5h4a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293L8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4a.5.5 0 0 0 .5-.5z"/>
-        </svg>
-        ${escapeHtml(d.name)}
-      `;
-    } catch (error) {
-      alert('Failed to rename department: ' + error.message);
-    }
-  });
-  left.append(name, count, rename);
+  if (!IS_VIEW_ONLY) {
+    const rename = document.createElement('button');
+    rename.className = 'btn btn-outline btn-sm mt-2';
+    rename.innerHTML = `
+      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+        <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207 11.207 2.5zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293l6.5-6.5zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325z"/>
+      </svg>
+      Rename
+    `;
+    rename.addEventListener('click', async () => {
+      const nn = prompt('New department name', d.name);
+      if (!nn || nn === d.name) return;
+      try {
+        await fetchJSON('/departments/api?a=department.rename', { 
+          method:'POST', 
+          body: JSON.stringify({ id:d.id, name: nn }) 
+        });
+        d.name = nn; 
+        name.innerHTML = `
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16" style="color: var(--accent);">
+            <path d="M6.5 14.5v-3.505c0-.245.25-.495.5-.495h2c.25 0 .5.25.5.5v3.5a.5.5 0 0 0 .5.5h4a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293L8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4a.5.5 0 0 0 .5-.5z"/>
+          </svg>
+          ${escapeHtml(d.name)}
+        `;
+      } catch (error) {
+        alert('Failed to rename department: ' + error.message);
+      }
+    });
+    left.append(name, count, rename);
+  } else {
+    left.append(name, count);
+  }
 
   /* middle: roles (chips + add input) */
   const mid = document.createElement('div');

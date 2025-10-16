@@ -1,12 +1,47 @@
-# TimeWise Chat
+# TimeWise Employee Management System
 
 ## Overview
 
-TimeWise Chat is a real-time messaging application built with Node.js and Socket.io. The system provides WebSocket-based chat functionality with persistent message storage and user authentication. It supports both individual and group chat capabilities, integrating with an existing TimeWise ecosystem that uses PHP-based authentication.
+TimeWise is a comprehensive employee management application that includes real-time chat, scheduling, time tracking, and department management features. The system uses PHP-based authentication with MySQL for user management and implements a robust role-based access control (RBAC) system with 5 access levels.
 
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
+
+## Role-Based Access Control (RBAC)
+
+### Access Level System (0-4)
+
+The application implements a 5-tier access level system stored in `users.access_level`:
+
+- **Level 0 - Inactive**: Cannot login (disabled account)
+- **Level 1 - Regular User**: Dashboard, Chat, Time Clock, My Shifts, Reminders
+- **Level 2 - Power User**: Dashboard, Chat, Time Clock, My Shifts, Reminders
+- **Level 3 - Team Lead**: Dashboard, Chat, Team Roster, Schedule Management, Reminders, Admin Reports
+- **Level 4 - Department Admin**: Dashboard, Chat, Time Clock, My Shifts, Reminders, Admin Reports, Departments & Roles (View Only - department scoped)
+
+### Access Control Implementation
+
+- **Configuration File**: `app/config/access.php` defines all navigation and controller access rules
+- **Access Control Class**: `app/core/AccessControl.php` handles permission checking
+- **Rule Syntax**: 
+  - `auth`: Any logged-in user
+  - `level:N`: Minimum access level N (e.g., level:3 means levels 3 and 4 can access)
+  - `role:name`: Specific role name (legacy support)
+  - `dept:Name`: Department-scoped access
+  - Combine rules with `&` for AND logic
+
+### Department Scoping
+
+- **employee_department table**: Junction table linking employees to departments
+- **Level 4 Behavior**: Department Admins only see departments they're assigned to
+- **View-Only**: Level 4 users can view departments/roles but cannot create, modify, or delete
+
+### Database Schema
+
+- **users.access_level**: INT (0-4) - User's access level
+- **employee_department**: (employee_id, department_id) - Department assignments
+- **department_managers**: (department_id, user_id) - Legacy manager assignments
 
 ## System Architecture
 

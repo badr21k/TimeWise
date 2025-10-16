@@ -47,6 +47,8 @@ class departments extends Controller
                         'roles'       => $this->listRoles(),
                         'users'       => $this->listUsers(),  // for Managers dropdown
                         'departments' => $this->listDepartmentsWithCounts(),
+                        'access_level' => $this->getUserAccessLevel(),
+                        'is_view_only' => $this->getUserAccessLevel() === 4,
                     ]);
                     break;
 
@@ -200,9 +202,18 @@ class departments extends Controller
     /* ===== helpers ===== */
 
     private function guardAdmin() {
+        // Level 4 users can view but not modify
+        // Only admins (legacy) or higher access levels can modify
         if (!isset($_SESSION['is_admin']) || (int)$_SESSION['is_admin'] !== 1) {
-            throw new Exception('Admin access required');
+            throw new Exception('Admin access required for modifications');
         }
+    }
+    
+    private function getUserAccessLevel(): int {
+        if (class_exists('AccessControl')) {
+            return AccessControl::getCurrentUserAccessLevel();
+        }
+        return isset($_SESSION['is_admin']) && $_SESSION['is_admin'] ? 4 : 1;
     }
 
     private function json(): array {
@@ -223,6 +234,33 @@ class departments extends Controller
     }
 
     private function listDepartmentsWithCounts(): array {
+        $accessLevel = $this->getUserAccessLevel();
+        
+        // Level 4 users only see departments they're assigned to
+        if ($accessLevel === 4 && class_exists('AccessControl')) {
+            $userDeptIds = AccessControl::getUserDepartmentIds();
+            
+            if (empty($userDeptIds)) {
+                return []; // No departments assigned
+            }
+            
+            $placeholders = implode(',', array_fill(0, count($userDeptIds), '?'));
+            $sql = "
+                SELECT d.id, d.name, 
+                       COUNT(dr.role_id) AS role_count
+                FROM departments d
+                LEFT JOIN department_roles dr ON dr.department_id = d.id
+                WHERE d.id IN ($placeholders)
+                GROUP BY d.id, d.name
+                ORDER BY d.name ASC
+            ";
+            
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute($userDeptIds);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        }
+        
+        // For all other users, show all departments
         $sql = "
             SELECT d.id, d.name, 
                    COUNT(dr.role_id) AS role_count
