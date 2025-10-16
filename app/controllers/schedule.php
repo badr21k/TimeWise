@@ -48,7 +48,37 @@ class Schedule extends Controller
 
                 /* ----------------- Employees ----------------- */
                 case 'employees.list':
-                    echo json_encode($this->Employee->all());
+                    $employees = $this->Employee->all();
+                    
+                    // Apply department scoping for Level 4 users (Department Admins)
+                    if (class_exists('AccessControl')) {
+                        $accessLevel = AccessControl::getCurrentUserAccessLevel();
+                        if ($accessLevel === 4) {
+                            $userDeptIds = AccessControl::getUserDepartmentIds();
+                            if (!empty($userDeptIds)) {
+                                $db = db_connect();
+                                // Filter employees to only those in the user's departments
+                                $employees = array_filter($employees, function($emp) use ($userDeptIds, $db) {
+                                    // Get departments for this employee
+                                    $stmt = $db->prepare("
+                                        SELECT department_id 
+                                        FROM employee_department 
+                                        WHERE employee_id = :emp_id
+                                    ");
+                                    $stmt->execute([':emp_id' => $emp['id']]);
+                                    $empDeptIds = $stmt->fetchAll(PDO::FETCH_COLUMN);
+                                    
+                                    // Check if employee has any department in common with user
+                                    return !empty(array_intersect($empDeptIds, $userDeptIds));
+                                });
+                                $employees = array_values($employees); // Re-index array
+                            } else {
+                                $employees = []; // No departments = no employees visible
+                            }
+                        }
+                    }
+                    
+                    echo json_encode($employees);
                     break;
 
                 case 'employees.create':
@@ -79,6 +109,33 @@ class Schedule extends Controller
                     $week = $_GET['week'] ?? date('Y-m-d');
                     $w    = ScheduleWeek::mondayOf($week);
                     $rows = $this->Shift->forWeek($w);
+                    
+                    // Apply department scoping for Level 4 users (Department Admins)
+                    if (class_exists('AccessControl')) {
+                        $accessLevel = AccessControl::getCurrentUserAccessLevel();
+                        if ($accessLevel === 4) {
+                            $userDeptIds = AccessControl::getUserDepartmentIds();
+                            if (!empty($userDeptIds)) {
+                                $db = db_connect();
+                                // Filter shifts to only those for employees in the user's departments
+                                $rows = array_filter($rows, function($shift) use ($userDeptIds, $db) {
+                                    $stmt = $db->prepare("
+                                        SELECT department_id 
+                                        FROM employee_department 
+                                        WHERE employee_id = :emp_id
+                                    ");
+                                    $stmt->execute([':emp_id' => $shift['employee_id']]);
+                                    $empDeptIds = $stmt->fetchAll(PDO::FETCH_COLUMN);
+                                    
+                                    return !empty(array_intersect($empDeptIds, $userDeptIds));
+                                });
+                                $rows = array_values($rows);
+                            } else {
+                                $rows = [];
+                            }
+                        }
+                    }
+                    
                     echo json_encode(['week_start'=>$w,'shifts'=>$rows,'is_admin'=>$this->isAdmin()]);
                     break;
                 }
