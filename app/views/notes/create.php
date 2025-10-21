@@ -15,7 +15,7 @@
                     <?php if (isset($_SESSION['error'])): ?>
                         <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
                             <i class="fas fa-exclamation-triangle me-2"></i>
-                            <strong>Error!</strong> <?php echo $_SESSION['error']; unset($_SESSION['error']); ?>
+                            <strong>Error!</strong> <?php echo htmlspecialchars($_SESSION['error']); unset($_SESSION['error']); ?>
                             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                         </div>
                     <?php endif; ?>
