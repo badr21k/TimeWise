@@ -43,12 +43,14 @@ class departments extends Controller
             switch ($a) {
                 /* ---------- Bootstrap ---------- */
                 case 'bootstrap':
+                    $accessLevel = $this->getUserAccessLevel();
                     echo json_encode([
                         'roles'       => $this->listRoles(),
                         'users'       => $this->listUsers(),  // for Managers dropdown
-                        'departments' => $this->listDepartmentsWithCounts(),
-                        'access_level' => $this->getUserAccessLevel(),
-                        'is_view_only' => $this->getUserAccessLevel() === 4,
+                        'departments' => $this->listDepartmentsWithRolesOptimized(),
+                        'access_level' => $accessLevel,
+                        'is_level_1' => $accessLevel === 1,  // Full access
+                        'is_level_4' => $accessLevel === 4,  // Scoped access
                     ]);
                     break;
 
@@ -385,6 +387,91 @@ class departments extends Controller
         ");
         $stmt->execute([':d'=>$deptId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+    
+    /**
+     * Optimized: Load departments with their roles in a single query
+     * For Level 4 users, only their assigned departments are returned
+     */
+    private function listDepartmentsWithRolesOptimized(): array {
+        $accessLevel = $this->getUserAccessLevel();
+        
+        // Level 4 users only see departments they're assigned to
+        if ($accessLevel === 4 && class_exists('AccessControl')) {
+            $userDeptIds = AccessControl::getUserDepartmentIds();
+            
+            if (empty($userDeptIds)) {
+                return []; // No departments assigned
+            }
+            
+            $placeholders = implode(',', array_fill(0, count($userDeptIds), '?'));
+            $sql = "
+                SELECT 
+                    d.id as dept_id,
+                    d.name as dept_name,
+                    r.id as role_id,
+                    r.name as role_name
+                FROM departments d
+                LEFT JOIN department_roles dr ON dr.department_id = d.id
+                LEFT JOIN roles r ON r.id = dr.role_id
+                WHERE d.id IN ($placeholders)
+                ORDER BY d.name ASC, r.name ASC
+            ";
+            
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute($userDeptIds);
+            return $this->groupDepartmentRoles($stmt->fetchAll(PDO::FETCH_ASSOC));
+        }
+        
+        // For all other users (Level 1 full access), show all departments
+        $sql = "
+            SELECT 
+                d.id as dept_id,
+                d.name as dept_name,
+                r.id as role_id,
+                r.name as role_name
+            FROM departments d
+            LEFT JOIN department_roles dr ON dr.department_id = d.id
+            LEFT JOIN roles r ON r.id = dr.role_id
+            ORDER BY d.name ASC, r.name ASC
+        ";
+        
+        return $this->groupDepartmentRoles($this->db->query($sql)->fetchAll(PDO::FETCH_ASSOC));
+    }
+    
+    /**
+     * Group flat department-role result set into nested structure
+     */
+    private function groupDepartmentRoles(array $rows): array {
+        $departments = [];
+        $deptMap = [];
+        
+        foreach ($rows as $row) {
+            $deptId = (int)$row['dept_id'];
+            
+            // Add department if not yet added
+            if (!isset($deptMap[$deptId])) {
+                $deptMap[$deptId] = count($departments);
+                $departments[] = [
+                    'id' => $deptId,
+                    'name' => $row['dept_name'],
+                    'roles' => [],
+                    'role_count' => 0
+                ];
+            }
+            
+            // Add role if present
+            if ($row['role_id']) {
+                $deptIndex = $deptMap[$deptId];
+                $departments[$deptIndex]['roles'][] = [
+                    'id' => (int)$row['role_id'],
+                    'name' => $row['role_name']
+                ];
+                $departments[$deptIndex]['role_count']++;
+            }
+        }
+        
+        return $departments;
     }
 
     private function ensurePivotTables(): void {
