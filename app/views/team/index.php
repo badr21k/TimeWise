@@ -1008,7 +1008,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('showTerminated').addEventListener('change', render);
 
   document.getElementById('btnAdd').addEventListener('click', async () => {
-    if (![1, 3, 4].includes(ACCESS_LEVEL)) return alert('Insufficient permissions to add team members');
+    if (ACCESS_LEVEL < 3) return alert('Team Lead or higher access required');
     clearHireForm();
     await loadDepartments();
     await loadRolesForHire();
@@ -1017,7 +1017,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
   
   document.getElementById('btnAddEmpty').addEventListener('click', async () => {
-    if (![1, 3, 4].includes(ACCESS_LEVEL)) return alert('Insufficient permissions to add team members');
+    if (ACCESS_LEVEL < 3) return alert('Team Lead or higher access required');
     clearHireForm();
     await loadDepartments();
     await loadRolesForHire();
@@ -1035,21 +1035,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 async function bootstrapTeam() {
   try {
     const data = await get('/team/api?a=bootstrap');
-    if (!data || !data.users) {
-      throw new Error('Invalid data structure: ' + JSON.stringify(data));
-    }
-    ROSTER = data.users || [];
+    ROSTER = data.roster || [];
     ACCESS_LEVEL = parseInt(data.access_level || 1);
-    
-    // Show/hide Add buttons based on access level (1, 3, 4 can add; 0, 2 cannot)
-    const canAdd = [1, 3, 4].includes(ACCESS_LEVEL);
-    document.getElementById('btnAdd').style.display = canAdd ? 'inline-flex' : 'none';
-    document.getElementById('btnAddEmpty').style.display = canAdd ? 'inline-flex' : 'none';
-    
     render();
   } catch (error) {
     console.error('Failed to load team data:', error);
-    showError('Failed to load team data: ' + error.message);
+    showError('Failed to load team data. Please refresh the page.');
   }
 }
 
@@ -1209,7 +1200,7 @@ function render() {
       (r.name||'').toLowerCase().includes(q) || 
       (r.username||'').toLowerCase().includes(q) || 
       (r.email||'').toLowerCase().includes(q);
-    const matchTerm = showTerm ? true : (parseInt(r.status) === 1);
+    const matchTerm = showTerm ? true : (parseInt(r.is_active) === 1);
     return matchQ && matchTerm;
   });
   
@@ -1257,27 +1248,27 @@ function render() {
           return labels[level] ?? '<span class="badge badge-secondary">Level ' + level + '</span>';
         })()}
       </td>
-      <td data-label="Role">${escapeHtml(r.role||'—')}</td>
+      <td data-label="Role">${escapeHtml(r.role_title||'—')}</td>
       <td data-label="Wage">
         <div>${Number(r.wage||0).toFixed(2)}</div>
         <div class="small-text">${r.rate||'hourly'}</div>
       </td>
       <td data-label="Status">
-        ${r.status==1
+        ${r.is_active==1
           ? '<span class="badge badge-success">Active</span>'
           : `<span class="badge badge-danger">Terminated</span>
              <div class="small-text">${escapeHtml(r.termination_reason||'')}</div>`}
       </td>
       <td data-label="Actions" class="text-end">
-        ${r.status==1
-            ? `<button class="btn btn-sm btn-outline-danger" ${[1,3,4].includes(ACCESS_LEVEL)?'':'disabled'} onclick="openTerminate(${r.user_id})">
+        ${r.is_active==1
+            ? `<button class="btn btn-sm btn-outline-danger" ${ACCESS_LEVEL>=3?'':'disabled'} onclick="openTerminate(${r.user_id})">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
                   <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
                   <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
                 </svg>
                 <span class="d-none d-md-inline">Terminate</span>
                </button>`
-            : `<button class="btn btn-sm btn-outline-success" ${[1,3,4].includes(ACCESS_LEVEL)?'':'disabled'} onclick="rehire(${r.user_id})">
+            : `<button class="btn btn-sm btn-outline-success" ${ACCESS_LEVEL>=3?'':'disabled'} onclick="rehire(${r.user_id})">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
                   <path fill-rule="evenodd" d="M8 3a5 5 0 1 1-4.546 2.914.5.5 0 0 0-.908-.417A6 6 0 1 0 8 2v1z"/>
                   <path d="M8 4.466V.534a.25.25 0 0 0-.41-.192L5.23 2.308a.25.25 0 0 0 0 .384l2.36 1.966A.25.25 0 0 0 8 4.466z"/>
@@ -1386,8 +1377,8 @@ async function rehire(user_id){
 /* ---------- Utils ---------- */
 async function refreshRoster(){ 
   try {
-    const d = await get('/team/api?a=bootstrap'); 
-    ROSTER = d.users || []; 
+    const d = await get('/team/api?a=list'); 
+    ROSTER = d.roster||[]; 
     render();
   } catch (error) {
     showError('Failed to refresh roster: ' + error.message);
