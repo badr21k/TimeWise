@@ -69,6 +69,10 @@ class departments extends Controller
                     $id   = (int)($in['id'] ?? 0);
                     $name = trim($in['name'] ?? '');
                     if (!$id || $name==='') throw new Exception('Invalid rename');
+                    
+                    // Level 4 can only rename their own departments
+                    $this->guardDepartmentAccess($id);
+                    
                     $stmt = $this->db->prepare("UPDATE departments SET name=:n WHERE id=:id");
                     $stmt->execute([':n'=>$name, ':id'=>$id]);
                     echo json_encode(['ok'=>true]);
@@ -78,6 +82,9 @@ class departments extends Controller
                     $this->guardAdmin();
                     $id = (int)($_GET['id'] ?? 0);
                     if (!$id) throw new Exception('Invalid id');
+                    
+                    // Level 4 can only delete their own departments
+                    $this->guardDepartmentAccess($id);
 
                     // Grab affected managers first
                     $stmt = $this->db->prepare("SELECT DISTINCT user_id FROM department_managers WHERE department_id = :id");
@@ -98,6 +105,9 @@ class departments extends Controller
                     $in = $this->json();
                     $deptId   = (int)($in['department_id'] ?? 0);
                     if (!$deptId) throw new Exception('department_id required');
+                    
+                    // Level 4 can only manage roles for their own departments
+                    $this->guardDepartmentAccess($deptId);
 
                     $roleId   = (int)($in['role_id'] ?? 0);
                     $roleName = trim($in['role_name'] ?? '');
@@ -131,6 +141,10 @@ class departments extends Controller
                     $deptId = (int)($in['department_id'] ?? 0);
                     $roleId = (int)($in['role_id'] ?? 0);
                     if (!$deptId || !$roleId) throw new Exception('department_id and role_id required');
+                    
+                    // Level 4 can only manage roles for their own departments
+                    $this->guardDepartmentAccess($deptId);
+                    
                     $this->db->prepare("DELETE FROM department_roles WHERE department_id=:d AND role_id=:r")
                              ->execute([':d'=>$deptId, ':r'=>$roleId]);
                     echo json_encode(['ok'=>true]);
@@ -140,6 +154,9 @@ class departments extends Controller
                 case 'members.list':
                     $deptId = (int)($_GET['dept_id'] ?? 0);
                     if (!$deptId) throw new Exception('dept_id required');
+                    
+                    // Level 4 can only view members of their own departments
+                    $this->guardDepartmentAccess($deptId);
                     
                     // Get all employees in this department with their access levels
                     $sql = "
@@ -184,6 +201,9 @@ class departments extends Controller
                     $deptId = (int)($in['department_id'] ?? 0);
                     $userId = (int)($in['user_id'] ?? 0);
                     if (!$deptId || !$userId) throw new Exception('department_id and user_id required');
+                    
+                    // Level 4 can only manage their own departments
+                    $this->guardDepartmentAccess($deptId);
 
                     // Link user to department as manager
                     $this->db->prepare("
@@ -200,6 +220,9 @@ class departments extends Controller
                     $deptId = (int)($in['department_id'] ?? 0);
                     $userId = (int)($in['user_id'] ?? 0);
                     if (!$deptId || !$userId) throw new Exception('department_id and user_id required');
+                    
+                    // Level 4 can only manage their own departments
+                    $this->guardDepartmentAccess($deptId);
 
                     // Unlink manager
                     $this->db->prepare("
@@ -234,18 +257,46 @@ class departments extends Controller
     private function guardAdmin() {
         $accessLevel = $this->getUserAccessLevel();
         
-        // Level 4 users have view-only access, cannot mutate data
-        if ($accessLevel === 4) {
-            http_response_code(403);
-            echo json_encode(['error' => 'Forbidden: Department Admins (Level 4) have view-only access']);
-            exit;
+        // Level 1 has FULL ACCESS - allow all operations
+        if ($accessLevel === 1) {
+            return;
         }
         
-        // Require level 3+ (Team Lead or above, but not level 4)
-        if ($accessLevel < 3) {
+        // Level 4 has FULL EDIT scoped to their departments - allow operations
+        // Department-specific validation will happen in individual methods
+        if ($accessLevel === 4) {
+            return;
+        }
+        
+        // Level 3 (Team Lead) not allowed access to departments
+        // Level 2 (Power User) not allowed access to departments
+        // Deny access for levels 2 and 3
+        if ($accessLevel === 2 || $accessLevel === 3) {
             http_response_code(403);
-            echo json_encode(['error' => 'Forbidden: Requires Team Lead (Level 3) access or higher']);
+            echo json_encode(['error' => 'Forbidden: Access denied']);
             exit;
+        }
+    }
+    
+    /**
+     * Verify Level 4 user has access to a specific department
+     */
+    private function guardDepartmentAccess(int $deptId): void {
+        $accessLevel = $this->getUserAccessLevel();
+        
+        // Level 1 has full access to all departments
+        if ($accessLevel === 1) {
+            return;
+        }
+        
+        // Level 4 can only access their assigned departments
+        if ($accessLevel === 4 && class_exists('AccessControl')) {
+            $userDeptIds = AccessControl::getUserDepartmentIds();
+            if (!in_array($deptId, $userDeptIds)) {
+                http_response_code(403);
+                echo json_encode(['error' => 'Forbidden: You do not have access to this department']);
+                exit;
+            }
         }
     }
     

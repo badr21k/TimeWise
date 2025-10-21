@@ -7,10 +7,10 @@
  * 
  * Access Level System (0-4):
  * - 0 = Inactive (cannot login)
- * - 1 = Regular User - Dashboard, Chat, Time Clock, My Shifts, Reminders
+ * - 1 = Regular User - Dashboard, Chat, Time Clock, My Shifts, Reminders, Departments & Roles (FULL ACCESS)
  * - 2 = Power User - Dashboard, Chat, Time Clock, My Shifts, Reminders
  * - 3 = Team Lead - Dashboard, Chat, Team, Schedule, Reminders, Admin Reports
- * - 4 = Department Admin - Dashboard, Chat, Time Clock, My Shifts, Reminders, Admin Reports, Departments & Roles (View Only)
+ * - 4 = Department Admin - Dashboard, Chat, Time Clock, My Shifts, Reminders, Admin Reports, Departments & Roles (FULL EDIT - scoped to own departments)
  * 
  * Rules support:
  * - auth: any logged-in user
@@ -31,7 +31,7 @@ return [
         
         // Team & Schedule dropdown items
         'team_roster' => 'level:3',             // Level 3+ (Team Lead and above)
-        'departments_roles' => 'level:4',       // Level 4 only (Department Admin - view only)
+        'departments_roles' => 'level:1',       // Level 1 (FULL) and Level 4 (scoped to own departments)
         'schedule' => 'level:3',                // Level 3+ (Team Lead and above)
         'my_shifts' => 'level:1',               // Level 1+ (Regular User and above)
         'time_clock' => 'level:1',              // Level 1+ (Regular User and above)
@@ -43,7 +43,7 @@ return [
     // Controller-level access rules (server-side enforcement)
     'controllers' => [
         'reports' => 'level:3',                 // Team Leads and above
-        'departments' => 'level:4',             // Department Admins only (view only)
+        'departments' => 'level:1',             // Level 1 (FULL) and Level 4 (scoped)
         'team' => 'level:3',                    // Team Leads and above
         'schedule' => [
             'index' => 'level:3',               // Schedule management - Team Leads and above
@@ -64,7 +64,7 @@ return [
         'reports.hours' => 'level:3',
         'reports.hoursEmployee' => 'level:3',
         'team.roster' => 'level:3',
-        'departments.index' => 'level:4',
+        'departments.index' => 'level:1',       // Level 1 (FULL) and Level 4 (scoped)
         'schedule.index' => 'level:3',
         'timeclock.index' => 'level:1',
         'timeclock.api' => 'level:1',
