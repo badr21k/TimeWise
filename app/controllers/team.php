@@ -47,6 +47,7 @@ class Team extends Controller
                         'roster' => $this->roster(),
                         'departments' => $this->departments(),  // for optional UI use
                         'roles' => $this->roles(),
+                        'access_level' => (int)($_SESSION['access_level'] ?? 1),
                     ]);
                     break;
 

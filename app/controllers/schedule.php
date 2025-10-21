@@ -136,7 +136,11 @@ class Schedule extends Controller
                         }
                     }
                     
-                    echo json_encode(['week_start'=>$w,'shifts'=>$rows]);
+                    echo json_encode([
+                        'week_start' => $w,
+                        'shifts' => $rows,
+                        'access_level' => (int)($_SESSION['access_level'] ?? 1)
+                    ]);
                     break;
                 }
 

@@ -49,7 +49,7 @@ class AccessControl
             
             // Get user basic info with access_level
             $userStmt = $db->prepare("
-                SELECT u.id, u.username, u.is_admin, u.access_level, u.full_name
+                SELECT u.id, u.username, u.access_level, u.full_name
                 FROM users u 
                 WHERE u.id = :user_id
             ");
@@ -60,8 +60,8 @@ class AccessControl
                 return null;
             }
             
-            // Set access_level - use access_level if available, otherwise fallback to is_admin
-            $user['access_level'] = (int)($user['access_level'] ?? ($user['is_admin'] ? 4 : 1));
+            // Set access_level - default to 1 (Regular User) if not set
+            $user['access_level'] = (int)($user['access_level'] ?? 1);
             
             // Try to find linked employee record to get a role title
             $employee = self::findEmployeeForUser($userId, $user);
@@ -94,7 +94,7 @@ class AccessControl
             
             // Determine effective roles
             $roles = [];
-            if (!empty($user['is_admin'])) {
+            if ($user['access_level'] >= 4) {
                 $roles[] = 'admin';
             }
             if (!empty($user['is_manager'])) {

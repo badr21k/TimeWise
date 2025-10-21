@@ -747,7 +747,7 @@ async function fetchJSON(url, options = {}) {
 let employees = [];
 let shifts = [];
 let currentWeekStart = null;
-let isAdmin = false;
+let accessLevel = 1;
 let shiftModal, copyWeekModal, copyUserModal, copyOneModal;
 let currentEmployee = null;
 let selectedDays = new Set();
@@ -875,15 +875,15 @@ async function loadWeek() {
   try {
     const data = await fetchJSON(`/schedule/api?a=shifts.week&week=${currentWeekStart}`);
     shifts  = data.shifts || [];
-    isAdmin = !!data.is_admin;
+    accessLevel = parseInt(data.access_level || 1);
 
     updateWeekHeader();
     renderGrid();
     await loadPublishStatus();
 
-    // show/hide tools for admin
+    // show/hide tools for Team Leads and above (Level 3+)
     const toolsWrap = document.getElementById('toolsWrap');
-    if (toolsWrap) toolsWrap.style.display = isAdmin ? 'block' : 'none';
+    if (toolsWrap) toolsWrap.style.display = accessLevel >= 3 ? 'block' : 'none';
   } catch (e) {
     console.error('Error loading week:', e);
     showError('Failed to load schedule data');
@@ -904,7 +904,7 @@ async function loadPublishStatus() {
       ind.className = 'badge badge-warning'; 
       btn.innerHTML = '<i class="fas fa-paper-plane me-1"></i>Publish'; 
     }
-    btn.style.display = isAdmin ? 'block' : 'none';
+    btn.style.display = accessLevel >= 3 ? 'block' : 'none';
   } catch (e) { console.error('Error loading publish status:', e); }
 }
 
@@ -946,7 +946,7 @@ function renderGrid() {
           <div class="employee-name">${escapeHtml(emp.name)}</div>
           <div class="employee-role">${escapeHtml(emp.role_title || '')}</div>
         </div>
-        ${isAdmin ? `<button class="btn btn-outline btn-sm" title="Copy this user's shifts to another user" onclick="openCopyUserModal(${emp.id})">
+        ${accessLevel >= 3 ? `<button class="btn btn-outline btn-sm" title="Copy this user's shifts to another user" onclick="openCopyUserModal(${emp.id})">
           <i class="fas fa-copy me-1"></i>Copy
         </button>` : ''}
       </div>
@@ -961,7 +961,7 @@ function renderGrid() {
       const todays = empShifts.filter(s => (s.start_dt || '').slice(0,10) === day.date);
       todays.forEach(shift => cell.appendChild(shiftBlock(shift)));
 
-      if (isAdmin) {
+      if (accessLevel >= 3) {
         const add = document.createElement('div'); 
         add.className = 'add-shift-area';
         const btn = document.createElement('button');
@@ -987,7 +987,7 @@ function shiftBlock(shift) {
   div.innerHTML = `
     <div class="shift-time">${t1}-${t2}</div>
     <div class="shift-role">${escapeHtml(shift.notes || shift.employee_role || '')}</div>
-    ${isAdmin ? `
+    ${accessLevel >= 3 ? `
       <div class="shift-actions">
         <button class="shift-mini" title="Copy" onclick="openCopyOne(${shift.id}, '${(shift.start_dt||'').slice(0,10)}')">
           <i class="fas fa-copy"></i>
@@ -1011,7 +1011,7 @@ async function loadRolesIntoModal() {
 
 // ===== Modal/CRUD =====
 async function openShiftModal(emp, ymd) {
-  if (!isAdmin) return;
+  if (!accessLevel >= 3) return;
   currentEmployee = emp;
   selectedDays.clear();
   document.querySelectorAll('.day-selector').forEach((b) => { b.classList.remove('active'); b.classList.add('btn-outline'); });
@@ -1056,13 +1056,13 @@ async function saveShift() {
 }
 
 async function deleteShift(id) {
-  if (!isAdmin || !confirm('Are you sure you want to delete this shift?')) return;
+  if (!accessLevel >= 3 || !confirm('Are you sure you want to delete this shift?')) return;
   try { await fetchJSON(`/schedule/api?a=shifts.delete&id=${id}`); await loadWeek(); showSuccess('Shift deleted successfully'); }
   catch (e) { console.error('Error deleting shift:', e); showError('Error deleting shift: ' + e.message); }
 }
 
 async function togglePublish() {
-  if (!isAdmin) return;
+  if (!accessLevel >= 3) return;
   try {
     const status = await fetchJSON(`/schedule/api?a=publish.status&week=${currentWeekStart}`);
     const newStatus = !status.published;
@@ -1074,7 +1074,7 @@ async function togglePublish() {
 
 // ===== Tools: Copy week / user / one =====
 function openCopyWeekModal() {
-  if (!isAdmin) return;
+  if (!accessLevel >= 3) return;
   document.getElementById('cwSource').value = currentWeekStart;
   document.getElementById('cwTarget').value = nextMonday(currentWeekStart);
   document.getElementById('cwOverwrite').checked = false;
@@ -1109,7 +1109,7 @@ async function copyThisToNext() {
 }
 
 function openCopyUserModal(prefillFromId = null) {
-  if (!isAdmin) return;
+  if (!accessLevel >= 3) return;
   const fromSel = document.getElementById('cuFrom');
   const toSel   = document.getElementById('cuTo');
   fromSel.innerHTML = ''; toSel.innerHTML = '';
@@ -1139,7 +1139,7 @@ async function doCopyUser() {
 
 // Single-shift copy
 function openCopyOne(shiftId, dateYmd) {
-  if (!isAdmin) return;
+  if (!accessLevel >= 3) return;
   document.getElementById('coShiftId').value = String(shiftId);
   document.getElementById('coDate').value = dateYmd;
   const toSel = document.getElementById('coTo'); toSel.innerHTML = '';

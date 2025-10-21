@@ -41,9 +41,9 @@ class User {
             header('Location: /login'); exit;
         }
 
-        // Fetch user (include is_admin + full_name!)
+        // Fetch user (include access_level + full_name!)
         $stmt = $db->prepare("
-            SELECT id, username, password, is_admin, full_name
+            SELECT id, username, password, access_level, full_name
             FROM users
             WHERE username = :u
             LIMIT 1
@@ -66,11 +66,11 @@ class User {
             $_SESSION['id']         = (int)$row['id'];            // <-- needed by Schedule::currentUserRow()
             $_SESSION['user_id']    = (int)$row['id'];            // keep if referenced elsewhere
             $_SESSION['username']   = ucwords($row['username'] ?? $username);
-            $_SESSION['is_admin']   = (int)($row['is_admin'] ?? 0);
+            $_SESSION['access_level'] = (int)($row['access_level'] ?? 1);
             $_SESSION['full_name']  = $row['full_name'] ?? null;
 
             // Optional debug
-            error_log("User {$username} logged in with admin status: " . $_SESSION['is_admin']);
+            error_log("User {$username} logged in with access level: " . $_SESSION['access_level']);
 
             $_SESSION['toast'] = ['type'=>'success','title'=>'Welcome Back!','message'=>'You have successfully logged in.'];
 

@@ -741,7 +741,7 @@
                           <i class="fas fa-user"></i>
                         </div>
                         <span class="d-none d-md-inline text-white"><?php echo htmlspecialchars($_SESSION['username'] ?? 'User'); ?></span>
-                        <?php if (isset($_SESSION['is_admin']) && (int)$_SESSION['is_admin'] === 1): ?>
+                        <?php if (isset($_SESSION['access_level']) && (int)$_SESSION['access_level'] >= 4): ?>
                           <span class="admin-badge">Admin</span>
                         <?php endif; ?>
                         <i class="fas fa-chevron-down ms-2 small text-white"></i>
