@@ -42,7 +42,7 @@ class Team extends Controller
         try {
             switch ($a) {
 
-                case 'bootstrap': // roster + departments + roles (single optimized query)
+                case 'bootstrap': // Single consolidated query for all data
                     $accessLevel = (int)($_SESSION['access_level'] ?? 1);
                     $userId = (int)($_SESSION['user_id'] ?? 0);
                     
@@ -52,13 +52,12 @@ class Team extends Controller
                         $userDeptIds = AccessControl::getUserDepartmentIds();
                     }
                     
-                    echo json_encode([
-                        'roster' => $this->roster(),
-                        'departments' => $this->departmentsAll(),
-                        'roles' => $this->rolesWithDepartment(), // Roles with department_id
-                        'access_level' => $accessLevel,
-                        'user_department_ids' => $userDeptIds, // Level 4 scoping
-                    ]);
+                    // Single optimized bootstrap query
+                    $data = $this->bootstrapOptimized($accessLevel, $userDeptIds);
+                    $data['access_level'] = $accessLevel;
+                    $data['user_department_ids'] = $userDeptIds;
+                    
+                    echo json_encode($data);
                     break;
                     
                 /* Get roles for a specific department */
@@ -172,6 +171,20 @@ class Team extends Controller
                     $rehire_ok = (int)($in['eligible_for_rehire'] ?? 1);
                     if ($user_id <= 0) throw new Exception('user_id required');
 
+                    // Get employee's current department for scoping check
+                    $stmt = $this->db->prepare("
+                        SELECT ed.department_id 
+                        FROM employees e
+                        LEFT JOIN employee_department ed ON ed.employee_id = e.id
+                        WHERE e.user_id = :uid 
+                        LIMIT 1
+                    ");
+                    $stmt->execute([':uid' => $user_id]);
+                    $currentDeptId = $stmt->fetchColumn();
+                    
+                    // Level 4 must have access to employee's department
+                    $this->guardDepartmentAccess($currentDeptId ?: null);
+
                     $this->db->prepare("
                         UPDATE employees
                            SET is_active = 0,
@@ -194,6 +207,20 @@ class Team extends Controller
                     $user_id  = (int)($in['user_id'] ?? 0);
                     $start_dt = trim($in['start_date'] ?? date('Y-m-d'));
                     if ($user_id <= 0) throw new Exception('user_id required');
+
+                    // Get employee's current department for scoping check
+                    $stmt = $this->db->prepare("
+                        SELECT ed.department_id 
+                        FROM employees e
+                        LEFT JOIN employee_department ed ON ed.employee_id = e.id
+                        WHERE e.user_id = :uid 
+                        LIMIT 1
+                    ");
+                    $stmt->execute([':uid' => $user_id]);
+                    $currentDeptId = $stmt->fetchColumn();
+                    
+                    // Level 4 must have access to employee's department
+                    $this->guardDepartmentAccess($currentDeptId ?: null);
 
                     $this->db->prepare("
                         UPDATE employees
@@ -313,8 +340,9 @@ class Team extends Controller
 
     private function guardAdmin(): void {
         $accessLevel = class_exists('AccessControl') ? AccessControl::getCurrentUserAccessLevel() : 1;
-        if ($accessLevel < 3) {
-            throw new Exception('Team Lead access (Level 3+) required');
+        // Level 1 (Full Admin), 3 (Team Lead), and 4 (Dept Admin) can access
+        if (!in_array($accessLevel, [1, 3, 4])) {
+            throw new Exception('Admin access required (Level 1, 3, or 4)');
         }
     }
     
@@ -435,6 +463,166 @@ class Team extends Controller
             ORDER BY department_id, name ASC
         ")->fetchAll(PDO::FETCH_ASSOC);
     }
+    
+    /**
+     * Single consolidated query to fetch all bootstrap data in ONE round-trip
+     * Uses CTE and UNION to combine roster, departments, and roles into a single SQL statement
+     */
+    private function bootstrapOptimized(int $accessLevel, array $userDeptIds): array {
+        // Build roster filter for Level 4
+        $rosterFilter = '1=1';
+        $params = [];
+        if ($accessLevel === 4 && !empty($userDeptIds)) {
+            $placeholders = implode(',', array_fill(0, count($userDeptIds), '?'));
+            $rosterFilter = "ed.department_id IN ($placeholders)";
+            $params = $userDeptIds;
+        }
+        
+        // SINGLE CONSOLIDATED QUERY using UNION ALL to combine all data types
+        $sql = "
+            SELECT 'roster' as data_type, 
+                   CAST(u.id AS CHAR) as id,
+                   COALESCE(NULLIF(u.full_name,''), u.username) AS name,
+                   u.username,
+                   e.email,
+                   e.phone,
+                   COALESCE(e.role_title, '') AS role_title,
+                   CAST(COALESCE(e.wage, 0) AS CHAR) AS wage,
+                   COALESCE(e.rate, 'hourly') AS rate,
+                   COALESCE(e.start_date, '') AS start_date,
+                   COALESCE(e.terminated_at, '') AS terminated_at,
+                   COALESCE(e.termination_reason, '') AS termination_reason,
+                   COALESCE(e.termination_note, '') AS termination_note,
+                   CAST(COALESCE(e.eligible_for_rehire, 1) AS CHAR) AS eligible_for_rehire,
+                   CAST(COALESCE(e.is_active, 1) AS CHAR) AS is_active,
+                   CAST(COALESCE(u.access_level, 1) AS CHAR) AS access_level,
+                   CAST(ed.department_id AS CHAR) AS department_id,
+                   d.name AS department_name,
+                   CAST(e.id AS CHAR) AS employee_id
+            FROM users u
+            LEFT JOIN employees e ON e.user_id = u.id
+            LEFT JOIN employee_department ed ON ed.employee_id = e.id
+            LEFT JOIN departments d ON d.id = ed.department_id
+            WHERE $rosterFilter
+            
+            UNION ALL
+            
+            SELECT 'department' as data_type,
+                   CAST(id AS CHAR) as id,
+                   name,
+                   NULL as username,
+                   NULL as email,
+                   NULL as phone,
+                   NULL as role_title,
+                   NULL as wage,
+                   NULL as rate,
+                   NULL as start_date,
+                   NULL as terminated_at,
+                   NULL as termination_reason,
+                   NULL as termination_note,
+                   NULL as eligible_for_rehire,
+                   NULL as is_active,
+                   NULL as access_level,
+                   NULL as department_id,
+                   NULL as department_name,
+                   NULL as employee_id
+            FROM departments
+            WHERE COALESCE(is_active,1)=1
+            
+            UNION ALL
+            
+            SELECT 'role' as data_type,
+                   CAST(id AS CHAR) as id,
+                   name,
+                   NULL as username,
+                   NULL as email,
+                   NULL as phone,
+                   NULL as role_title,
+                   NULL as wage,
+                   NULL as rate,
+                   NULL as start_date,
+                   NULL as terminated_at,
+                   NULL as termination_reason,
+                   NULL as termination_note,
+                   NULL as eligible_for_rehire,
+                   NULL as is_active,
+                   NULL as access_level,
+                   CAST(department_id AS CHAR) AS department_id,
+                   NULL as department_name,
+                   NULL as employee_id
+            FROM roles
+            WHERE COALESCE(is_active,1)=1
+        ";
+        
+        // Execute single query
+        if (!empty($params)) {
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute($params);
+            $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } else {
+            $results = $this->db->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+        }
+        
+        // Split results by data_type
+        $roster = [];
+        $departments = [];
+        $roles = [];
+        
+        foreach ($results as $row) {
+            $type = $row['data_type'];
+            unset($row['data_type']);
+            
+            if ($type === 'roster') {
+                // Convert string fields back to appropriate types
+                $roster[] = [
+                    'user_id' => (int)$row['id'],
+                    'employee_id' => $row['employee_id'] ? (int)$row['employee_id'] : null,
+                    'name' => $row['name'],
+                    'username' => $row['username'],
+                    'email' => $row['email'],
+                    'phone' => $row['phone'],
+                    'role_title' => $row['role_title'],
+                    'wage' => (float)$row['wage'],
+                    'rate' => $row['rate'],
+                    'start_date' => $row['start_date'],
+                    'terminated_at' => $row['terminated_at'],
+                    'termination_reason' => $row['termination_reason'],
+                    'termination_note' => $row['termination_note'],
+                    'eligible_for_rehire' => (int)$row['eligible_for_rehire'],
+                    'is_active' => (int)$row['is_active'],
+                    'access_level' => (int)$row['access_level'],
+                    'department_id' => $row['department_id'] ? (int)$row['department_id'] : null,
+                    'department_name' => $row['department_name']
+                ];
+            } elseif ($type === 'department') {
+                $departments[] = [
+                    'id' => (int)$row['id'],
+                    'name' => $row['name']
+                ];
+            } elseif ($type === 'role') {
+                $roles[] = [
+                    'id' => (int)$row['id'],
+                    'name' => $row['name'],
+                    'department_id' => $row['department_id'] ? (int)$row['department_id'] : null
+                ];
+            }
+        }
+        
+        // Sort roster
+        usort($roster, function($a, $b) {
+            if ($a['is_active'] !== $b['is_active']) {
+                return $b['is_active'] - $a['is_active'];
+            }
+            return strcasecmp($a['name'], $b['name']);
+        });
+        
+        return [
+            'roster' => $roster,
+            'departments' => $departments,
+            'roles' => $roles
+        ];
+    }
+    
     private function departments(): array {
         return $this->db->query("SELECT id, name FROM departments WHERE COALESCE(is_active,1)=1 ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
     }
