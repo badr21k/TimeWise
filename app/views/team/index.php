@@ -996,8 +996,11 @@ body::before {
 <?php require 'app/views/templates/footer.php'; ?>
 
 <script>
-let ROSTER = [];
+let DEPARTMENTS = [];
+let ROLES = [];
+let USERS = [];
 let ACCESS_LEVEL = 1;
+let USER_DEPARTMENT_IDS = [];
 
 const M_hire  = new bootstrap.Modal(document.getElementById('hireModal'));
 const M_term  = new bootstrap.Modal(document.getElementById('termModal'));
@@ -1006,9 +1009,21 @@ document.addEventListener('DOMContentLoaded', async () => {
   await bootstrapTeam();
   document.getElementById('q').addEventListener('input', render);
   document.getElementById('showTerminated').addEventListener('change', render);
+  
+  // Show/hide Add button based on access level (only 1, 3, 4 can add)
+  const btnAdd = document.getElementById('btnAdd');
+  if (btnAdd) {
+    if (ACCESS_LEVEL === 1 || ACCESS_LEVEL === 3 || ACCESS_LEVEL === 4) {
+      btnAdd.style.display = 'inline-flex';
+    } else {
+      btnAdd.style.display = 'none';
+    }
+  }
 
   document.getElementById('btnAdd').addEventListener('click', async () => {
-    if (ACCESS_LEVEL < 3) return alert('Team Lead or higher access required');
+    if (ACCESS_LEVEL !== 1 && ACCESS_LEVEL !== 3 && ACCESS_LEVEL !== 4) {
+      return alert('Admin access required (Level 1, 3, or 4)');
+    }
     clearHireForm();
     await loadDepartments();
     await loadRolesForHire();
@@ -1017,7 +1032,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
   
   document.getElementById('btnAddEmpty').addEventListener('click', async () => {
-    if (ACCESS_LEVEL < 3) return alert('Team Lead or higher access required');
+    if (ACCESS_LEVEL !== 1 && ACCESS_LEVEL !== 3 && ACCESS_LEVEL !== 4) {
+      return alert('Admin access required (Level 1, 3, or 4)');
+    }
     clearHireForm();
     await loadDepartments();
     await loadRolesForHire();
@@ -1035,8 +1052,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 async function bootstrapTeam() {
   try {
     const data = await get('/team/api?a=bootstrap');
-    ROSTER = data.roster || [];
+    DEPARTMENTS = data.departments || [];
+    ROLES = data.roles || [];
+    USERS = data.users || [];
     ACCESS_LEVEL = parseInt(data.access_level || 1);
+    USER_DEPARTMENT_IDS = data.user_department_ids || [];
     render();
   } catch (error) {
     console.error('Failed to load team data:', error);
@@ -1188,23 +1208,24 @@ function filterRolesByDepartments() {
   }
 }
 
-/* ---------- Render roster ---------- */
+/* ---------- Render roster grouped by department ---------- */
 function render() {
   const q = (document.getElementById('q').value || '').toLowerCase();
   const showTerm = document.getElementById('showTerminated').checked;
   const tbody = document.getElementById('rows');
   const emptyState = document.getElementById('emptyState');
   
-  const filteredRoster = ROSTER.filter(r => {
+  // Filter users
+  const filteredUsers = USERS.filter(u => {
     const matchQ = !q || 
-      (r.name||'').toLowerCase().includes(q) || 
-      (r.username||'').toLowerCase().includes(q) || 
-      (r.email||'').toLowerCase().includes(q);
-    const matchTerm = showTerm ? true : (parseInt(r.is_active) === 1);
+      (u.name||'').toLowerCase().includes(q) || 
+      (u.username||'').toLowerCase().includes(q) || 
+      (u.email||'').toLowerCase().includes(q);
+    const matchTerm = showTerm ? true : (parseInt(u.status) === 1);
     return matchQ && matchTerm;
   });
   
-  if (filteredRoster.length === 0) {
+  if (filteredUsers.length === 0) {
     tbody.innerHTML = '';
     emptyState.style.display = 'block';
     return;
@@ -1212,73 +1233,119 @@ function render() {
   
   emptyState.style.display = 'none';
   tbody.innerHTML = '';
-
-  filteredRoster.forEach(r => {
-    const tr = document.createElement('tr');
-    tr.classList.add('fade-in');
-    
-    // Get initials for avatar
-    const name = r.name || r.username || '';
-    const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '?';
-    
-    tr.innerHTML = `
-      <td data-label="Team Member">
-        <div class="team-member-cell">
-          <div class="avatar">${initials}</div>
-          <div class="team-member-info">
-            <span class="team-member-name">${escapeHtml(r.name || r.username)}</span>
-            <div class="small-text">${escapeHtml(r.username||'')}</div>
-          </div>
-        </div>
-      </td>
-      <td data-label="Contact">
-        <div>${escapeHtml(r.email||'—')}</div>
-        <div class="small-text">${escapeHtml(r.phone||'—')}</div>
-      </td>
-      <td data-label="Access">
-        ${(() => {
-          const level = parseInt(r.access_level ?? 1);
-          const labels = {
-            0: '<span class="badge badge-danger">Inactive</span>',
-            1: '<span class="badge badge-secondary">Regular User</span>',
-            2: '<span class="badge badge-info">Power User</span>',
-            3: '<span class="badge badge-warning">Team Lead</span>',
-            4: '<span class="badge badge-dark">Dept Admin</span>'
-          };
-          return labels[level] ?? '<span class="badge badge-secondary">Level ' + level + '</span>';
-        })()}
-      </td>
-      <td data-label="Role">${escapeHtml(r.role_title||'—')}</td>
-      <td data-label="Wage">
-        <div>${Number(r.wage||0).toFixed(2)}</div>
-        <div class="small-text">${r.rate||'hourly'}</div>
-      </td>
-      <td data-label="Status">
-        ${r.is_active==1
-          ? '<span class="badge badge-success">Active</span>'
-          : `<span class="badge badge-danger">Terminated</span>
-             <div class="small-text">${escapeHtml(r.termination_reason||'')}</div>`}
-      </td>
-      <td data-label="Actions" class="text-end">
-        ${r.is_active==1
-            ? `<button class="btn btn-sm btn-outline-danger" ${ACCESS_LEVEL>=3?'':'disabled'} onclick="openTerminate(${r.user_id})">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                  <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
-                  <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
-                </svg>
-                <span class="d-none d-md-inline">Terminate</span>
-               </button>`
-            : `<button class="btn btn-sm btn-outline-success" ${ACCESS_LEVEL>=3?'':'disabled'} onclick="rehire(${r.user_id})">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                  <path fill-rule="evenodd" d="M8 3a5 5 0 1 1-4.546 2.914.5.5 0 0 0-.908-.417A6 6 0 1 0 8 2v1z"/>
-                  <path d="M8 4.466V.534a.25.25 0 0 0-.41-.192L5.23 2.308a.25.25 0 0 0 0 .384l2.36 1.966A.25.25 0 0 0 8 4.466z"/>
-                </svg>
-                <span class="d-none d-md-inline">Rehire</span>
-               </button>`}
+  
+  // Group users by department
+  const deptGroups = {};
+  filteredUsers.forEach(u => {
+    const deptName = u.department_name || 'No Department';
+    if (!deptGroups[deptName]) {
+      deptGroups[deptName] = [];
+    }
+    deptGroups[deptName].push(u);
+  });
+  
+  // Render each department group
+  Object.keys(deptGroups).sort().forEach(deptName => {
+    // Department header row
+    const headerRow = document.createElement('tr');
+    headerRow.classList.add('department-header');
+    headerRow.innerHTML = `
+      <td colspan="7" style="background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 100%); 
+                             color: white; font-weight: 700; padding: 0.75rem 1rem; 
+                             font-size: 0.875rem; letter-spacing: 0.5px;">
+        ${escapeHtml(deptName)}
       </td>
     `;
-    tbody.appendChild(tr);
+    tbody.appendChild(headerRow);
+    
+    // Users in this department
+    deptGroups[deptName].forEach(u => {
+      const tr = document.createElement('tr');
+      tr.classList.add('fade-in');
+      
+      // Get initials for avatar
+      const name = u.name || u.username || '';
+      const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '?';
+      
+      // Check if user can edit this user (scoped by department for Level 4)
+      const canEdit = canEditUser(u);
+      
+      tr.innerHTML = `
+        <td data-label="Team Member">
+          <div class="team-member-cell">
+            <div class="avatar">${initials}</div>
+            <div class="team-member-info">
+              <span class="team-member-name">${escapeHtml(u.name || u.username)}</span>
+              <div class="small-text">${escapeHtml(u.username||'')}</div>
+            </div>
+          </div>
+        </td>
+        <td data-label="Contact">
+          <div>${escapeHtml(u.email||'—')}</div>
+          <div class="small-text">${escapeHtml(u.phone||'—')}</div>
+        </td>
+        <td data-label="Access">
+          ${(() => {
+            const level = parseInt(u.access_level ?? 1);
+            const labels = {
+              0: '<span class="badge badge-danger">Inactive</span>',
+              1: '<span class="badge badge-secondary">Regular User</span>',
+              2: '<span class="badge badge-info">Power User</span>',
+              3: '<span class="badge badge-warning">Team Lead</span>',
+              4: '<span class="badge badge-dark">Dept Admin</span>'
+            };
+            return labels[level] ?? '<span class="badge badge-secondary">Level ' + level + '</span>';
+          })()}
+        </td>
+        <td data-label="Role">${escapeHtml(u.role_title||'—')}</td>
+        <td data-label="Wage">
+          <div>${Number(u.wage||0).toFixed(2)}</div>
+          <div class="small-text">${u.rate||'hourly'}</div>
+        </td>
+        <td data-label="Status">
+          ${u.status==1
+            ? '<span class="badge badge-success">Active</span>'
+            : `<span class="badge badge-danger">Terminated</span>
+               <div class="small-text">${escapeHtml(u.termination_reason||'')}</div>`}
+        </td>
+        <td data-label="Actions" class="text-end">
+          ${u.status==1
+              ? `<button class="btn btn-sm btn-outline-danger" ${canEdit?'':'disabled'} onclick="openTerminate(${u.id})">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+                    <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+                  </svg>
+                  <span class="d-none d-md-inline">Terminate</span>
+                 </button>`
+              : `<button class="btn btn-sm btn-outline-success" ${canEdit?'':'disabled'} onclick="rehire(${u.id})">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path fill-rule="evenodd" d="M8 3a5 5 0 1 1-4.546 2.914.5.5 0 0 0-.908-.417A6 6 0 1 0 8 2v1z"/>
+                    <path d="M8 4.466V.534a.25.25 0 0 0-.41-.192L5.23 2.308a.25.25 0 0 0 0 .384l2.36 1.966A.25.25 0 0 0 8 4.466z"/>
+                  </svg>
+                  <span class="d-none d-md-inline">Rehire</span>
+                 </button>`}
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
   });
+}
+
+/* Check if current user can edit a specific user (department scoping for Level 4) */
+function canEditUser(user) {
+  // Level 0 and 2 cannot edit
+  if (ACCESS_LEVEL === 0 || ACCESS_LEVEL === 2) return false;
+  
+  // Level 1 and 3 can edit all
+  if (ACCESS_LEVEL === 1 || ACCESS_LEVEL === 3) return true;
+  
+  // Level 4 can only edit users in their assigned departments
+  if (ACCESS_LEVEL === 4) {
+    const userDeptId = parseInt(user.department_id);
+    return userDeptId > 0 && USER_DEPARTMENT_IDS.includes(userDeptId);
+  }
+  
+  return false;
 }
 
 /* ---------- Hire ---------- */
@@ -1378,7 +1445,7 @@ async function rehire(user_id){
 async function refreshRoster(){ 
   try {
     const d = await get('/team/api?a=list'); 
-    ROSTER = d.roster||[]; 
+    USERS = d.users||[]; 
     render();
   } catch (error) {
     showError('Failed to refresh roster: ' + error.message);

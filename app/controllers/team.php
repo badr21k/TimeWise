@@ -42,12 +42,17 @@ class Team extends Controller
         try {
             switch ($a) {
 
-                case 'bootstrap': // roster + options
+                case 'bootstrap': // New structure: departments, roles, users
+                    $departments = $this->getAllDepartments();
+                    $roles = $this->getAllRolesWithDepartment();
+                    $users = $this->getAllUsers();
+                    
                     echo json_encode([
-                        'roster' => $this->roster(),
-                        'departments' => $this->departmentsAll(),  // All departments for dropdown
-                        'roles' => $this->roles(),
+                        'departments' => $departments,
+                        'roles' => $roles,
+                        'users' => $users,
                         'access_level' => (int)($_SESSION['access_level'] ?? 1),
+                        'user_department_ids' => class_exists('AccessControl') ? AccessControl::getUserDepartmentIds() : []
                     ]);
                     break;
                     
@@ -161,6 +166,20 @@ class Team extends Controller
                     $term_dt   = trim($in['termination_date'] ?? date('Y-m-d'));
                     $rehire_ok = (int)($in['eligible_for_rehire'] ?? 1);
                     if ($user_id <= 0) throw new Exception('user_id required');
+                    
+                    // Get employee's current department to verify access
+                    $stmt = $this->db->prepare("
+                        SELECT ed.department_id 
+                        FROM employees e
+                        LEFT JOIN employee_department ed ON ed.employee_id = e.id
+                        WHERE e.user_id = :uid 
+                        LIMIT 1
+                    ");
+                    $stmt->execute([':uid' => $user_id]);
+                    $currentDeptId = $stmt->fetchColumn();
+                    
+                    // SECURITY: Level 4 must have access to employee's department to terminate them
+                    $this->guardDepartmentAccess($currentDeptId ?: null);
 
                     $this->db->prepare("
                         UPDATE employees
@@ -184,6 +203,20 @@ class Team extends Controller
                     $user_id  = (int)($in['user_id'] ?? 0);
                     $start_dt = trim($in['start_date'] ?? date('Y-m-d'));
                     if ($user_id <= 0) throw new Exception('user_id required');
+                    
+                    // Get employee's current department to verify access
+                    $stmt = $this->db->prepare("
+                        SELECT ed.department_id 
+                        FROM employees e
+                        LEFT JOIN employee_department ed ON ed.employee_id = e.id
+                        WHERE e.user_id = :uid 
+                        LIMIT 1
+                    ");
+                    $stmt->execute([':uid' => $user_id]);
+                    $currentDeptId = $stmt->fetchColumn();
+                    
+                    // SECURITY: Level 4 must have access to employee's department to rehire them
+                    $this->guardDepartmentAccess($currentDeptId ?: null);
 
                     $this->db->prepare("
                         UPDATE employees
@@ -287,7 +320,7 @@ class Team extends Controller
 
                 /* Simple search list refresh */
                 case 'list':
-                    echo json_encode(['roster'=>$this->roster()]);
+                    echo json_encode(['users'=>$this->getAllUsers()]);
                     break;
 
                 default:
@@ -303,8 +336,9 @@ class Team extends Controller
 
     private function guardAdmin(): void {
         $accessLevel = class_exists('AccessControl') ? AccessControl::getCurrentUserAccessLevel() : 1;
-        if ($accessLevel < 3) {
-            throw new Exception('Team Lead access (Level 3+) required');
+        // Allow Level 1 (Full Admin), Level 3 (Team Lead), Level 4 (Department Admin)
+        if ($accessLevel !== 1 && $accessLevel !== 3 && $accessLevel !== 4) {
+            throw new Exception('Admin access required (Level 1, 3, or 4)');
         }
     }
     
@@ -338,77 +372,73 @@ class Team extends Controller
         return json_decode(file_get_contents('php://input'), true) ?: [];
     }
 
-    private function roster(): array {
-        $accessLevel = class_exists('AccessControl') ? AccessControl::getCurrentUserAccessLevel() : 1;
-        
-        // Level 4 users only see employees in their assigned departments
-        if ($accessLevel === 4 && class_exists('AccessControl')) {
-            $userDeptIds = AccessControl::getUserDepartmentIds();
-            
-            if (empty($userDeptIds)) {
-                return []; // No departments assigned, no employees to see
-            }
-            
-            $placeholders = implode(',', array_fill(0, count($userDeptIds), '?'));
-            $sql = "
-                SELECT 
-                    u.id            AS user_id,
-                    e.id            AS employee_id,
-                    COALESCE(NULLIF(u.full_name,''), u.username) AS name,
-                    u.username,
-                    e.email,
-                    e.phone,
-                    COALESCE(e.role_title, '') AS role_title,
-                    COALESCE(e.wage, 0) AS wage,
-                    COALESCE(e.rate, 'hourly') AS rate,
-                    COALESCE(e.start_date, '') AS start_date,
-                    COALESCE(e.terminated_at, '') AS terminated_at,
-                    COALESCE(e.termination_reason, '') AS termination_reason,
-                    COALESCE(e.termination_note, '')   AS termination_note,
-                    COALESCE(e.eligible_for_rehire, 1) AS eligible_for_rehire,
-                    COALESCE(e.is_active, 1) AS is_active,
-                    COALESCE(u.access_level, 1) AS access_level,
-                    ed.department_id,
-                    d.name AS department_name
-                FROM users u
-                LEFT JOIN employees e ON e.user_id = u.id
-                LEFT JOIN employee_department ed ON ed.employee_id = e.id
-                LEFT JOIN departments d ON d.id = ed.department_id
-                WHERE ed.department_id IN ($placeholders)
-                ORDER BY is_active DESC, name ASC
-            ";
-            
-            $stmt = $this->db->prepare($sql);
-            $stmt->execute($userDeptIds);
-            return $stmt->fetchAll(PDO::FETCH_ASSOC);
-        }
-        
-        // Level 1 and 3 see all employees
+    /**
+     * Get ALL users for roster display (no filtering by access level)
+     * Returns: id, name, email, department_id, role_id, access_level, status
+     */
+    private function getAllUsers(): array {
         $sql = "
             SELECT 
-                u.id            AS user_id,
-                e.id            AS employee_id,
+                u.id,
                 COALESCE(NULLIF(u.full_name,''), u.username) AS name,
                 u.username,
-                e.email,
-                e.phone,
+                COALESCE(e.email, '') AS email,
+                COALESCE(e.phone, '') AS phone,
+                COALESCE(ed.department_id, 0) AS department_id,
+                COALESCE(d.name, '') AS department_name,
+                0 AS role_id,
                 COALESCE(e.role_title, '') AS role_title,
+                COALESCE(u.access_level, 1) AS access_level,
+                COALESCE(e.is_active, 1) AS status,
                 COALESCE(e.wage, 0) AS wage,
                 COALESCE(e.rate, 'hourly') AS rate,
                 COALESCE(e.start_date, '') AS start_date,
                 COALESCE(e.terminated_at, '') AS terminated_at,
                 COALESCE(e.termination_reason, '') AS termination_reason,
-                COALESCE(e.termination_note, '')   AS termination_note,
-                COALESCE(e.eligible_for_rehire, 1) AS eligible_for_rehire,
-                COALESCE(e.is_active, 1) AS is_active,
-                COALESCE(u.access_level, 1) AS access_level,
-                ed.department_id,
-                d.name AS department_name
+                COALESCE(e.eligible_for_rehire, 1) AS eligible_for_rehire
             FROM users u
             LEFT JOIN employees e ON e.user_id = u.id
             LEFT JOIN employee_department ed ON ed.employee_id = e.id
             LEFT JOIN departments d ON d.id = ed.department_id
-            ORDER BY is_active DESC, name ASC
+            ORDER BY 
+                COALESCE(d.name, 'ZZZ'),
+                COALESCE(e.is_active, 1) DESC,
+                u.full_name, 
+                u.username
+        ";
+        return $this->db->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+    }
+    
+    /**
+     * Get ALL departments
+     * Returns: id, name, status
+     */
+    private function getAllDepartments(): array {
+        $sql = "
+            SELECT 
+                id,
+                name,
+                COALESCE(is_active, 1) AS status
+            FROM departments
+            ORDER BY name ASC
+        ";
+        return $this->db->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+    }
+    
+    /**
+     * Get ALL roles with department_id
+     * Returns: id, department_id, name
+     */
+    private function getAllRolesWithDepartment(): array {
+        $sql = "
+            SELECT 
+                r.id,
+                dr.department_id,
+                r.name,
+                COALESCE(r.is_active, 1) AS status
+            FROM roles r
+            LEFT JOIN department_roles dr ON dr.role_id = r.id
+            ORDER BY r.name ASC
         ";
         return $this->db->query($sql)->fetchAll(PDO::FETCH_ASSOC);
     }
