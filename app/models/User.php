@@ -53,6 +53,12 @@ class User {
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
         $isGood = $row && password_verify($password, $row['password']);
+        
+        // TERMINATION RULE: Block users with access_level = 0 (terminated users)
+        if ($isGood && (int)($row['access_level'] ?? 1) === 0) {
+            $isGood = false;
+            $terminatedReason = 'Account inactive';
+        }
 
         // Log the attempt
         $logStmt = $db->prepare("INSERT INTO login_logs (username, status) VALUES (:u, :s)");
@@ -104,8 +110,9 @@ class User {
             header('Location: /home'); exit;
         }
 
-        $_SESSION['toast'] = ['type'=>'error','title'=>'Login Failed','message'=>'Invalid username or password.'];
-        $_SESSION['login_error'] = 'Invalid username or password.';
+        $errorMessage = isset($terminatedReason) ? $terminatedReason : 'Invalid username or password.';
+        $_SESSION['toast'] = ['type'=>'error','title'=>'Login Failed','message'=>$errorMessage];
+        $_SESSION['login_error'] = $errorMessage;
         header('Location: /login'); exit;
     }
 

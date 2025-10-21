@@ -181,6 +181,7 @@ class Team extends Controller
                     // SECURITY: Level 4 must have access to employee's department to terminate them
                     $this->guardDepartmentAccess($currentDeptId ?: null);
 
+                    // Update employee record
                     $this->db->prepare("
                         UPDATE employees
                            SET is_active = 0,
@@ -192,6 +193,13 @@ class Team extends Controller
                     ")->execute([
                         ':td'=>$term_dt, ':r'=>$reason, ':n'=>$note, ':ok'=>$rehire_ok, ':uid'=>$user_id
                     ]);
+                    
+                    // TERMINATION RULE: Set access_level = 0 to block all access
+                    $this->db->prepare("
+                        UPDATE users
+                           SET access_level = 0
+                         WHERE id = :uid
+                    ")->execute([':uid'=>$user_id]);
 
                     echo json_encode(['ok'=>true]);
                     break;
@@ -202,6 +210,7 @@ class Team extends Controller
                     $in = $this->json();
                     $user_id  = (int)($in['user_id'] ?? 0);
                     $start_dt = trim($in['start_date'] ?? date('Y-m-d'));
+                    $new_access_level = (int)($in['access_level'] ?? 2); // Default to Power User on rehire
                     if ($user_id <= 0) throw new Exception('user_id required');
                     
                     // Get employee's current department to verify access
@@ -218,6 +227,7 @@ class Team extends Controller
                     // SECURITY: Level 4 must have access to employee's department to rehire them
                     $this->guardDepartmentAccess($currentDeptId ?: null);
 
+                    // Update employee record
                     $this->db->prepare("
                         UPDATE employees
                            SET is_active = 1,
@@ -228,6 +238,13 @@ class Team extends Controller
                                eligible_for_rehire = 1
                          WHERE user_id = :uid
                     ")->execute([':sd'=>$start_dt, ':uid'=>$user_id]);
+                    
+                    // REHIRE RULE: Restore access_level (default to 2 - Power User)
+                    $this->db->prepare("
+                        UPDATE users
+                           SET access_level = :al
+                         WHERE id = :uid
+                    ")->execute([':al'=>$new_access_level, ':uid'=>$user_id]);
 
                     echo json_encode(['ok'=>true]);
                     break;

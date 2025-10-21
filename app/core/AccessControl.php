@@ -63,6 +63,13 @@ class AccessControl
             // Set access_level - default to 1 (Regular User) if not set
             $user['access_level'] = (int)($user['access_level'] ?? 1);
             
+            // TERMINATION RULE: Invalidate session if access_level = 0 (terminated user)
+            if ($user['access_level'] === 0) {
+                session_unset();
+                session_destroy();
+                return null;
+            }
+            
             // Try to find linked employee record to get a role title
             $employee = self::findEmployeeForUser($userId, $user);
 
