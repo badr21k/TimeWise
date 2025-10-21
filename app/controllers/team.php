@@ -46,14 +46,14 @@ class Team extends Controller
                     $accessLevel = (int)($_SESSION['access_level'] ?? 1);
                     $userId = (int)($_SESSION['user_id'] ?? 0);
                     
-                    // Get user's department IDs if Level 4
+                    // Get user's department IDs if Level 4 (for mutation scoping only)
                     $userDeptIds = [];
                     if ($accessLevel === 4 && class_exists('AccessControl')) {
                         $userDeptIds = AccessControl::getUserDepartmentIds();
                     }
                     
-                    // Single optimized bootstrap query
-                    $data = $this->bootstrapOptimized($accessLevel, $userDeptIds);
+                    // Single optimized bootstrap query - NO filtering on GET
+                    $data = $this->bootstrapOptimized();
                     $data['access_level'] = $accessLevel;
                     $data['user_department_ids'] = $userDeptIds;
                     
@@ -466,27 +466,19 @@ class Team extends Controller
     
     /**
      * Single consolidated query to fetch all bootstrap data in ONE round-trip
-     * Uses CTE and UNION to combine roster, departments, and roles into a single SQL statement
+     * Returns ALL users to ALL logged-in users - NO filtering by access level on GET
+     * Uses UNION ALL to combine users, departments, and roles into a single SQL statement
      */
-    private function bootstrapOptimized(int $accessLevel, array $userDeptIds): array {
-        // Build roster filter for Level 4
-        $rosterFilter = '1=1';
-        $params = [];
-        if ($accessLevel === 4 && !empty($userDeptIds)) {
-            $placeholders = implode(',', array_fill(0, count($userDeptIds), '?'));
-            $rosterFilter = "ed.department_id IN ($placeholders)";
-            $params = $userDeptIds;
-        }
-        
-        // SINGLE CONSOLIDATED QUERY using UNION ALL to combine all data types
+    private function bootstrapOptimized(): array {
+        // SINGLE CONSOLIDATED QUERY - NO FILTERING (show all users to all logged-in users)
         $sql = "
-            SELECT 'roster' as data_type, 
+            SELECT 'user' as data_type, 
                    CAST(u.id AS CHAR) as id,
                    COALESCE(NULLIF(u.full_name,''), u.username) AS name,
                    u.username,
                    e.email,
                    e.phone,
-                   COALESCE(e.role_title, '') AS role_title,
+                   COALESCE(e.role_title, '') AS role,
                    CAST(COALESCE(e.wage, 0) AS CHAR) AS wage,
                    COALESCE(e.rate, 'hourly') AS rate,
                    COALESCE(e.start_date, '') AS start_date,
@@ -494,16 +486,15 @@ class Team extends Controller
                    COALESCE(e.termination_reason, '') AS termination_reason,
                    COALESCE(e.termination_note, '') AS termination_note,
                    CAST(COALESCE(e.eligible_for_rehire, 1) AS CHAR) AS eligible_for_rehire,
-                   CAST(COALESCE(e.is_active, 1) AS CHAR) AS is_active,
+                   CAST(COALESCE(e.is_active, 1) AS CHAR) AS status,
                    CAST(COALESCE(u.access_level, 1) AS CHAR) AS access_level,
                    CAST(ed.department_id AS CHAR) AS department_id,
-                   d.name AS department_name,
+                   d.name AS department,
                    CAST(e.id AS CHAR) AS employee_id
             FROM users u
             LEFT JOIN employees e ON e.user_id = u.id
             LEFT JOIN employee_department ed ON ed.employee_id = e.id
             LEFT JOIN departments d ON d.id = ed.department_id
-            WHERE $rosterFilter
             
             UNION ALL
             
@@ -513,7 +504,7 @@ class Team extends Controller
                    NULL as username,
                    NULL as email,
                    NULL as phone,
-                   NULL as role_title,
+                   NULL as role,
                    NULL as wage,
                    NULL as rate,
                    NULL as start_date,
@@ -521,10 +512,10 @@ class Team extends Controller
                    NULL as termination_reason,
                    NULL as termination_note,
                    NULL as eligible_for_rehire,
-                   NULL as is_active,
+                   NULL as status,
                    NULL as access_level,
                    NULL as department_id,
-                   NULL as department_name,
+                   NULL as department,
                    NULL as employee_id
             FROM departments
             WHERE COALESCE(is_active,1)=1
@@ -537,7 +528,7 @@ class Team extends Controller
                    NULL as username,
                    NULL as email,
                    NULL as phone,
-                   NULL as role_title,
+                   NULL as role,
                    NULL as wage,
                    NULL as rate,
                    NULL as start_date,
@@ -545,26 +536,20 @@ class Team extends Controller
                    NULL as termination_reason,
                    NULL as termination_note,
                    NULL as eligible_for_rehire,
-                   NULL as is_active,
+                   NULL as status,
                    NULL as access_level,
                    CAST(department_id AS CHAR) AS department_id,
-                   NULL as department_name,
+                   NULL as department,
                    NULL as employee_id
             FROM roles
             WHERE COALESCE(is_active,1)=1
         ";
         
         // Execute single query
-        if (!empty($params)) {
-            $stmt = $this->db->prepare($sql);
-            $stmt->execute($params);
-            $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        } else {
-            $results = $this->db->query($sql)->fetchAll(PDO::FETCH_ASSOC);
-        }
+        $results = $this->db->query($sql)->fetchAll(PDO::FETCH_ASSOC);
         
         // Split results by data_type
-        $roster = [];
+        $users = [];
         $departments = [];
         $roles = [];
         
@@ -572,16 +557,16 @@ class Team extends Controller
             $type = $row['data_type'];
             unset($row['data_type']);
             
-            if ($type === 'roster') {
+            if ($type === 'user') {
                 // Convert string fields back to appropriate types
-                $roster[] = [
+                $users[] = [
                     'user_id' => (int)$row['id'],
                     'employee_id' => $row['employee_id'] ? (int)$row['employee_id'] : null,
                     'name' => $row['name'],
                     'username' => $row['username'],
                     'email' => $row['email'],
                     'phone' => $row['phone'],
-                    'role_title' => $row['role_title'],
+                    'role' => $row['role'],
                     'wage' => (float)$row['wage'],
                     'rate' => $row['rate'],
                     'start_date' => $row['start_date'],
@@ -589,10 +574,10 @@ class Team extends Controller
                     'termination_reason' => $row['termination_reason'],
                     'termination_note' => $row['termination_note'],
                     'eligible_for_rehire' => (int)$row['eligible_for_rehire'],
-                    'is_active' => (int)$row['is_active'],
+                    'status' => (int)$row['status'],
                     'access_level' => (int)$row['access_level'],
                     'department_id' => $row['department_id'] ? (int)$row['department_id'] : null,
-                    'department_name' => $row['department_name']
+                    'department' => $row['department']
                 ];
             } elseif ($type === 'department') {
                 $departments[] = [
@@ -608,16 +593,16 @@ class Team extends Controller
             }
         }
         
-        // Sort roster
-        usort($roster, function($a, $b) {
-            if ($a['is_active'] !== $b['is_active']) {
-                return $b['is_active'] - $a['is_active'];
+        // Sort users by status (active first) then name
+        usort($users, function($a, $b) {
+            if ($a['status'] !== $b['status']) {
+                return $b['status'] - $a['status'];
             }
             return strcasecmp($a['name'], $b['name']);
         });
         
         return [
-            'roster' => $roster,
+            'users' => $users,
             'departments' => $departments,
             'roles' => $roles
         ];

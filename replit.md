@@ -10,16 +10,16 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (October 2025)
 
-### Team Roster Redesign (October 21, 2025)
-- **Mobile-First UI**: Complete redesign with single-column layout, grouped sections (Profile/Access/Department & Role), sticky bottom bar, touch-friendly controls (44px min-height)
-- **Department Grouping**: All users visible to all logged-in users, grouped by department headers with counts
-- **Add User Permissions**: Add button only visible for access_level 1, 3, 4 (hidden for 0, 2)
-- **Department Scoping**: Level 4 users can only edit users within their assigned departments (visual feedback with opacity/cursor)
-- **Auto-Populate Edit Form**: All fields pre-populated when editing users, inline validation, toast notifications
-- **Performance Optimization**: Single SQL query using UNION ALL fetches roster + departments + roles in one database round-trip
-- **guardAdmin Fixed**: Now allows Level 1 (Full Admin), 3 (Team Lead), and 4 (Department Admin) access
-- **Complete Department Scoping**: All mutation endpoints (hire, update, terminate, rehire) validate department access for Level 4
-- **Architect Approved**: All requirements met, security verified, performance optimized
+### Team Roster Complete Implementation (October 21, 2025)
+- **Universal Visibility**: ALL team members visible to ALL logged-in users, no filtering by access level on GET
+- **Data Structure**: Bootstrap endpoint returns `{departments: [], roles: [], users: []}` with full user data including department, role, access_level, status
+- **Add Button Permissions**: Visible/enabled only for access_level ∈ {1, 3, 4}; hidden/disabled for {0, 2}
+- **Department Scoping on Mutations**: All write operations (hire, update, terminate, rehire) enforce department access validation for Level 4
+- **Single Query Performance**: One UNION ALL query fetches all bootstrap data (users + departments + roles) in single database round-trip
+- **guardAdmin Fixed**: Allows Level 1 (Full Admin), 3 (Team Lead), and 4 (Department Admin) access
+- **Field Mapping**: Users have `status` (not is_active), `role` (not role_title), `department` (not department_name)
+- **Security**: Read operations show all data; mutation operations enforce department scoping for Level 4
+- **Architect Approved**: All requirements met, performance optimized, security verified
 
 ### Access Control Redesign (October 21, 2025)
 - **Level 1 Full Admin Access**: Level 1 users now have FULL access to all departments and roles (no restrictions)
