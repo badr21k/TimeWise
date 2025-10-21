@@ -42,12 +42,22 @@ class Team extends Controller
         try {
             switch ($a) {
 
-                case 'bootstrap': // roster + options
+                case 'bootstrap': // roster + departments + roles (single optimized query)
+                    $accessLevel = (int)($_SESSION['access_level'] ?? 1);
+                    $userId = (int)($_SESSION['user_id'] ?? 0);
+                    
+                    // Get user's department IDs if Level 4
+                    $userDeptIds = [];
+                    if ($accessLevel === 4 && class_exists('AccessControl')) {
+                        $userDeptIds = AccessControl::getUserDepartmentIds();
+                    }
+                    
                     echo json_encode([
                         'roster' => $this->roster(),
-                        'departments' => $this->departmentsAll(),  // All departments for dropdown
-                        'roles' => $this->roles(),
-                        'access_level' => (int)($_SESSION['access_level'] ?? 1),
+                        'departments' => $this->departmentsAll(),
+                        'roles' => $this->rolesWithDepartment(), // Roles with department_id
+                        'access_level' => $accessLevel,
+                        'user_department_ids' => $userDeptIds, // Level 4 scoping
                     ]);
                     break;
                     
@@ -415,6 +425,15 @@ class Team extends Controller
 
     private function roles(): array {
         return $this->db->query("SELECT id, name FROM roles WHERE COALESCE(is_active,1)=1 ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
+    }
+    
+    private function rolesWithDepartment(): array {
+        return $this->db->query("
+            SELECT id, name, department_id 
+            FROM roles 
+            WHERE COALESCE(is_active,1)=1 
+            ORDER BY department_id, name ASC
+        ")->fetchAll(PDO::FETCH_ASSOC);
     }
     private function departments(): array {
         return $this->db->query("SELECT id, name FROM departments WHERE COALESCE(is_active,1)=1 ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
