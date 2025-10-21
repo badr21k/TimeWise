@@ -45,10 +45,20 @@ class Team extends Controller
                 case 'bootstrap': // roster + options
                     echo json_encode([
                         'roster' => $this->roster(),
-                        'departments' => $this->departments(),  // for optional UI use
+                        'departments' => $this->departmentsAll(),  // All departments for dropdown
                         'roles' => $this->roles(),
                         'access_level' => (int)($_SESSION['access_level'] ?? 1),
                     ]);
+                    break;
+                    
+                /* Get roles for a specific department */
+                case 'department_roles':
+                    $deptId = (int)($_GET['dept_id'] ?? 0);
+                    if (!$deptId) {
+                        echo json_encode(['roles' => []]);
+                    } else {
+                        echo json_encode(['roles' => $this->getRolesForDepartment($deptId)]);
+                    }
                     break;
 
                 /* ===== HIRE ===== */
@@ -64,7 +74,8 @@ class Team extends Controller
                     $wage      = (float)($in['wage'] ?? 0);
                     $rate      = in_array(($in['rate'] ?? 'hourly'), ['hourly','salary']) ? $in['rate'] : 'hourly';
                     $access_level = (int)($in['access_level'] ?? 1);
-                    $departments = $in['departments'] ?? [];
+                    $department_id = isset($in['department_id']) ? (int)$in['department_id'] : null; // Single department
+                    $role_id = isset($in['role_id']) ? (int)$in['role_id'] : null; // Single role
                     $start_dt  = trim($in['start_date'] ?? '') ?: date('Y-m-d');
 
                     if ($username === '') throw new Exception('Username is required');
@@ -114,28 +125,28 @@ class Team extends Controller
                     
                     $employee_id = (int)$this->db->lastInsertId();
                     
-                    // 3) Assign departments if provided
-                    if (!empty($departments) && is_array($departments) && $employee_id > 0) {
-                        // First clear existing department assignments
+                    // 3) Verify department access and assign single department if provided
+                    if ($employee_id > 0) {
+                        // Level 4 can only assign employees to their own departments
+                        $this->guardDepartmentAccess($department_id);
+                        
+                        // First clear existing department assignments (single department only)
                         $this->db->prepare("DELETE FROM employee_department WHERE employee_id = :eid")
                                  ->execute([':eid' => $employee_id]);
                         
-                        // Then insert new assignments
-                        $stmt = $this->db->prepare("
-                            INSERT INTO employee_department (employee_id, department_id) 
-                            VALUES (:eid, :did)
-                        ");
-                        foreach ($departments as $dept_id) {
-                            $dept_id = (int)$dept_id;
-                            if ($dept_id > 0) {
-                                $stmt->execute([':eid' => $employee_id, ':did' => $dept_id]);
-                            }
+                        // Then insert new assignment (single department only)
+                        if ($department_id > 0) {
+                            $this->db->prepare("
+                                INSERT INTO employee_department (employee_id, department_id) 
+                                VALUES (:eid, :did)
+                            ")->execute([':eid' => $employee_id, ':did' => $department_id]);
                         }
                     }
 
                     echo json_encode([
                         'ok'=>true,
                         'user_id'=>$user_id,
+                        'employee_id'=>$employee_id,
                         'temp_password' => $password   // show once if you want to display it
                     ]);
                     break;
@@ -188,28 +199,87 @@ class Team extends Controller
                     echo json_encode(['ok'=>true]);
                     break;
 
-                /* Update quick fields (role, wage, rate, access level) */
+                /* Update employee details including department and role */
                 case 'update':
                     $this->guardAdmin();
                     $in = $this->json();
                     $user_id = (int)($in['user_id'] ?? 0);
                     if ($user_id <= 0) throw new Exception('user_id required');
 
-                    // Employees table updates
+                    // Get employee_id and current department
+                    $stmt = $this->db->prepare("
+                        SELECT e.id, ed.department_id 
+                        FROM employees e
+                        LEFT JOIN employee_department ed ON ed.employee_id = e.id
+                        WHERE e.user_id = :uid 
+                        LIMIT 1
+                    ");
+                    $stmt->execute([':uid' => $user_id]);
+                    $empData = $stmt->fetch(PDO::FETCH_ASSOC);
+                    
+                    if (!$empData) throw new Exception('Employee not found');
+                    
+                    $employee_id = (int)$empData['id'];
+                    $currentDeptId = $empData['department_id'] ? (int)$empData['department_id'] : null;
+                    
+                    // SECURITY: Level 4 must have access to employee's current department to update them
+                    $this->guardDepartmentAccess($currentDeptId);
+
+                    // 1) Update employee table fields
+                    $full_name = isset($in['full_name']) ? trim($in['full_name']) : null;
+                    $email = isset($in['email']) ? trim($in['email']) : null;
                     $role = isset($in['role_title']) ? trim($in['role_title']) : null;
                     $wage = isset($in['wage']) ? (float)$in['wage'] : null;
                     $rate = isset($in['rate']) && in_array($in['rate'], ['hourly','salary']) ? $in['rate'] : null;
 
-                    if ($role !== null || $wage !== null || $rate !== null) {
+                    if ($full_name !== null || $email !== null || $role !== null || $wage !== null || $rate !== null) {
                         $this->db->prepare("
                             UPDATE employees
-                               SET role_title = COALESCE(NULLIF(:r,''), role_title),
+                               SET name = COALESCE(NULLIF(:n,''), name),
+                                   email = COALESCE(NULLIF(:e,''), email),
+                                   role_title = COALESCE(NULLIF(:r,''), role_title),
                                    wage       = COALESCE(:w, wage),
                                    rate       = COALESCE(:rate, rate)
                              WHERE user_id = :uid
                         ")->execute([
-                            ':r'=>$role, ':w'=>$wage, ':rate'=>$rate, ':uid'=>$user_id
+                            ':n'=>$full_name, ':e'=>$email, ':r'=>$role, 
+                            ':w'=>$wage, ':rate'=>$rate, ':uid'=>$user_id
                         ]);
+                    }
+                    
+                    // 2) Update user table fields (full_name, access_level)
+                    $u_full_name = isset($in['full_name']) ? trim($in['full_name']) : null;
+                    $access_level = isset($in['access_level']) ? (int)$in['access_level'] : null;
+                    
+                    if ($u_full_name !== null || $access_level !== null) {
+                        $this->db->prepare("
+                            UPDATE users
+                               SET full_name = COALESCE(NULLIF(:fn,''), full_name),
+                                   access_level = COALESCE(:al, access_level)
+                             WHERE id = :uid
+                        ")->execute([
+                            ':fn'=>$u_full_name, ':al'=>$access_level, ':uid'=>$user_id
+                        ]);
+                    }
+                    
+                    // 3) Update department assignment (single department only)
+                    if (isset($in['department_id'])) {
+                        $department_id = $in['department_id'] ? (int)$in['department_id'] : null;
+                        
+                        // Level 4 must have access to the NEW department they're assigning
+                        $this->guardDepartmentAccess($department_id);
+                        
+                        // Clear existing assignments
+                        $this->db->prepare("DELETE FROM employee_department WHERE employee_id = :eid")
+                                 ->execute([':eid' => $employee_id]);
+                        
+                        // Insert new assignment if provided
+                        if ($department_id > 0) {
+                            $this->db->prepare("
+                                INSERT INTO employee_department (employee_id, department_id)
+                                VALUES (:eid, :did)
+                            ")->execute([':eid' => $employee_id, ':did' => $department_id]);
+                        }
                     }
 
                     echo json_encode(['ok'=>true]);
@@ -238,15 +308,86 @@ class Team extends Controller
         }
     }
     
+    /**
+     * Verify Level 4 user has access to a specific department
+     * For hire/update operations, Level 4 can only work with their assigned departments
+     */
+    private function guardDepartmentAccess(?int $deptId): void {
+        if ($deptId === null || $deptId === 0) {
+            // No department specified, allow it
+            return;
+        }
+        
+        $accessLevel = class_exists('AccessControl') ? AccessControl::getCurrentUserAccessLevel() : 1;
+        
+        // Level 1 and 3 have full access
+        if ($accessLevel === 1 || $accessLevel === 3) {
+            return;
+        }
+        
+        // Level 4 can only access their assigned departments
+        if ($accessLevel === 4 && class_exists('AccessControl')) {
+            $userDeptIds = AccessControl::getUserDepartmentIds();
+            if (!in_array($deptId, $userDeptIds)) {
+                throw new Exception('You do not have access to this department');
+            }
+        }
+    }
+    
     private function json(): array {
         return json_decode(file_get_contents('php://input'), true) ?: [];
     }
 
     private function roster(): array {
-        // Join users + employees; show active first
+        $accessLevel = class_exists('AccessControl') ? AccessControl::getCurrentUserAccessLevel() : 1;
+        
+        // Level 4 users only see employees in their assigned departments
+        if ($accessLevel === 4 && class_exists('AccessControl')) {
+            $userDeptIds = AccessControl::getUserDepartmentIds();
+            
+            if (empty($userDeptIds)) {
+                return []; // No departments assigned, no employees to see
+            }
+            
+            $placeholders = implode(',', array_fill(0, count($userDeptIds), '?'));
+            $sql = "
+                SELECT 
+                    u.id            AS user_id,
+                    e.id            AS employee_id,
+                    COALESCE(NULLIF(u.full_name,''), u.username) AS name,
+                    u.username,
+                    e.email,
+                    e.phone,
+                    COALESCE(e.role_title, '') AS role_title,
+                    COALESCE(e.wage, 0) AS wage,
+                    COALESCE(e.rate, 'hourly') AS rate,
+                    COALESCE(e.start_date, '') AS start_date,
+                    COALESCE(e.terminated_at, '') AS terminated_at,
+                    COALESCE(e.termination_reason, '') AS termination_reason,
+                    COALESCE(e.termination_note, '')   AS termination_note,
+                    COALESCE(e.eligible_for_rehire, 1) AS eligible_for_rehire,
+                    COALESCE(e.is_active, 1) AS is_active,
+                    COALESCE(u.access_level, 1) AS access_level,
+                    ed.department_id,
+                    d.name AS department_name
+                FROM users u
+                LEFT JOIN employees e ON e.user_id = u.id
+                LEFT JOIN employee_department ed ON ed.employee_id = e.id
+                LEFT JOIN departments d ON d.id = ed.department_id
+                WHERE ed.department_id IN ($placeholders)
+                ORDER BY is_active DESC, name ASC
+            ";
+            
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute($userDeptIds);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        }
+        
+        // Level 1 and 3 see all employees
         $sql = "
             SELECT 
                 u.id            AS user_id,
+                e.id            AS employee_id,
                 COALESCE(NULLIF(u.full_name,''), u.username) AS name,
                 u.username,
                 e.email,
@@ -260,9 +401,13 @@ class Team extends Controller
                 COALESCE(e.termination_note, '')   AS termination_note,
                 COALESCE(e.eligible_for_rehire, 1) AS eligible_for_rehire,
                 COALESCE(e.is_active, 1) AS is_active,
-                COALESCE(u.access_level, 1) AS access_level
+                COALESCE(u.access_level, 1) AS access_level,
+                ed.department_id,
+                d.name AS department_name
             FROM users u
             LEFT JOIN employees e ON e.user_id = u.id
+            LEFT JOIN employee_department ed ON ed.employee_id = e.id
+            LEFT JOIN departments d ON d.id = ed.department_id
             ORDER BY is_active DESC, name ASC
         ";
         return $this->db->query($sql)->fetchAll(PDO::FETCH_ASSOC);
@@ -273,6 +418,29 @@ class Team extends Controller
     }
     private function departments(): array {
         return $this->db->query("SELECT id, name FROM departments WHERE COALESCE(is_active,1)=1 ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
+    }
+    
+    /**
+     * Get all departments for dropdown
+     */
+    private function departmentsAll(): array {
+        return $this->db->query("SELECT id, name FROM departments WHERE COALESCE(is_active,1)=1 ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
+    }
+    
+    /**
+     * Get roles for a specific department
+     */
+    private function getRolesForDepartment(int $deptId): array {
+        $stmt = $this->db->prepare("
+            SELECT r.id, r.name
+            FROM department_roles dr
+            JOIN roles r ON r.id = dr.role_id
+            WHERE dr.department_id = :dept_id
+              AND COALESCE(r.is_active,1) = 1
+            ORDER BY r.name ASC
+        ");
+        $stmt->execute([':dept_id' => $deptId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     private function ensureTables(): void {
