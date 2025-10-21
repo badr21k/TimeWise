@@ -8,6 +8,18 @@ TimeWise is a comprehensive employee management application that includes real-t
 
 Preferred communication style: Simple, everyday language.
 
+## Recent Changes (October 2025)
+
+### Complete is_admin to access_level Migration
+- **Database Cleanup**: Removed legacy `is_admin` column from users table
+- **Access Control Unified**: All controllers now exclusively use `AccessControl::enforceAccess()` with `access_level` (0-4) checks
+- **Session Management Updated**: Login process now sets `$_SESSION['access_level']` instead of `$_SESSION['is_admin']`
+- **Frontend Updated**: JavaScript views (team, schedule) now use `accessLevel >= 3` checks for admin features
+- **API Responses**: All API endpoints return `access_level` for client-side authorization
+- **Database Optimization**: Added missing `updated_at` timestamps to employees, shifts, departments, roles, and users tables
+- **Performance Indexes**: Created indexes on frequently queried columns (access_level, is_active, employee_id, etc.)
+- **Security Hardened**: Removed all mixed is_admin/access_level logic; system now uses single, consistent access control mechanism
+
 ## Role-Based Access Control (RBAC)
 
 ### Access Level System (0-4)
