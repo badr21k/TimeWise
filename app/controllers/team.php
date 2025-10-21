@@ -47,7 +47,6 @@ class Team extends Controller
                         'roster' => $this->roster(),
                         'departments' => $this->departments(),  // for optional UI use
                         'roles' => $this->roles(),
-                        'is_admin' => $this->isAdmin(),
                     ]);
                     break;
 
@@ -212,13 +211,6 @@ class Team extends Controller
                         ]);
                     }
 
-                    // Access level (users.is_admin)
-                    if (isset($in['is_admin'])) {
-                        $is_admin = (int)$in['is_admin'];
-                        $this->db->prepare("UPDATE users SET is_admin=:a WHERE id=:id")
-                                 ->execute([':a'=>$is_admin, ':id'=>$user_id]);
-                    }
-
                     echo json_encode(['ok'=>true]);
                     break;
 
@@ -238,12 +230,13 @@ class Team extends Controller
 
     /* ===== Helpers ===== */
 
-    private function isAdmin(): bool {
-        return isset($_SESSION['is_admin']) && (int)$_SESSION['is_admin'] === 1;
-    }
     private function guardAdmin(): void {
-        if (!$this->isAdmin()) throw new Exception('Admin access required');
+        $accessLevel = class_exists('AccessControl') ? AccessControl::getCurrentUserAccessLevel() : 1;
+        if ($accessLevel < 3) {
+            throw new Exception('Team Lead access (Level 3+) required');
+        }
     }
+    
     private function json(): array {
         return json_decode(file_get_contents('php://input'), true) ?: [];
     }
@@ -266,7 +259,6 @@ class Team extends Controller
                 COALESCE(e.termination_note, '')   AS termination_note,
                 COALESCE(e.eligible_for_rehire, 1) AS eligible_for_rehire,
                 COALESCE(e.is_active, 1) AS is_active,
-                u.is_admin,
                 COALESCE(u.access_level, 1) AS access_level
             FROM users u
             LEFT JOIN employees e ON e.user_id = u.id

@@ -89,11 +89,6 @@ class departments extends Controller
                     $this->db->prepare("DELETE FROM department_managers WHERE department_id=:id")->execute([':id'=>$id]);
                     $this->db->prepare("DELETE FROM departments WHERE id=:id")->execute([':id'=>$id]);
 
-                    // Recalc admin flags for everyone that was a manager here
-                    foreach ($affected as $uid) {
-                        $this->refreshAdminFlag((int)$uid);
-                    }
-
                     echo json_encode(['ok'=>true]);
                     break;
 
@@ -196,9 +191,6 @@ class departments extends Controller
                         VALUES (:d,:u)
                     ")->execute([':d'=>$deptId, ':u'=>$userId]);
 
-                    // Ensure admin flag is correct after change
-                    $this->refreshAdminFlag($userId);
-
                     echo json_encode(['ok'=>true]);
                     break;
 
@@ -214,9 +206,6 @@ class departments extends Controller
                         DELETE FROM department_managers
                         WHERE department_id=:d AND user_id=:u
                     ")->execute([':d'=>$deptId, ':u'=>$userId]);
-
-                    // Flip admin off if they no longer manage any departments
-                    $this->refreshAdminFlag($userId);
 
                     echo json_encode(['ok'=>true]);
                     break;
@@ -254,12 +243,9 @@ class departments extends Controller
         
         // Require level 3+ (Team Lead or above, but not level 4)
         if ($accessLevel < 3) {
-            // Also check legacy is_admin for backward compatibility
-            if (!isset($_SESSION['is_admin']) || (int)$_SESSION['is_admin'] !== 1) {
-                http_response_code(403);
-                echo json_encode(['error' => 'Forbidden: Requires Team Lead (Level 3) access or higher']);
-                exit;
-            }
+            http_response_code(403);
+            echo json_encode(['error' => 'Forbidden: Requires Team Lead (Level 3) access or higher']);
+            exit;
         }
     }
     
@@ -267,7 +253,7 @@ class departments extends Controller
         if (class_exists('AccessControl')) {
             return AccessControl::getCurrentUserAccessLevel();
         }
-        return isset($_SESSION['is_admin']) && $_SESSION['is_admin'] ? 4 : 1;
+        return 1; // Default to regular user if AccessControl not available
     }
 
     private function json(): array {
@@ -381,14 +367,4 @@ class departments extends Controller
         return (int)$stmt->fetchColumn();
     }
 
-    /** Flip users.is_admin based on whether they manage >= 1 department and sync session if needed */
-    private function refreshAdminFlag(int $userId): void {
-        $isAdmin = $this->userManagerCount($userId) > 0 ? 1 : 0;
-        $this->db->prepare("UPDATE users SET is_admin = :a WHERE id = :u")
-                 ->execute([':a'=>$isAdmin, ':u'=>$userId]);
-
-        if (!empty($_SESSION['id']) && (int)$_SESSION['id'] === $userId) {
-            $_SESSION['is_admin'] = $isAdmin;
-        }
-    }
 }

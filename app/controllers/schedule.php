@@ -136,7 +136,7 @@ class Schedule extends Controller
                         }
                     }
                     
-                    echo json_encode(['week_start'=>$w,'shifts'=>$rows,'is_admin'=>$this->isAdmin()]);
+                    echo json_encode(['week_start'=>$w,'shifts'=>$rows]);
                     break;
                 }
 
@@ -268,7 +268,6 @@ class Schedule extends Controller
                 case 'publish.status':
                     $week = $_GET['week'] ?? date('Y-m-d');
                     $status = $this->Week->status($week);
-                    $status['is_admin'] = $this->isAdmin();
                     echo json_encode($status);
                     break;
 
@@ -291,11 +290,6 @@ class Schedule extends Controller
                     echo json_encode($this->model('User')->all());
                     break;
 
-                case 'users.setAdmin':
-                    $this->guardAdmin();
-                    $in = $this->json();
-                    echo json_encode(['ok'=>$this->model('User')->setAdmin((int)$in['id'], (int)$in['is_admin'])]);
-                    break;
 
                 default:
                     echo json_encode(['error'=>'Unknown action']);
@@ -309,11 +303,10 @@ class Schedule extends Controller
     /* ================= helpers ================= */
 
     private function guardAdmin() {
-        if (!$this->isAdmin()) throw new Exception('Admin access required');
-    }
-
-    private function isAdmin(): bool {
-        return isset($_SESSION['is_admin']) && (int)$_SESSION['is_admin'] === 1;
+        $accessLevel = class_exists('AccessControl') ? AccessControl::getCurrentUserAccessLevel() : 1;
+        if ($accessLevel < 3) {
+            throw new Exception('Team Lead access (Level 3+) required');
+        }
     }
 
     private function json(): array {

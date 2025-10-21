@@ -10,7 +10,7 @@ class Home extends Controller
             'id'        => $_SESSION['id'] ?? $_SESSION['user_id'] ?? null,
             'username'  => $_SESSION['username'] ?? null,
             'full_name' => $_SESSION['full_name'] ?? null,
-            'is_admin'  => (int)($_SESSION['is_admin'] ?? 0),
+            'access_level' => (int)($_SESSION['access_level'] ?? 1),
         ];
 
         // Optional sample DB call, wrapped so it can't blank the page

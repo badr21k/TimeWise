@@ -440,51 +440,6 @@ class Reports extends Controller {
         }
     }
 
-    /**
-     * Comprehensive access control check
-     * Handles authentication and authorization with proper redirects and messages
-     */
-    private function checkAccess($resource = 'Admin Reports') {
-        // Check if user is logged in
-        if (!isset($_SESSION['auth']) || !$_SESSION['auth']) {
-            $_SESSION['toast'] = [
-                'type' => 'error',
-                'title' => 'Authentication Required',
-                'message' => 'Please log in to access ' . $resource . '.'
-            ];
-
-            // Store intended URL for redirect after login
-            $_SESSION['intended_url'] = $_SERVER['REQUEST_URI'];
-
-            header('Location: /login');
-            exit;
-        }
-
-        // Check if user has admin privileges
-        if (!$this->isAdmin()) {
-            $_SESSION['toast'] = [
-                'type' => 'error',
-                'title' => 'Access Denied',
-                'message' => 'You do not have permission to access ' . $resource . '. Admin privileges required.'
-            ];
-
-            // Log the unauthorized access attempt
-            $this->logAccessAttempt($_SESSION['username'], $resource, 'denied');
-
-            header('Location: /home');
-            exit;
-        }
-
-        // Log successful access
-        $this->logAccessAttempt($_SESSION['username'], $resource, 'granted');
-    }
-
-    /**
-     * Check if current user is admin
-     */
-    private function isAdmin() {
-        return isset($_SESSION['is_admin']) && (int)$_SESSION['is_admin'] === 1;
-    }
 
     /**
      * Log access attempts for security monitoring
