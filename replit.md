@@ -10,15 +10,26 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (October 2025)
 
+### Team Roster Redesign (October 21, 2025)
+- **Mobile-First UI**: Complete redesign with single-column layout, grouped sections (Profile/Access/Department & Role), sticky bottom bar, touch-friendly controls (44px min-height)
+- **Department Grouping**: All users visible to all logged-in users, grouped by department headers with counts
+- **Add User Permissions**: Add button only visible for access_level 1, 3, 4 (hidden for 0, 2)
+- **Department Scoping**: Level 4 users can only edit users within their assigned departments (visual feedback with opacity/cursor)
+- **Auto-Populate Edit Form**: All fields pre-populated when editing users, inline validation, toast notifications
+- **Performance Optimization**: Single SQL query using UNION ALL fetches roster + departments + roles in one database round-trip
+- **guardAdmin Fixed**: Now allows Level 1 (Full Admin), 3 (Team Lead), and 4 (Department Admin) access
+- **Complete Department Scoping**: All mutation endpoints (hire, update, terminate, rehire) validate department access for Level 4
+- **Architect Approved**: All requirements met, security verified, performance optimized
+
 ### Access Control Redesign (October 21, 2025)
 - **Level 1 Full Admin Access**: Level 1 users now have FULL access to all departments and roles (no restrictions)
 - **Level 4 Scoped Admin Access**: Level 4 users have FULL EDIT access scoped to their assigned departments only
 - **Single Department Model**: Changed from multi-department to single department + single role per employee
 - **Department Scoping Security**: 
   - `departments.php`: guardDepartmentAccess() enforces Level 4 can only manage assigned departments
-  - `team.php`: All hire/update operations validate department access; roster filtered for Level 4
+  - `team.php`: All hire/update/terminate/rehire operations validate department access; roster filtered for Level 4
   - Level 4 cannot view or modify employees outside assigned departments
-- **Optimized Bootstrap**: Single preloaded query for departments+roles in departments controller
+- **Optimized Bootstrap**: Single consolidated SQL query (UNION ALL) for departments+roles+roster
 - **Security Audited**: All Level 4 privilege escalation bypasses identified and fixed
 - **Architect Approved**: Complete security review passed for all access control changes
 
