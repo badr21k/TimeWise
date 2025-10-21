@@ -10,6 +10,18 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (October 2025)
 
+### Access Control Redesign (October 21, 2025)
+- **Level 1 Full Admin Access**: Level 1 users now have FULL access to all departments and roles (no restrictions)
+- **Level 4 Scoped Admin Access**: Level 4 users have FULL EDIT access scoped to their assigned departments only
+- **Single Department Model**: Changed from multi-department to single department + single role per employee
+- **Department Scoping Security**: 
+  - `departments.php`: guardDepartmentAccess() enforces Level 4 can only manage assigned departments
+  - `team.php`: All hire/update operations validate department access; roster filtered for Level 4
+  - Level 4 cannot view or modify employees outside assigned departments
+- **Optimized Bootstrap**: Single preloaded query for departments+roles in departments controller
+- **Security Audited**: All Level 4 privilege escalation bypasses identified and fixed
+- **Architect Approved**: Complete security review passed for all access control changes
+
 ### Complete is_admin to access_level Migration
 - **Database Cleanup**: Removed legacy `is_admin` column from users table
 - **Access Control Unified**: All controllers now exclusively use `AccessControl::enforceAccess()` with `access_level` (0-4) checks
@@ -27,10 +39,10 @@ Preferred communication style: Simple, everyday language.
 The application implements a 5-tier access level system stored in `users.access_level`:
 
 - **Level 0 - Inactive**: Cannot login (disabled account)
-- **Level 1 - Regular User**: Dashboard, Chat, Time Clock, My Shifts, Reminders
+- **Level 1 - Full Admin**: Full access to all features, all departments, all roles (unrestricted)
 - **Level 2 - Power User**: Dashboard, Chat, Time Clock, My Shifts, Reminders
 - **Level 3 - Team Lead**: Dashboard, Chat, Team Roster, Schedule Management, Reminders, Admin Reports
-- **Level 4 - Department Admin**: Dashboard, Chat, Time Clock, My Shifts, Reminders, Admin Reports, Departments & Roles (View Only - department scoped)
+- **Level 4 - Department Admin**: Dashboard, Chat, Team Roster (scoped), Departments & Roles (scoped with full edit access), Admin Reports (scoped) - can only manage assigned departments
 
 ### Access Control Implementation
 
@@ -49,9 +61,16 @@ Level 4 (Department Admin) users have department-scoped access across the applic
 
 - **Departments View**: 
   - Can only view departments they're assigned to
-  - View-only access (cannot create, modify, or delete departments/roles)
-  - Can manage department members and change their access levels (0-4)
-  - Server-side guardAdmin() blocks all mutation endpoints for Level 4
+  - **FULL EDIT ACCESS** to assigned departments (rename, delete, manage roles, assign managers)
+  - guardDepartmentAccess() validates all mutation operations
+  - Server-side enforcement prevents access to unauthorized departments
+
+- **Team Roster View**:
+  - Employee list filtered to only show employees in assigned departments
+  - Can hire new employees (only into assigned departments)
+  - Can update employees (only in assigned departments)
+  - Cannot view or modify employees in other departments
+  - All operations validate current department ownership
 
 - **Schedule View**:
   - Employee list filtered to only show employees in assigned departments
@@ -65,12 +84,16 @@ Level 4 (Department Admin) users have department-scoped access across the applic
   - Employee detail reports: Blocked for employees outside assigned departments
   - All queries use secure parameterized SQL with department filtering
 
-- **Implementation**: employee_department junction table links employees to departments
+- **Implementation**: 
+  - employee_department junction table links employees to departments (single department per employee)
+  - guardDepartmentAccess() method enforces scoping in all controllers
+  - All read operations filter by department; all write operations validate department ownership
 
 ### Database Schema
 
 - **users.access_level**: INT (0-4) - User's access level
-- **employee_department**: (employee_id, department_id) - Department assignments
+- **employee_department**: (employee_id, department_id) - Department assignments (single department per employee)
+- **employees.role_title**: VARCHAR - Single role title per employee
 - **department_managers**: (department_id, user_id) - Legacy manager assignments
 
 ## System Architecture
