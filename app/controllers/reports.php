@@ -55,50 +55,10 @@ class Reports extends Controller {
 
         $db = db_connect();
 
-        // Users list for selector - filtered by department for Level 4
-        $accessLevel = class_exists('AccessControl') ? AccessControl::getCurrentUserAccessLevel() : null;
-        if ($accessLevel === 4) {
-            $userDeptIds = AccessControl::getUserDepartmentIds();
-            if (!empty($userDeptIds)) {
-                $placeholders = implode(',', array_fill(0, count($userDeptIds), '?'));
-                $stmt = $db->prepare("
-                    SELECT DISTINCT u.id, COALESCE(NULLIF(u.full_name,''), u.username) AS label 
-                    FROM users u
-                    JOIN employees e ON e.user_id = u.id
-                    JOIN employee_department ed ON ed.employee_id = e.id
-                    WHERE ed.department_id IN ($placeholders)
-                    ORDER BY label ASC
-                ");
-                $stmt->execute($userDeptIds);
-                $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            } else {
-                $users = [];
-            }
-        } else {
-            $users = $db->query("SELECT id, COALESCE(NULLIF(full_name,''), username) AS label FROM users ORDER BY label ASC")->fetchAll(PDO::FETCH_ASSOC);
-        }
+        // Users list for selector
+        $users = $db->query("SELECT id, COALESCE(NULLIF(full_name,''), username) AS label FROM users ORDER BY label ASC")->fetchAll(PDO::FETCH_ASSOC);
 
         $userId = (int)($_GET['user_id'] ?? ($users[0]['id'] ?? 0));
-        
-        // Validate user_id for Level 4 users (department scoping)
-        if ($accessLevel === 4 && $userId > 0) {
-            $isAllowed = false;
-            foreach ($users as $user) {
-                if ((int)$user['id'] === $userId) {
-                    $isAllowed = true;
-                    break;
-                }
-            }
-            if (!$isAllowed) {
-                $_SESSION['toast'] = [
-                    'type' => 'error',
-                    'title' => 'Access Denied',
-                    'message' => 'You do not have access to view this user\'s data.'
-                ];
-                header('Location: /reports/satisfactionUsers');
-                exit;
-            }
-        }
         
         $to = $_GET['to'] ?? date('Y-m-d');
         // default from = 12 weeks ago
@@ -179,72 +139,29 @@ class Reports extends Controller {
         $to = $_GET['to'] ?? date('Y-m-d');
         $from = $_GET['from'] ?? (new DateTime($to))->modify('-12 weeks')->format('Y-m-d');
 
-        // Department scoping for Level 4 users
-        $accessLevel = class_exists('AccessControl') ? AccessControl::getCurrentUserAccessLevel() : null;
-        $userDeptIds = ($accessLevel === 4 && class_exists('AccessControl')) ? AccessControl::getUserDepartmentIds() : null;
-
-        // Weekly average by department using employee_department → departments
-        if ($accessLevel === 4 && !empty($userDeptIds)) {
-            // Build named placeholders for department IDs
-            $deptPlaceholders = [];
-            $params = [':from'=>$from, ':to'=>$to];
-            foreach ($userDeptIds as $idx => $deptId) {
-                $placeholder = ":dept{$idx}";
-                $deptPlaceholders[] = $placeholder;
-                $params[$placeholder] = $deptId;
-            }
-            $placeholders = implode(',', $deptPlaceholders);
-            
-            $sql = "
-                SELECT 
-                  d.name AS department,
-                  DATE_SUB(te.entry_date, INTERVAL WEEKDAY(te.entry_date) DAY) AS week_start,
-                  ROUND(AVG(te.satisfaction),2) AS avg_sat
-                FROM time_entries te
-                LEFT JOIN employees e ON e.id = te.employee_id
-                LEFT JOIN employee_department ed ON ed.employee_id = e.id
-                LEFT JOIN departments d ON d.id = ed.department_id
-                WHERE te.satisfaction IS NOT NULL
-                  AND te.entry_date BETWEEN :from AND :to
-                  AND (e.start_date IS NULL OR te.entry_date >= e.start_date)
-                  AND ed.department_id IN ($placeholders)
-                GROUP BY d.name, week_start
-                HAVING department IS NOT NULL
-                ORDER BY week_start ASC, department ASC
-            ";
-            try {
-                $stmt = $db->prepare($sql);
-                $stmt->execute($params);
-                $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            } catch (Throwable $e) {
-                $rows = [];
-            }
-        } else if ($accessLevel === 4) {
-            $rows = []; // No departments = no data
-        } else {
-            $sql = "
-                SELECT 
-                  d.name AS department,
-                  DATE_SUB(te.entry_date, INTERVAL WEEKDAY(te.entry_date) DAY) AS week_start,
-                  ROUND(AVG(te.satisfaction),2) AS avg_sat
-                FROM time_entries te
-                LEFT JOIN employees e ON e.id = te.employee_id
-                LEFT JOIN employee_department ed ON ed.employee_id = e.id
-                LEFT JOIN departments d ON d.id = ed.department_id
-                WHERE te.satisfaction IS NOT NULL
-                  AND te.entry_date BETWEEN :from AND :to
-                  AND (e.start_date IS NULL OR te.entry_date >= e.start_date)
-                GROUP BY d.name, week_start
-                HAVING department IS NOT NULL
-                ORDER BY week_start ASC, department ASC
-            ";
-            try {
-                $stmt = $db->prepare($sql);
-                $stmt->execute([':from'=>$from, ':to'=>$to]);
-                $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            } catch (Throwable $e) {
-                $rows = [];
-            }
+        // Weekly average by department
+        $sql = "
+            SELECT 
+              d.name AS department,
+              DATE_SUB(te.entry_date, INTERVAL WEEKDAY(te.entry_date) DAY) AS week_start,
+              ROUND(AVG(te.satisfaction),2) AS avg_sat
+            FROM time_entries te
+            LEFT JOIN employees e ON e.id = te.employee_id
+            LEFT JOIN employee_department ed ON ed.employee_id = e.id
+            LEFT JOIN departments d ON d.id = ed.department_id
+            WHERE te.satisfaction IS NOT NULL
+              AND te.entry_date BETWEEN :from AND :to
+              AND (e.start_date IS NULL OR te.entry_date >= e.start_date)
+            GROUP BY d.name, week_start
+            HAVING department IS NOT NULL
+            ORDER BY week_start ASC, department ASC
+        ";
+        try {
+            $stmt = $db->prepare($sql);
+            $stmt->execute([':from'=>$from, ':to'=>$to]);
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (Throwable $e) {
+            $rows = [];
         }
 
         // Pivot to chart series
@@ -289,30 +206,6 @@ class Reports extends Controller {
 
         $rows = $Shift->hoursForWeekGrouped($monday);
 
-        // Apply department scoping for Level 4 users
-        $accessLevel = class_exists('AccessControl') ? AccessControl::getCurrentUserAccessLevel() : null;
-        if ($accessLevel === 4) {
-            $userDeptIds = AccessControl::getUserDepartmentIds();
-            if (!empty($userDeptIds)) {
-                $db = db_connect();
-                // Filter employees to only those in the user's departments
-                $rows = array_filter($rows, function($row) use ($userDeptIds, $db) {
-                    $stmt = $db->prepare("
-                        SELECT department_id 
-                        FROM employee_department 
-                        WHERE employee_id = :emp_id
-                    ");
-                    $stmt->execute([':emp_id' => $row['employee_id']]);
-                    $empDeptIds = $stmt->fetchAll(PDO::FETCH_COLUMN);
-                    
-                    return !empty(array_intersect($empDeptIds, $userDeptIds));
-                });
-                $rows = array_values($rows);
-            } else {
-                $rows = [];
-            }
-        }
-
         $this->view('reports/hours', [
             'week_start' => $monday,
             'rows' => $rows,
@@ -328,31 +221,6 @@ class Reports extends Controller {
 
         $empId = (int)($_GET['employee_id'] ?? 0);
         if ($empId <= 0) { header('Location: /reports/hours'); exit; }
-
-        // Validate employee access for Level 4 users (department scoping)
-        $accessLevel = class_exists('AccessControl') ? AccessControl::getCurrentUserAccessLevel() : null;
-        if ($accessLevel === 4) {
-            $userDeptIds = AccessControl::getUserDepartmentIds();
-            $db = db_connect();
-            $stmt = $db->prepare("
-                SELECT department_id 
-                FROM employee_department 
-                WHERE employee_id = :emp_id
-            ");
-            $stmt->execute([':emp_id' => $empId]);
-            $empDeptIds = $stmt->fetchAll(PDO::FETCH_COLUMN);
-            
-            // Check if employee is in any of the user's departments
-            if (empty(array_intersect($empDeptIds, $userDeptIds))) {
-                $_SESSION['toast'] = [
-                    'type' => 'error',
-                    'title' => 'Access Denied',
-                    'message' => 'You do not have access to view this employee\'s data.'
-                ];
-                header('Location: /reports/hours');
-                exit;
-            }
-        }
 
         $Week = $this->model('ScheduleWeek');
         $Shift = $this->model('Shift');

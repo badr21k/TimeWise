@@ -74,16 +74,10 @@ class Schedule extends Controller
                     if (class_exists('AccessControl')) {
                         $accessLevel = AccessControl::getCurrentUserAccessLevel();
                         
-                        // Level 1 (Full Admin) and Level 3 (Team Lead) can edit all departments
-                        if ($accessLevel === 1 || $accessLevel === 3) {
+                        // Level 1, 3, and 4 can edit all departments
+                        if ($accessLevel === 1 || $accessLevel >= 3) {
                             $stmt = $db->query("SELECT id FROM departments");
                             $userEditableDeptIds = $stmt->fetchAll(PDO::FETCH_COLUMN);
-                        }
-                        // Level 4 (Department Admin) can VIEW all but EDIT only their assigned departments
-                        elseif ($accessLevel === 4) {
-                            $userEditableDeptIds = AccessControl::getUserDepartmentIds();
-                            // Note: We do NOT filter employees - Level 4 can see all employees
-                            // but editing is restricted via userEditableDeptIds
                         }
                     }
                     
@@ -122,31 +116,6 @@ class Schedule extends Controller
                     $week = $_GET['week'] ?? date('Y-m-d');
                     $w    = ScheduleWeek::mondayOf($week);
                     $rows = $this->Shift->forWeek($w);
-                    
-                    // Level 4 can view all shifts, but tag them with editable flag based on department assignment
-                    if (class_exists('AccessControl')) {
-                        $accessLevel = AccessControl::getCurrentUserAccessLevel();
-                        if ($accessLevel === 4) {
-                            $userDeptIds = AccessControl::getUserDepartmentIds();
-                            if (!empty($userDeptIds)) {
-                                $db = db_connect();
-                                // Tag each shift with editable flag
-                                foreach ($rows as &$shift) {
-                                    $stmt = $db->prepare("
-                                        SELECT department_id 
-                                        FROM employee_department 
-                                        WHERE employee_id = :emp_id
-                                    ");
-                                    $stmt->execute([':emp_id' => $shift['employee_id']]);
-                                    $empDeptIds = $stmt->fetchAll(PDO::FETCH_COLUMN);
-                                    
-                                    // Shift is editable if employee is in one of user's departments
-                                    $shift['editable'] = !empty(array_intersect($empDeptIds, $userDeptIds));
-                                }
-                                unset($shift); // Break reference
-                            }
-                        }
-                    }
                     
                     echo json_encode([
                         'week_start' => $w,

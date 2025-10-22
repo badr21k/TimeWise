@@ -49,8 +49,6 @@ class departments extends Controller
                         'users'       => $this->listUsers(),  // for Managers dropdown
                         'departments' => $this->listDepartmentsWithRolesOptimized(),
                         'access_level' => $accessLevel,
-                        'is_level_1' => $accessLevel === 1,  // Full access
-                        'is_level_4' => $accessLevel === 4,  // Scoped access
                     ]);
                     break;
 
@@ -265,21 +263,13 @@ class departments extends Controller
     private function guardAdmin() {
         $accessLevel = $this->getUserAccessLevel();
         
-        // Level 1 has FULL ACCESS - allow all operations
-        if ($accessLevel === 1) {
+        // Level 1, 3, and 4 have FULL ACCESS
+        if ($accessLevel === 1 || $accessLevel === 3 || $accessLevel === 4) {
             return;
         }
         
-        // Level 4 has FULL EDIT scoped to their departments - allow operations
-        // Department-specific validation will happen in individual methods
-        if ($accessLevel === 4) {
-            return;
-        }
-        
-        // Level 3 (Team Lead) not allowed access to departments
         // Level 2 (Power User) not allowed access to departments
-        // Deny access for levels 2 and 3
-        if ($accessLevel === 2 || $accessLevel === 3) {
+        if ($accessLevel === 2) {
             http_response_code(403);
             echo json_encode(['error' => 'Forbidden: Access denied']);
             exit;
@@ -287,25 +277,12 @@ class departments extends Controller
     }
     
     /**
-     * Verify Level 4 user has access to a specific department
+     * Verify user has access to a specific department (currently no restrictions)
      */
     private function guardDepartmentAccess(int $deptId): void {
-        $accessLevel = $this->getUserAccessLevel();
-        
-        // Level 1 has full access to all departments
-        if ($accessLevel === 1) {
-            return;
-        }
-        
-        // Level 4 can only access their assigned departments
-        if ($accessLevel === 4 && class_exists('AccessControl')) {
-            $userDeptIds = AccessControl::getUserDepartmentIds();
-            if (!in_array($deptId, $userDeptIds)) {
-                http_response_code(403);
-                echo json_encode(['error' => 'Forbidden: You do not have access to this department']);
-                exit;
-            }
-        }
+        // All admin users (Level 1, 3, 4) have full access to all departments
+        // No scoping needed
+        return;
     }
     
     private function getUserAccessLevel(): int {
@@ -397,18 +374,8 @@ class departments extends Controller
     
     /**
      * Optimized: Load departments with their roles in a single query
-     * Level 4 users can VIEW all departments but EDIT only their assigned ones
      */
     private function listDepartmentsWithRolesOptimized(): array {
-        $accessLevel = $this->getUserAccessLevel();
-        $userDeptIds = [];
-        
-        // Get user's assigned department IDs (for Level 4 edit permissions)
-        if ($accessLevel === 4 && class_exists('AccessControl')) {
-            $userDeptIds = AccessControl::getUserDepartmentIds();
-        }
-        
-        // Load ALL departments (Level 4 can view all)
         $sql = "
             SELECT 
                 d.id as dept_id,
@@ -421,14 +388,13 @@ class departments extends Controller
             ORDER BY d.name ASC, r.name ASC
         ";
         
-        return $this->groupDepartmentRoles($this->db->query($sql)->fetchAll(PDO::FETCH_ASSOC), $userDeptIds, $accessLevel);
+        return $this->groupDepartmentRoles($this->db->query($sql)->fetchAll(PDO::FETCH_ASSOC));
     }
     
     /**
      * Group flat department-role result set into nested structure
-     * Adds 'editable' flag for Level 4 users
      */
-    private function groupDepartmentRoles(array $rows, array $userDeptIds = [], int $accessLevel = 1): array {
+    private function groupDepartmentRoles(array $rows): array {
         $departments = [];
         $deptMap = [];
         
@@ -439,19 +405,11 @@ class departments extends Controller
             if (!isset($deptMap[$deptId])) {
                 $deptMap[$deptId] = count($departments);
                 
-                // Determine if this department is editable by the current user
-                $editable = true;
-                if ($accessLevel === 4) {
-                    // Level 4 can only edit their assigned departments
-                    $editable = in_array($deptId, $userDeptIds);
-                }
-                
                 $departments[] = [
                     'id' => $deptId,
                     'name' => $row['dept_name'],
                     'roles' => [],
-                    'role_count' => 0,
-                    'editable' => $editable
+                    'role_count' => 0
                 ];
             }
             

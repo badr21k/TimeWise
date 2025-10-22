@@ -10,41 +10,26 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (October 2025)
 
-### Level 4 Access Control Update (October 22, 2025)
-- **View All, Edit Scoped**: Level 4 users now have VIEW access to all departments but EDIT access only to assigned departments
-- **Schedule View**:
-  - Shows ALL employees grouped by department
-  - Color-coded department grouping (10-color palette)
-  - "View Only" badge appears on non-editable departments
-  - Edit controls (Add Shift, Copy, Delete) only appear for assigned departments
-- **Departments & Roles View**:
-  - Shows ALL departments
-  - "View Only" badge appears on non-editable departments  
-  - Edit controls (Rename, Delete, Add/Remove Roles) only appear for assigned departments
+### Level 4 Access Control Simplified (October 22, 2025)
+- **Full Access**: Level 4 users now have the same full access as Level 3 (Team Lead)
 - **Access Matrix**:
-  - Level 1 (Full Admin): View all + Edit all
-  - Level 3 (Team Lead): View all + Edit all
-  - Level 4 (Department Admin): View all + Edit assigned departments only
+  - Level 1 (Full Admin): Full access to all features and data
+  - Level 3 (Team Lead): Full access to all administrative features
+  - Level 4 (Department Admin): Same as Level 3 - Full access to all administrative features
 
-### Schedule View - Department-Scoped Editing with Visual Grouping (October 22, 2025)
+### Schedule View - Department-Grouped Display (October 22, 2025)
 - **Department Grouping**: Employees now grouped by department with visual headers
 - **Color Coding**: Each department has a unique color (10-color palette)
   - Department headers show colored dot and left border
   - Employee rows have colored left border (4px)
   - Shift blocks have colored left border (3px) and tinted background
   - Day cells have subtle colored left border
-- **Edit Restrictions**: Only employees from user's assigned departments are editable
-  - Level 1 (Full Admin): Can edit all departments
-  - Level 3 (Team Lead): Can edit all departments
-  - Level 4 (Department Admin): Can VIEW all but EDIT only assigned departments
-  - Other departments show "View Only" badge and have reduced opacity
-- **UI Behavior**:
-  - Add Shift button only appears for editable employees
-  - Copy button only appears for editable employees
-  - Shift delete/copy actions only appear for editable employees
+- **Access Control**: 
+  - Level 1, 3, and 4: Full edit access to all departments
+  - Level 2: View-only access
 - **API Changes**:
   - `employees.list` now returns department info (department_id, department_name)
-  - Returns `user_editable_dept_ids` array to indicate which departments user can edit
+  - Returns `user_editable_dept_ids` array (all departments for Level 3+)
   - Returns `access_level` for frontend permission checks
 
 ### Team Roster UI - Level 2 View-Only Mode (October 22, 2025)
@@ -84,17 +69,12 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (October 2025)
 
-### Access Control Redesign (October 21, 2025)
-- **Level 1 Full Admin Access**: Level 1 users now have FULL access to all departments and roles (no restrictions)
-- **Level 4 Scoped Admin Access**: Level 4 users have FULL EDIT access scoped to their assigned departments only
+### Access Control Redesign (October 21-22, 2025)
+- **Level 1 Full Admin Access**: Level 1 users have FULL access to all departments and roles (no restrictions)
+- **Level 3 & 4 Unified Access**: Level 3 (Team Lead) and Level 4 (Department Admin) now have identical full administrative access
 - **Single Department Model**: Changed from multi-department to single department + single role per employee
-- **Department Scoping Security**: 
-  - `departments.php`: guardDepartmentAccess() enforces Level 4 can only manage assigned departments
-  - `team.php`: All hire/update operations validate department access; roster filtered for Level 4
-  - Level 4 cannot view or modify employees outside assigned departments
+- **Simplified Permissions**: Removed department scoping for Level 4 - all admin levels (1, 3, 4) have full access
 - **Optimized Bootstrap**: Single preloaded query for departments+roles in departments controller
-- **Security Audited**: All Level 4 privilege escalation bypasses identified and fixed
-- **Architect Approved**: Complete security review passed for all access control changes
 
 ### Complete is_admin to access_level Migration
 - **Database Cleanup**: Removed legacy `is_admin` column from users table
@@ -116,7 +96,7 @@ The application implements a 5-tier access level system stored in `users.access_
 - **Level 1 - Full Admin**: Full access to all features, all departments, all roles (unrestricted) - includes Team Roster, Departments & Roles
 - **Level 2 - Power User**: Dashboard, Chat, Time Clock, My Shifts, Reminders, Team Roster (view only)
 - **Level 3 - Team Lead**: Dashboard, Chat, Team Roster, Schedule Management, Reminders, Admin Reports
-- **Level 4 - Department Admin**: Dashboard, Chat, Team Roster, Schedule, Departments & Roles, Admin Reports - can VIEW all departments but EDIT only assigned departments
+- **Level 4 - Department Admin**: Same access as Level 3 (Team Lead) - Full access to all administrative features
 
 ### Access Control Implementation
 
@@ -131,39 +111,37 @@ The application implements a 5-tier access level system stored in `users.access_
   - Combine rules with `&` for AND logic
   - Combine rules with `|` for OR logic (e.g., exact:1 | exact:4)
 
-### Department Scoping
+### Department Access
 
-Level 4 (Department Admin) users have department-scoped access across the application:
+All administrative users (Level 1, 3, and 4) have full access to all departments:
 
 - **Departments View**: 
-  - Can only view departments they're assigned to
-  - **FULL EDIT ACCESS** to assigned departments (rename, delete, manage roles, assign managers)
-  - guardDepartmentAccess() validates all mutation operations
-  - Server-side enforcement prevents access to unauthorized departments
+  - All admin users can view and edit all departments
+  - Full access to rename, delete, manage roles, and assign managers
+  - No scoping restrictions
 
 - **Team Roster View**:
-  - Employee list filtered to only show employees in assigned departments
-  - Can hire new employees (only into assigned departments)
-  - Can update employees (only in assigned departments)
-  - Cannot view or modify employees in other departments
-  - All operations validate current department ownership
+  - All admin users can view and manage all employees
+  - Can hire new employees into any department
+  - Can update employees in any department
+  - Full access to all team operations
 
 - **Schedule View**:
-  - Employee list filtered to only show employees in assigned departments
-  - Shift calendar filtered to only show shifts for employees in assigned departments
-  - Cannot view or manage schedules for other departments
+  - All admin users can view and manage all employee schedules
+  - Full access to create, edit, and delete shifts for any employee
+  - Department-grouped display with color-coding for visual organization
 
 - **Reports View**:
-  - User satisfaction reports: Only shows users from assigned departments
-  - Department satisfaction reports: Only shows assigned departments
-  - Hours reports: Only shows employees from assigned departments
-  - Employee detail reports: Blocked for employees outside assigned departments
-  - All queries use secure parameterized SQL with department filtering
+  - All admin users can view reports for all departments and employees
+  - User satisfaction reports: All users
+  - Department satisfaction reports: All departments
+  - Hours reports: All employees
+  - No filtering or scoping restrictions
 
 - **Implementation**: 
   - employee_department junction table links employees to departments (single department per employee)
-  - guardDepartmentAccess() method enforces scoping in all controllers
-  - All read operations filter by department; all write operations validate department ownership
+  - guardDepartmentAccess() method allows full access for all admin levels
+  - Level 2 users have view-only access where applicable
 
 ### Database Schema
 

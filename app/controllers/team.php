@@ -360,29 +360,12 @@ class Team extends Controller
     }
     
     /**
-     * Verify Level 4 user has access to a specific department
-     * For hire/update operations, Level 4 can only work with their assigned departments
+     * Verify user has access to a specific department (no restrictions for admin users)
      */
     private function guardDepartmentAccess(?int $deptId): void {
-        if ($deptId === null || $deptId === 0) {
-            // No department specified, allow it
-            return;
-        }
-        
-        $accessLevel = class_exists('AccessControl') ? AccessControl::getCurrentUserAccessLevel() : 1;
-        
-        // Level 1 and 3 have full access
-        if ($accessLevel === 1 || $accessLevel === 3) {
-            return;
-        }
-        
-        // Level 4 can only access their assigned departments
-        if ($accessLevel === 4 && class_exists('AccessControl')) {
-            $userDeptIds = AccessControl::getUserDepartmentIds();
-            if (!in_array($deptId, $userDeptIds)) {
-                throw new Exception('You do not have access to this department');
-            }
-        }
+        // All admin users (Level 1, 3, 4) have full access to all departments
+        // No scoping needed
+        return;
     }
     
     private function json(): array {
