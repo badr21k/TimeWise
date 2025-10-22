@@ -18,6 +18,11 @@ Preferred communication style: Simple, everyday language.
   - "Actions" column completely hidden (header + all cells)
   - Table colspan adjusted from 7 to 6 when Actions column is hidden
 - **Implementation**: Uses "admin-action" CSS class with display:none for ACCESS_LEVEL === 2
+- **Add Team Member Form**:
+  - Changed Department field from multi-select to single dropdown
+  - Roles now filter based on selected department
+  - Department selection is required before saving
+  - Roles display message "— Select a department first —" when no department selected
 
 ### Database Migration & Access Control Fixes (October 22, 2025)
 - **SSL Connection**: Updated database.php to support TiDB Cloud's required SSL/TLS encryption

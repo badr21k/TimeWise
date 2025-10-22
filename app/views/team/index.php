@@ -902,11 +902,12 @@ body::before {
           </div>
 
           <div class="col-md-6">
-            <label class="form-label">Departments</label>
-            <select class="form-select" id="h_departments" multiple size="4">
+            <label class="form-label">Department</label>
+            <select class="form-select" id="h_departments">
+              <option value="">Select a department...</option>
               <!-- Will be populated by JavaScript -->
             </select>
-            <div class="form-text">Hold Ctrl/Cmd to select multiple</div>
+            <div class="form-text">Select the employee's primary department</div>
           </div>
 
           <div class="col-md-6">
@@ -1141,12 +1142,12 @@ let ALL_ROLES = [];
 
 async function loadDepartments() {
   const sel = document.getElementById('h_departments');
-  sel.innerHTML = '<option>Loading…</option>';
+  sel.innerHTML = '<option value="">Loading…</option>';
   
   // Use bootstrap data (already loaded from /team/api?a=bootstrap)
   ALL_DEPARTMENTS = DEPARTMENTS || [];
   
-  sel.innerHTML = '';
+  sel.innerHTML = '<option value="">Select a department...</option>';
   
   if (ALL_DEPARTMENTS.length > 0) {
     ALL_DEPARTMENTS.forEach(dept => {
@@ -1155,8 +1156,6 @@ async function loadDepartments() {
       opt.textContent = dept.name;
       sel.appendChild(opt);
     });
-  } else {
-    sel.innerHTML = '<option value="">— No departments found —</option>';
   }
 }
 
@@ -1188,19 +1187,21 @@ async function loadRolesForHire() {
 function filterRolesByDepartments() {
   const sel = document.getElementById('h_role');
   const deptSel = document.getElementById('h_departments');
-  const selectedDepts = Array.from(deptSel.selectedOptions).map(opt => parseInt(opt.value));
+  const selectedDeptId = parseInt(deptSel.value) || 0;
   
   sel.innerHTML = '';
   
   let filteredRoles = ALL_ROLES;
-  if (selectedDepts.length > 0) {
+  
+  // If a department is selected, filter roles for that department
+  if (selectedDeptId > 0) {
     filteredRoles = ALL_ROLES.filter(r => {
-      if (!r.department_id) return false;
-      return selectedDepts.includes(parseInt(r.department_id));
+      return parseInt(r.department_id) === selectedDeptId;
     });
   }
   
-  if (filteredRoles.length) {
+  // Add roles to dropdown
+  if (filteredRoles.length > 0) {
     for (const r of filteredRoles) {
       const name = (r && (r.name ?? r.title ?? r.role ?? '')).toString();
       if (!name) continue;
@@ -1211,10 +1212,11 @@ function filterRolesByDepartments() {
     }
   }
   
-  if (!sel.options.length) {
-    const msg = selectedDepts.length > 0 
-      ? '— No roles for selected departments —' 
-      : '— No roles found (check API / DB) —';
+  // If no roles available, show message
+  if (sel.options.length === 0) {
+    const msg = selectedDeptId > 0 
+      ? '— No roles for this department —' 
+      : '— Select a department first —';
     sel.innerHTML = `<option value="">${msg}</option>`;
   }
 }
@@ -1369,7 +1371,7 @@ function clearHireForm() {
   document.getElementById('h_start').value = (new Date()).toISOString().slice(0,10);
   
   const deptSel = document.getElementById('h_departments');
-  Array.from(deptSel.options).forEach(opt => opt.selected = false);
+  deptSel.value = '';
 }
 
 async function onHireSave(){
@@ -1386,7 +1388,13 @@ async function onHireSave(){
   }
   
   const deptSel = document.getElementById('h_departments');
-  const selectedDepts = Array.from(deptSel.selectedOptions).map(opt => parseInt(opt.value));
+  const selectedDeptId = parseInt(deptSel.value) || 0;
+  
+  // Validate department selection
+  if (!selectedDeptId) {
+    showError('Please select a department');
+    return;
+  }
   
   try {
     const payload = {
@@ -1398,7 +1406,7 @@ async function onHireSave(){
       wage:      parseFloat(v('h_wage')||0),
       rate:      v('h_rate'),
       access_level: parseInt(v('h_access'),10),
-      departments: selectedDepts,
+      departments: [selectedDeptId],  // Send as array with single department
       start_date:v('h_start'),
       password:  v('h_password')
     };
