@@ -1,39 +1,33 @@
 <?php require 'app/views/templates/header.php';
 require 'app/views/templates/spinner.php';
 ?>
-
 <style>
 :root {
   /* Primary Brand Colors */
   --primary: #09194D;
   --primary-light: #1A2A6C;
   --primary-dark: #060F2E;
-
   /* Secondary Colors */
   --secondary: #D97F76;
   --secondary-light: #E8A8A2;
   --secondary-dark: #C46A61;
-
   /* Neutral & Background Colors */
   --light: #E4E4EF;
   --lighter: #F4F5F0;
   --neutral: #9B9498;
   --neutral-light: #B8B3B6;
   --neutral-dark: #7A7478;
-
   /* Accent Colors */
   --accent: #B59E5F;
   --accent-light: #D4C191;
   --accent-dark: #8F7D4C;
   --accent-secondary: #8D77AB;
   --accent-tertiary: #DA70D6;
-
   /* Semantic Colors */
   --success: #10b981;
   --warning: #f59e0b;
   --danger: #ef4444;
   --info: #3b82f6;
-
   /* UI Variables */
   --bg: linear-gradient(135deg, var(--lighter) 0%, var(--light) 100%);
   --card: #ffffff;
@@ -49,13 +43,11 @@ require 'app/views/templates/spinner.php';
   --radius-sm: 8px;
   --radius-lg: 16px;
 }
-
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
-
 body {
   background: var(--bg);
   color: var(--ink);
@@ -64,7 +56,6 @@ body {
   line-height: 1.6;
   position: relative;
 }
-
 body::before {
   content: '';
   position: absolute;
@@ -77,24 +68,20 @@ body::before {
     radial-gradient(circle at 80% 20%, rgba(141, 119, 171, 0.03) 0%, transparent 50%);
   pointer-events: none;
 }
-
 .page-wrap { 
   background: transparent; 
   min-height: 100vh; 
   padding: 1.5rem 0;
   position: relative;
 }
-
 .page-header {
   margin-bottom: 1.5rem;
   gap: 1rem;
 }
-
 .page-header-content {
   flex: 1;
   min-width: 0;
 }
-
 .page-title {
   font-size: clamp(1.5rem, 4vw, 2rem);
   font-weight: 700;
@@ -102,14 +89,12 @@ body::before {
   margin-bottom: 0.25rem;
   letter-spacing: -0.02em;
 }
-
 .page-subtitle {
   color: var(--muted);
   font-size: clamp(0.875rem, 2vw, 1rem);
   font-weight: 500;
   line-height: 1.5;
 }
-
 .card { 
   background: var(--card);
   border: 1px solid var(--border);
@@ -119,7 +104,6 @@ body::before {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
 }
-
 .card::before {
   content: '';
   position: absolute;
@@ -129,7 +113,6 @@ body::before {
   height: 3px;
   background: linear-gradient(90deg, var(--accent), var(--accent-secondary), var(--accent-tertiary));
 }
-
 /* Enhanced Buttons */
 .btn {
   display: inline-flex;
@@ -148,30 +131,24 @@ body::before {
   text-decoration: none;
   line-height: 1.5;
 }
-
 .btn:hover {
   transform: translateY(-1px);
 }
-
 .btn:active {
   transform: translateY(0);
 }
-
 .btn-sm {
   padding: 0.5rem 1rem;
   font-size: 0.8125rem;
 }
-
 .btn-primary {
   background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
   color: white;
   box-shadow: 0 2px 8px rgba(9, 25, 77, 0.2);
 }
-
 .btn-primary:hover {
   box-shadow: 0 4px 12px rgba(9, 25, 77, 0.3);
 }
-
 .btn-outline,
 .btn-outline-danger,
 .btn-outline-success {
@@ -179,58 +156,47 @@ body::before {
   border: 1.5px solid var(--border);
   color: var(--primary);
 }
-
 .btn-outline:hover {
   border-color: var(--primary);
   background: var(--lighter);
 }
-
 .btn-outline-danger {
   color: var(--danger);
   border-color: rgba(239, 68, 68, 0.3);
 }
-
 .btn-outline-danger:hover {
   border-color: var(--danger);
   background: rgba(239, 68, 68, 0.05);
 }
-
 .btn-outline-success {
   color: var(--success);
   border-color: rgba(16, 185, 129, 0.3);
 }
-
 .btn-outline-success:hover {
   border-color: var(--success);
   background: rgba(16, 185, 129, 0.05);
 }
-
 .btn-danger {
   background: linear-gradient(135deg, var(--danger) 0%, #dc2626 100%);
   color: white;
   box-shadow: 0 2px 8px rgba(239, 68, 68, 0.2);
 }
-
 .btn-danger:hover {
   box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
 }
-
 .btn-success {
   background: linear-gradient(135deg, var(--success) 0%, #0da271 100%);
   color: white;
   box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
 }
-
 .btn-success:hover {
   box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
 }
-
 .btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
   transform: none !important;
 }
-
 /* Enhanced Badges */
 .badge {
   display: inline-flex;
@@ -243,44 +209,38 @@ body::before {
   white-space: nowrap;
   border-radius: 6px;
   border: 1px solid;
+  flex-shrink: 0; /* Prevents stretching on desktop/tablet */
 }
-
 .badge-success {
   background: rgba(16, 185, 129, 0.1);
   border-color: rgba(16, 185, 129, 0.2);
   color: var(--success);
 }
-
 .badge-danger {
   background: rgba(239, 68, 68, 0.1);
   border-color: rgba(239, 68, 68, 0.2);
   color: var(--danger);
 }
-
 .badge-dark {
   background: rgba(9, 25, 77, 0.1);
   border-color: rgba(9, 25, 77, 0.2);
   color: var(--primary);
 }
-
 .badge-secondary {
   background: rgba(157, 148, 152, 0.1);
   border-color: rgba(157, 148, 152, 0.2);
   color: var(--muted);
 }
-
 .badge-info {
   background: rgba(59, 130, 246, 0.1);
   border-color: rgba(59, 130, 246, 0.2);
   color: var(--info);
 }
-
 .badge-warning {
   background: rgba(245, 158, 11, 0.1);
   border-color: rgba(245, 158, 11, 0.2);
   color: var(--warning);
 }
-
 /* Card Toolbar */
 .card-toolbar {
   padding: 1rem 1.5rem;
@@ -291,20 +251,21 @@ body::before {
   gap: 1rem;
   align-items: center;
 }
-
+.card-toolbar > .input-group {
+    flex-grow: 1; /* Allow search to take up available space */
+    min-width: 200px;
+}
 /* Enhanced Table */
 .table-responsive {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
 }
-
 .table {
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
   font-size: 0.875rem;
 }
-
 .table th {
   font-weight: 700;
   color: var(--primary);
@@ -317,25 +278,23 @@ body::before {
   letter-spacing: 0.05em;
   white-space: nowrap;
 }
-
 .table td {
   padding: 1rem 1.5rem;
   border-bottom: 1px solid var(--border);
   vertical-align: middle;
 }
-
 .table tbody tr {
   transition: all 0.2s ease;
 }
-
-.table tbody tr:hover {
+.table tbody tr:hover:not(.department-header) {
   background: rgba(244, 245, 240, 0.5);
 }
-
 .table tbody tr:last-child td {
   border-bottom: none;
 }
-
+.department-header td {
+  border-bottom: 1px solid var(--border); /* Ensure a line after the header */
+}
 /* Avatar & Team Member Cell */
 .team-member-cell {
   display: flex;
@@ -343,7 +302,6 @@ body::before {
   gap: 0.75rem;
   min-width: 0;
 }
-
 .avatar {
   width: 40px;
   height: 40px;
@@ -356,20 +314,18 @@ body::before {
   color: white;
   font-weight: 700;
   font-size: 0.875rem;
+  box-shadow: var(--shadow);
 }
-
 .team-member-info {
   min-width: 0;
   flex: 1;
 }
-
 .team-member-name {
   font-weight: 600;
   color: var(--primary);
   display: block;
   margin-bottom: 0.125rem;
 }
-
 /* Enhanced Form Controls */
 .input-group {
   position: relative;
@@ -377,7 +333,6 @@ body::before {
   align-items: stretch;
   width: 100%;
 }
-
 .input-group-text {
   display: flex;
   align-items: center;
@@ -391,7 +346,6 @@ body::before {
   border-top-right-radius: 0;
   border-bottom-right-radius: 0;
 }
-
 .form-control {
   display: block;
   width: 100%;
@@ -405,22 +359,18 @@ body::before {
   border-radius: var(--radius);
   transition: all 0.2s ease;
 }
-
 .input-group .form-control {
   border-top-left-radius: 0;
   border-bottom-left-radius: 0;
 }
-
 .form-control:focus {
   outline: none;
   border-color: var(--accent);
   box-shadow: 0 0 0 3px rgba(181, 158, 95, 0.1);
 }
-
 .form-control::placeholder {
   color: var(--neutral-light);
 }
-
 .form-select {
   display: block;
   width: 100%;
@@ -439,19 +389,16 @@ body::before {
   transition: all 0.2s ease;
   appearance: none;
 }
-
 .form-select:focus {
   border-color: var(--accent);
   outline: none;
   box-shadow: 0 0 0 3px rgba(181, 158, 95, 0.1);
 }
-
 .form-check {
   display: flex;
   align-items: center;
   gap: 0.625rem;
 }
-
 .form-check-input {
   width: 18px;
   height: 18px;
@@ -464,12 +411,10 @@ body::before {
   flex-shrink: 0;
   background: white;
 }
-
 .form-check-input:checked {
   background-color: var(--accent);
   border-color: var(--accent);
 }
-
 .form-check-input:checked::after {
   content: '✓';
   position: absolute;
@@ -480,12 +425,10 @@ body::before {
   left: 50%;
   transform: translate(-50%, -50%);
 }
-
 .form-check-input:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px rgba(181, 158, 95, 0.1);
 }
-
 .form-check-label {
   cursor: pointer;
   font-size: 0.875rem;
@@ -493,7 +436,6 @@ body::before {
   font-weight: 500;
   user-select: none;
 }
-
 .form-label {
   display: block;
   margin-bottom: 0.5rem;
@@ -501,45 +443,38 @@ body::before {
   color: var(--primary);
   font-size: 0.8125rem;
 }
-
 .form-text {
   margin-top: 0.375rem;
   font-size: 0.75rem;
   color: var(--muted);
   font-weight: 500;
 }
-
 .alert {
   padding: 0.75rem 1rem;
   border-radius: var(--radius);
   font-size: 0.875rem;
   border: 1px solid;
 }
-
 .alert-info {
   background: rgba(59, 130, 246, 0.1);
   border-color: rgba(59, 130, 246, 0.2);
   color: var(--info);
 }
-
 .text-muted {
   color: var(--muted) !important;
 }
-
 .small-text {
   font-size: 0.75rem;
   color: var(--muted);
   margin-top: 0.125rem;
   line-height: 1.4;
 }
-
 /* Enhanced Modals */
 .modal-header {
   padding: 1.25rem 1.5rem;
   border-bottom: 1px solid var(--border);
   background: rgba(244, 245, 240, 0.3);
 }
-
 .modal-title {
   margin-bottom: 0;
   line-height: 1.5;
@@ -550,11 +485,9 @@ body::before {
   gap: 0.625rem;
   font-size: 1.125rem;
 }
-
 .modal-body {
   padding: 1.5rem;
 }
-
 .modal-footer {
   padding: 1.25rem 1.5rem;
   border-top: 1px solid var(--border);
@@ -563,7 +496,6 @@ body::before {
   gap: 0.75rem;
   flex-wrap: wrap;
 }
-
 .btn-close {
   box-sizing: content-box;
   width: 1em;
@@ -577,37 +509,31 @@ body::before {
   cursor: pointer;
   transition: all 0.2s ease;
 }
-
 .btn-close:hover {
   opacity: 1;
   background-color: var(--light);
 }
-
 /* Empty State */
 .empty-state {
   padding: 3rem 1.5rem;
   text-align: center;
   color: var(--muted);
 }
-
 .empty-state-icon {
   font-size: 3rem;
   margin-bottom: 1rem;
   opacity: 0.5;
 }
-
 .empty-state-text {
   margin-bottom: 1.5rem;
   font-size: 1rem;
   font-weight: 500;
   color: var(--neutral-dark);
 }
-
 /* Animations */
 .fade-in {
   animation: fadeIn 0.3s ease-out;
 }
-
 @keyframes fadeIn {
   from { 
     opacity: 0; 
@@ -618,7 +544,6 @@ body::before {
     transform: translateY(0); 
   }
 }
-
 /* Responsive styles */
 @media (max-width: 1024px) {
   .table {
@@ -630,10 +555,10 @@ body::before {
     padding: 0.875rem 1rem;
   }
 }
-
+/* Tablet/Narrow Desktop View (Fixes for sidebar open) */
 @media (max-width: 768px) {
   .page-wrap {
-    padding: 1rem 0;
+    padding: 1rem 2;
   }
   
   .page-header {
@@ -651,10 +576,11 @@ body::before {
     align-items: stretch;
   }
   
-  .input-group {
+  .card-toolbar .input-group {
     max-width: 100% !important;
+    min-width: 100% !important; /* Ensure search bar takes full width */
   }
-  
+
   .table-responsive {
     margin: 0 -1rem;
   }
@@ -704,7 +630,7 @@ body::before {
     width: 100%;
   }
 }
-
+/* Mobile Card View (Most Complex Refinements) */
 @media (max-width: 640px) {
   .container-fluid {
     padding-left: 0.75rem;
@@ -723,46 +649,140 @@ body::before {
     padding: 2rem 1rem;
   }
   
-  /* Stack table cells on mobile */
+  /* Hide the main table header */
   .table thead {
     display: none;
   }
   
-  .table tbody tr {
-    display: block;
+  /* Style for the member's card view (the table row) */
+  .table tbody tr:not(.department-header) {
+    display: flex; 
+    flex-direction: row; 
+    flex-wrap: wrap; 
     margin-bottom: 1rem;
     border: 1px solid var(--border);
     border-radius: var(--radius);
     overflow: hidden;
+    box-shadow: var(--shadow-md);
+    background: var(--card);
+    padding: 0; 
   }
   
+  .table tbody tr:not(.department-header):hover {
+    transform: scale(1.01);
+  }
+  
+  /* Reset padding/border for cells in mobile view */
   .table td {
     display: block;
     text-align: left !important;
     padding: 0.75rem 1rem;
     border-bottom: 1px solid var(--border);
+    width: 100%; /* Default width */
   }
   
   .table td:last-child {
     border-bottom: none;
   }
+
+  /* --- Mobile Layout Structure for Density --- */
   
+  /* 1. Team Member & Contact: Header block */
+  .table tbody tr td:nth-child(1) { /* Team Member */
+    order: 1; 
+    padding-bottom: 0.5rem;
+  }
+
+  .table tbody tr td:nth-child(2) { /* Contact */
+    order: 2; 
+    border-bottom: 1px solid var(--border); /* Add separator below contact */
+    padding-top: 0;
+  }
+
+  /* 2. Department & Access: Grouped side-by-side (50/50 split) */
+  .table tbody tr td:nth-child(3), /* Department */
+  .table tbody tr td:nth-child(4)  /* Access */ {
+    order: 3; 
+    width: 50%;
+    border-bottom: 1px solid var(--border);
+    border-top: none; /* No top border, contact cell handles separation */
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+  }
+  
+  .table tbody tr td:nth-child(3) { /* Department */
+    border-right: 1px solid var(--border); 
+  }
+  .table tbody tr td:nth-child(4) { /* Access */
+    border-right: none;
+  }
+  /* Ensure the Change button in Department TD is compact */
+  .table tbody tr td:nth-child(3) .btn-sm {
+    margin-top: 0.25rem !important;
+    margin-left: 0 !important;
+    line-height: 1;
+    font-size: 0.75rem;
+  }
+
+
+  /* 3. Role, Wage, Status, Actions: Grouped side-by-side (2x2 grid) */
+  .table tbody tr td:nth-child(5), /* Role */
+  .table tbody tr td:nth-child(6), /* Wage */
+  .table tbody tr td:nth-child(7), /* Status */
+  .table tbody tr td:nth-child(8) /* Actions */ {
+    order: 4; 
+    width: 50%;
+    padding: 0.6rem 1rem;
+    border-bottom: none; 
+    border-top: none; 
+  }
+
+  /* Add vertical separators */
+  .table tbody tr td:nth-child(5), /* Role */
+  .table tbody tr td:nth-child(7)  /* Status */ {
+    border-right: 1px solid var(--border); 
+  }
+  
+  /* Ensure actions button takes minimal space and looks clean */
+  .table tbody tr td:nth-child(8) .btn-sm {
+      width: 100%;
+  }
+
+  /* Re-add labels for compact fields and hide for header fields */
   .table td::before {
-    content: attr(data-label);
     font-weight: 700;
-    color: var(--primary);
+    color: var(--primary-dark);
     display: block;
-    font-size: 0.6875rem;
+    font-size: 0.625rem; 
     text-transform: uppercase;
     letter-spacing: 0.05em;
     margin-bottom: 0.25rem;
+    opacity: 0.8;
   }
   
-  .table tbody tr:hover {
-    transform: none;
+  /* Hide the data label for the main header fields */
+  .table td:nth-child(1)::before, 
+  .table td:nth-child(2)::before, 
+  .table td:nth-child(3)::before, 
+  .table td:nth-child(4)::before { 
+    content: none;
+  }
+  
+  /* Department Header Styles */
+  .table tbody tr.department-header {
+    border: none;
+    box-shadow: none;
+    background: transparent;
+  }
+  
+  .table tbody tr.department-header td {
+    padding: 0.5rem 1rem;
+    font-size: 0.8125rem;
+    margin-top: 0.5rem;
+    border-bottom: 1px solid var(--border);
+    border-radius: var(--radius-sm);
   }
 }
-
 /* Utility Classes */
 .d-flex { display: flex; }
 .d-block { display: block; }
@@ -781,13 +801,11 @@ body::before {
 .col-12 { flex: 0 0 100%; max-width: 100%; }
 .col-md-3 { flex: 0 0 100%; max-width: 100%; }
 .col-md-6 { flex: 0 0 100%; max-width: 100%; }
-
 @media (min-width: 768px) {
   .col-md-3 { flex: 0 0 25%; max-width: 25%; }
   .col-md-6 { flex: 0 0 50%; max-width: 50%; }
 }
 </style>
-
 <div class="page-wrap">
   <div class="container-fluid px-3 px-md-4 py-3 py-md-4">
     <div class="d-flex align-items-center justify-content-between page-header">
@@ -803,10 +821,9 @@ body::before {
         <span class="d-inline d-md-none">Add</span>
       </button>
     </div>
-
     <div class="card">
       <div class="card-toolbar">
-        <div class="input-group" style="max-width:420px; flex: 1; min-width: 200px;">
+        <div class="input-group" style="max-width:420px;">
           <span class="input-group-text">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
               <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
@@ -819,7 +836,6 @@ body::before {
           <label class="form-check-label" for="showTerminated">Show terminated</label>
         </div>
       </div>
-
       <div class="table-responsive">
         <table class="table" id="tbl">
           <thead>
@@ -855,8 +871,6 @@ body::before {
     </div>
   </div>
 </div>
-
-<!-- Hire modal -->
 <div class="modal fade" id="hireModal" tabindex="-1">
   <div class="modal-dialog modal-lg modal-dialog-scrollable">
     <div class="modal-content">
@@ -872,7 +886,7 @@ body::before {
       <div class="modal-body">
         <div class="row g-3">
           <div class="col-md-6">
-            <label class="form-label">Username *</label>
+            <label class="form-label">Username <span class="text-danger">*</span></label>
             <input class="form-control" id="h_username" placeholder="e.g. jsmith">
           </div>
           <div class="col-md-6">
@@ -887,9 +901,8 @@ body::before {
             <label class="form-label">Mobile phone</label>
             <input class="form-control" id="h_phone" placeholder="(555) 555-5555">
           </div>
-
           <div class="col-12">
-            <label class="form-label">Access Level *</label>
+            <label class="form-label">Access Level <span class="text-danger">*</span></label>
             <select class="form-select" id="h_access">
               <option value="0">Level 0 - Inactive</option>
               <option value="1" selected>Level 1 - Regular User</option>
@@ -898,19 +911,15 @@ body::before {
               <option value="4">Level 4 - Department Admin</option>
             </select>
             <div id="accessSummary" class="alert alert-info mt-2" style="display:none; font-size: 0.875rem;">
-              <!-- Will be populated by JavaScript -->
-            </div>
+              </div>
           </div>
-
           <div class="col-md-6">
-            <label class="form-label">Department</label>
+            <label class="form-label">Department <span class="text-danger">*</span></label>
             <select class="form-select" id="h_departments">
               <option value="">Select a department...</option>
-              <!-- Will be populated by JavaScript -->
-            </select>
+              </select>
             <div class="form-text">Select the employee's primary department</div>
           </div>
-
           <div class="col-md-6">
             <label class="form-label">Role <span class="text-danger">*</span></label>
             <select class="form-select" id="h_role" required></select>
@@ -928,7 +937,6 @@ body::before {
               <option value="salary">Salary</option>
             </select>
           </div>
-
           <div class="col-md-3">
             <label class="form-label">Start date</label>
             <input class="form-control" id="h_start" type="date" value="<?= date('Y-m-d') ?>">
@@ -947,8 +955,6 @@ body::before {
     </div>
   </div>
 </div>
-
-<!-- Terminate modal -->
 <div class="modal fade" id="termModal" tabindex="-1">
   <div class="modal-dialog">
     <div class="modal-content">
@@ -965,7 +971,7 @@ body::before {
       <div class="modal-body">
         <input type="hidden" id="t_user_id">
         <div class="mb-3">
-          <label class="form-label">Reason</label>
+          <label class="form-label">Reason <span class="text-danger">*</span></label>
           <select class="form-select" id="t_reason">
             <option value="">Select…</option>
             <option>Resignation</option>
@@ -994,8 +1000,6 @@ body::before {
     </div>
   </div>
 </div>
-
-<!-- Change Department modal -->
 <div class="modal fade" id="changeDeptModal" tabindex="-1">
   <div class="modal-dialog">
     <div class="modal-content">
@@ -1014,8 +1018,7 @@ body::before {
           <label class="form-label">Select Department</label>
           <select class="form-select" id="cd_department">
             <option value="">Select a department...</option>
-            <!-- Will be populated by JavaScript -->
-          </select>
+            </select>
           <div class="form-text">Select the employee's new department</div>
         </div>
       </div>
@@ -1026,20 +1029,16 @@ body::before {
     </div>
   </div>
 </div>
-
 <?php require 'app/views/templates/footer.php'; ?>
-
 <script>
 let DEPARTMENTS = [];
 let ROLES = [];
 let USERS = [];
 let ACCESS_LEVEL = 1;
 let USER_DEPARTMENT_IDS = [];
-
 const M_hire  = new bootstrap.Modal(document.getElementById('hireModal'));
 const M_term  = new bootstrap.Modal(document.getElementById('termModal'));
 const M_changeDept = new bootstrap.Modal(document.getElementById('changeDeptModal'));
-
 document.addEventListener('DOMContentLoaded', async () => {
   await bootstrapTeam();
   document.getElementById('q').addEventListener('input', render);
@@ -1054,7 +1053,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       btnAdd.style.display = 'none';
     }
   }
-
   document.getElementById('btnAdd').addEventListener('click', async () => {
     if (ACCESS_LEVEL !== 1 && ACCESS_LEVEL !== 3 && ACCESS_LEVEL !== 4) {
       return alert('Admin access required (Level 1, 3, or 4)');
@@ -1076,14 +1074,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     updateAccessLevelSummary();
     M_hire.show();
   });
-
   document.getElementById('h_access').addEventListener('change', updateAccessLevelSummary);
   document.getElementById('h_departments').addEventListener('change', filterRolesByDepartments);
   document.getElementById('hireSave').addEventListener('click', onHireSave);
   document.getElementById('termSave').addEventListener('click', onTermSave);
   document.getElementById('changeDeptSave').addEventListener('click', onChangeDeptSave);
 });
-
 /* ---------- Bootstrap roster ---------- */
 async function bootstrapTeam() {
   try {
@@ -1107,7 +1103,6 @@ async function bootstrapTeam() {
     showError('Failed to load team data. Please refresh the page.');
   }
 }
-
 /* ---------- Spinner-aware fetch helpers ---------- */
 async function fetchJSON(url, options = {}) {
   Spinner.show();
@@ -1120,7 +1115,6 @@ async function fetchJSON(url, options = {}) {
     Spinner.hide();
   }
 }
-
 async function get(url) {
   Spinner.show();
   try {
@@ -1132,7 +1126,6 @@ async function get(url) {
     Spinner.hide();
   }
 }
-
 async function post(url, data) {
   Spinner.show();
   try {
@@ -1148,7 +1141,6 @@ async function post(url, data) {
     Spinner.hide();
   }
 }
-
 /* ---------- Access Level Summary ---------- */
 const ACCESS_LEVEL_DESCRIPTIONS = {
   0: 'Inactive - No access (cannot login)',
@@ -1157,7 +1149,6 @@ const ACCESS_LEVEL_DESCRIPTIONS = {
   3: 'Team Lead - Dashboard, Chat, Team, Schedule, Reminders, Admin Reports',
   4: 'Department Admin - Dashboard, Chat, Time Clock, My Shifts, Reminders, Admin Reports, Departments & Roles (View Only)'
 };
-
 function updateAccessLevelSummary() {
   const level = document.getElementById('h_access').value;
   const summary = document.getElementById('accessSummary');
@@ -1170,11 +1161,9 @@ function updateAccessLevelSummary() {
     summary.style.display = 'none';
   }
 }
-
 /* ---------- Departments ---------- */
 let ALL_DEPARTMENTS = [];
 let ALL_ROLES = [];
-
 async function loadDepartments() {
   const sel = document.getElementById('h_departments');
   sel.innerHTML = '<option value="">Loading…</option>';
@@ -1193,12 +1182,10 @@ async function loadDepartments() {
     });
   }
 }
-
 /* ---------- Roles ---------- */
 async function loadRolesForHire() {
   const sel = document.getElementById('h_role');
   sel.innerHTML = '<option>Loading…</option>';
-
   async function tryFetch(url) {
     try {
       const r = await fetch(url, { headers: { 'Content-Type': 'application/json' }});
@@ -1211,14 +1198,12 @@ async function loadRolesForHire() {
       return null;
     }
   }
-
   let roles = await tryFetch('/schedule/api?a=roles.list');
   if (!roles) roles = await tryFetch('/team/api?a=roles.list');
   
   ALL_ROLES = Array.isArray(roles) ? roles : [];
   filterRolesByDepartments();
 }
-
 function filterRolesByDepartments() {
   const sel = document.getElementById('h_role');
   const deptSel = document.getElementById('h_departments');
@@ -1246,7 +1231,6 @@ function filterRolesByDepartments() {
     sel.innerHTML = '<option value="">— No roles available —</option>';
   }
 }
-
 /* ---------- Render roster grouped by department ---------- */
 function render() {
   const q = (document.getElementById('q').value || '').toLowerCase();
@@ -1328,8 +1312,11 @@ function render() {
           <div id="dept-display-${u.id}">
             ${escapeHtml(u.department_name||'No Department')}
             ${canEdit && (ACCESS_LEVEL === 1 || ACCESS_LEVEL === 4) 
-              ? `<button class="btn btn-sm btn-outline" style="margin-left: 0.5rem; padding: 0.25rem 0.5rem;" onclick="openChangeDepartment(${u.id}, ${u.department_id || 0})">
-                  Change
+              ? `<button class="btn btn-sm btn-outline" style="margin-left: 0.5rem; padding: 0.25rem 0.5rem; margin-top: 0.25rem; line-height: 1;" onclick="openChangeDepartment(${u.id}, ${u.department_id || 0})">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M12.854.146a.5.5 0 0 0-.708 0l-10 10a.5.5 0 0 0-.127.353v3.5a.5.5 0 0 0 .5.5h3.5a.5.5 0 0 0 .353-.127l10-10a.5.5 0 0 0 0-.708l-3.5-3.5zM11.5 1.5l3 3L14.707 5.707 11 2zM3 13.5v-2.192l5.057-5.057 3 3L5.192 13.5H3z"/>
+                  </svg>
+                  <span class="d-none d-md-inline">Change</span>
                  </button>` 
               : ''}
           </div>
@@ -1349,7 +1336,7 @@ function render() {
         </td>
         <td data-label="Role">${escapeHtml(u.role_title||'—')}</td>
         <td data-label="Wage">
-          <div>${Number(u.wage||0).toFixed(2)}</div>
+          <div>$${Number(u.wage||0).toFixed(2)}</div>
           <div class="small-text">${u.rate||'hourly'}</div>
         </td>
         <td data-label="Status">
@@ -1382,7 +1369,6 @@ function render() {
     });
   });
 }
-
 /* Check if current user can edit a specific user */
 function canEditUser(user) {
   // Level 0 and 2 cannot edit
@@ -1393,7 +1379,6 @@ function canEditUser(user) {
   
   return false;
 }
-
 /* ---------- Hire ---------- */
 function clearHireForm() {
   ['h_username','h_fullname','h_email','h_phone','h_password'].forEach(id => document.getElementById(id).value='');
@@ -1405,7 +1390,6 @@ function clearHireForm() {
   const deptSel = document.getElementById('h_departments');
   deptSel.value = '';
 }
-
 async function onHireSave(){
   const username = v('h_username');
   if (!username) {
@@ -1451,9 +1435,7 @@ async function onHireSave(){
     showError('Failed to add team member: ' + error.message);
   }
 }
-
 function v(id){ return document.getElementById(id).value.trim(); }
-
 /* ---------- Terminate / Rehire ---------- */
 function openTerminate(user_id){
   document.getElementById('t_user_id').value = user_id;
@@ -1463,7 +1445,6 @@ function openTerminate(user_id){
   document.getElementById('t_date').value = (new Date()).toISOString().slice(0,10);
   M_term.show();
 }
-
 async function onTermSave(){
   const reason = document.getElementById('t_reason').value.trim();
   if (!reason) {
@@ -1488,7 +1469,6 @@ async function onTermSave(){
     showError('Failed to terminate team member: ' + error.message);
   }
 }
-
 async function rehire(user_id){
   try {
     await post('/team/api?a=rehire', { user_id, start_date:(new Date()).toISOString().slice(0,10) });
@@ -1498,7 +1478,6 @@ async function rehire(user_id){
     showError('Failed to rehire team member: ' + error.message);
   }
 }
-
 /* ---------- Change Department ---------- */
 async function openChangeDepartment(userId, currentDeptId) {
   document.getElementById('cd_user_id').value = userId;
@@ -1518,7 +1497,6 @@ async function openChangeDepartment(userId, currentDeptId) {
   
   M_changeDept.show();
 }
-
 async function onChangeDeptSave() {
   const userId = parseInt(document.getElementById('cd_user_id').value);
   const newDeptId = parseInt(document.getElementById('cd_department').value);
@@ -1540,7 +1518,6 @@ async function onChangeDeptSave() {
     showError('Failed to change department: ' + error.message);
   }
 }
-
 /* ---------- Utils ---------- */
 async function refreshRoster(){ 
   try {
@@ -1551,18 +1528,15 @@ async function refreshRoster(){
     showError('Failed to refresh roster: ' + error.message);
   }
 }
-
 function escapeHtml(t=''){ 
   const d = document.createElement('div'); 
   d.textContent = t; 
   return d.innerHTML; 
 }
-
 function showError(message) {
   // You could replace this with a toast notification system
   alert('Error: ' + message);
 }
-
 function showSuccess(message) {
   // You could replace this with a toast notification system
   alert('Success: ' + message);

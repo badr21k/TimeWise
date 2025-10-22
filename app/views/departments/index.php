@@ -120,17 +120,19 @@ body {
 }
 
 .page-title {
-  font-size: 2rem;
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
   font-weight: 800;
   color: var(--primary);
   margin-bottom: 0.5rem;
   letter-spacing: -0.02em;
+  line-height: 1.2;
 }
 
 .page-subtitle {
   color: var(--muted);
-  font-size: 1.1rem;
+  font-size: clamp(0.95rem, 2vw, 1.1rem);
   font-weight: 500;
+  line-height: 1.4;
 }
 
 /* Enhanced Buttons */
@@ -139,9 +141,9 @@ body {
   align-items: center;
   justify-content: center;
   border-radius: var(--radius-lg);
-  padding: 14px 28px;
+  padding: clamp(12px, 2vw, 14px) clamp(20px, 3vw, 28px);
   font-weight: 600;
-  font-size: 0.95rem;
+  font-size: clamp(0.85rem, 1.5vw, 0.95rem);
   border: 2px solid transparent;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -150,6 +152,8 @@ body {
   letter-spacing: 0.5px;
   position: relative;
   overflow: hidden;
+  white-space: nowrap;
+  min-height: 44px;
 }
 
 .btn:hover {
@@ -157,8 +161,9 @@ body {
 }
 
 .btn-sm {
-  padding: 10px 20px;
-  font-size: 0.85rem;
+  padding: clamp(8px, 1.5vw, 10px) clamp(16px, 2.5vw, 20px);
+  font-size: clamp(0.8rem, 1.2vw, 0.85rem);
+  min-height: 36px;
 }
 
 .btn-primary {
@@ -213,10 +218,12 @@ body {
   color: var(--primary);
   border-radius: var(--radius);
   padding: 8px 16px;
-  font-size: 0.85rem;
+  font-size: clamp(0.8rem, 1.2vw, 0.85rem);
   font-weight: 500;
   margin: 0.25rem 0.5rem 0.25rem 0;
   transition: all 0.3s ease;
+  max-width: 100%;
+  word-break: break-word;
 }
 
 .badge:hover {
@@ -236,6 +243,7 @@ body {
   background: var(--neutral-light);
   color: var(--primary);
   transition: all 0.3s ease;
+  flex-shrink: 0;
 }
 
 .badge .remove:hover {
@@ -247,11 +255,12 @@ body {
 .dept-row {
   display: grid;
   grid-template-columns: minmax(180px, 1fr) minmax(250px, 1.5fr) minmax(250px, 1.5fr) auto;
-  gap: 1.5rem;
+  gap: clamp(1rem, 2vw, 1.5rem);
   align-items: start;
-  padding: 2rem;
+  padding: clamp(1.5rem, 3vw, 2rem);
   border-bottom: 2px solid var(--border);
   transition: all 0.3s ease;
+  position: relative;
 }
 
 .dept-row:hover {
@@ -261,13 +270,13 @@ body {
 .dept-header {
   display: grid;
   grid-template-columns: minmax(180px, 1fr) minmax(250px, 1.5fr) minmax(250px, 1.5fr) auto;
-  gap: 1.5rem;
-  padding: 1.5rem 2rem;
+  gap: clamp(1rem, 2vw, 1.5rem);
+  padding: clamp(1.25rem, 2vw, 1.5rem) clamp(1.5rem, 3vw, 2rem);
   background: var(--lighter);
   border-bottom: 2px solid var(--border);
   font-weight: 700;
   color: var(--primary);
-  font-size: 0.9rem;
+  font-size: clamp(0.8rem, 1.2vw, 0.9rem);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -279,11 +288,12 @@ body {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  font-size: 1.1rem;
+  font-size: clamp(1rem, 1.5vw, 1.1rem);
+  line-height: 1.3;
 }
 
 .dept-count {
-  font-size: 0.9rem;
+  font-size: clamp(0.85rem, 1.2vw, 0.9rem);
   color: var(--muted);
   font-weight: 500;
 }
@@ -293,12 +303,13 @@ body {
   width: 100%;
   border: 2px solid var(--border);
   border-radius: var(--radius-sm);
-  padding: 14px 20px;
-  font-size: 0.95rem;
+  padding: clamp(12px, 2vw, 14px) clamp(16px, 2.5vw, 20px);
+  font-size: clamp(0.9rem, 1.2vw, 0.95rem);
   font-weight: 500;
   transition: all 0.3s ease;
   background: var(--lighter);
   color: var(--primary);
+  min-height: 44px;
 }
 
 .input:focus, select:focus {
@@ -317,10 +328,12 @@ body {
   display: flex;
   gap: 0.75rem;
   margin-top: 1rem;
+  flex-wrap: wrap;
 }
 
 .input-group .input {
-  flex: 1;
+  flex: 1 1 200px;
+  min-width: 0;
 }
 
 .select-multi {
@@ -331,29 +344,31 @@ body {
 }
 
 .small-text {
-  font-size: 0.85rem;
+  font-size: clamp(0.8rem, 1.2vw, 0.85rem);
   color: var(--muted);
   margin-top: 0.5rem;
   font-weight: 500;
+  line-height: 1.4;
 }
 
 /* Empty State */
 .empty-state {
-  padding: 4rem 2rem;
+  padding: clamp(3rem, 6vw, 4rem) clamp(1.5rem, 3vw, 2rem);
   text-align: center;
   color: var(--muted);
 }
 
 .empty-state-icon {
-  font-size: 3rem;
+  font-size: clamp(2.5rem, 6vw, 3rem);
   margin-bottom: 1.5rem;
   opacity: 0.7;
 }
 
 .empty-state-text {
   margin-bottom: 2rem;
-  font-size: 1.1rem;
+  font-size: clamp(1rem, 2vw, 1.1rem);
   font-weight: 500;
+  line-height: 1.5;
 }
 
 /* Animations */
@@ -395,7 +410,14 @@ body {
   100% { background-position: -200% 0; }
 }
 
-/* Responsive styles */
+/* Enhanced Responsive Grid */
+@media (max-width: 1200px) {
+  .dept-row, .dept-header {
+    grid-template-columns: minmax(150px, 1fr) minmax(200px, 1.5fr) minmax(200px, 1.5fr) auto;
+    gap: 1.25rem;
+  }
+}
+
 @media (max-width: 1024px) {
   .dept-row, .dept-header {
     grid-template-columns: 1fr 1fr;
@@ -441,6 +463,10 @@ body {
     flex-direction: column;
   }
   
+  .input-group .input {
+    flex: 1 1 100%;
+  }
+  
   .page-header {
     flex-direction: column;
     align-items: flex-start !important;
@@ -455,6 +481,41 @@ body {
   .page-title {
     font-size: 1.75rem;
   }
+  
+  .dept-name {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .container-fluid {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  
+  .dept-row, .dept-header {
+    padding: 1.25rem;
+  }
+  
+  .input, select {
+    padding: 12px 16px;
+  }
+  
+  .empty-state {
+    padding: 2.5rem 1rem;
+  }
+  
+  .page-title {
+    font-size: 1.5rem;
+  }
+  
+  .badge {
+    width: 100%;
+    justify-content: space-between;
+    margin: 0.25rem 0;
+  }
 }
 
 @media (max-width: 480px) {
@@ -463,15 +524,77 @@ body {
   }
   
   .input, select {
-    padding: 12px 16px;
+    padding: 10px 14px;
+    font-size: 16px; /* Prevent zoom on iOS */
   }
   
   .empty-state {
-    padding: 3rem 1rem;
+    padding: 2rem 0.75rem;
   }
   
   .page-title {
-    font-size: 1.5rem;
+    font-size: 1.375rem;
+  }
+  
+  .btn {
+    font-size: 0.9rem;
+    padding: 12px 20px;
+  }
+}
+
+@media (max-width: 360px) {
+  .page-wrap {
+    padding: 0.75rem 0;
+  }
+  
+  .dept-row, .dept-header {
+    padding: 0.875rem;
+  }
+  
+  .input-group {
+    gap: 0.5rem;
+  }
+}
+
+/* Touch Device Optimizations */
+@media (hover: none) and (pointer: coarse) {
+  .card:hover {
+    transform: none;
+  }
+  
+  .btn:hover {
+    transform: none;
+  }
+  
+  .badge:hover {
+    transform: none;
+  }
+  
+  .dept-row:hover {
+    background: transparent;
+  }
+}
+
+/* High Contrast Mode Support */
+@media (prefers-contrast: high) {
+  :root {
+    --border: var(--primary-dark);
+    --shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.4);
+    --shadow-xl: 0 12px 48px rgba(0, 0, 0, 0.5);
+  }
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  
+  .card, .btn, .badge {
+    transition: none;
   }
 }
 
@@ -482,12 +605,29 @@ body {
 .justify-content-end { justify-content: flex-end; }
 .mt-2 { margin-top: 0.5rem; }
 .mb-2 { margin-bottom: 0.5rem; }
+.w-100 { width: 100%; }
+.text-center { text-align: center; }
+
+/* Flex gap utilities */
+.gap-1 { gap: 0.5rem; }
+.gap-2 { gap: 1rem; }
+
+/* Responsive flex */
+.flex-column-mobile {
+  flex-direction: row;
+}
+
+@media (max-width: 768px) {
+  .flex-column-mobile {
+    flex-direction: column;
+  }
+}
 </style>
 
 <div class="page-wrap">
   <div class="container-fluid px-3 px-md-4 py-4">
-    <div class="d-flex align-items-center justify-content-between page-header">
-      <div>
+    <div class="d-flex align-items-center justify-content-between page-header flex-column-mobile gap-2">
+      <div class="text-center text-md-start">
         <h1 class="page-title">Departments & Roles</h1>
         <p class="page-subtitle">Create departments and attach roles</p>
       </div>
@@ -635,14 +775,14 @@ function deptRow(d) {
   if (d.editable === false) {
     const badge = document.createElement('span');
     badge.className = 'badge';
-    badge.style.cssText = 'background: var(--gray-400); color: white; font-size: 0.7rem; margin-left: 0.5rem;';
+    badge.style.cssText = 'background: var(--neutral); color: white; font-size: 0.7rem; margin-left: 0.5rem;';
     badge.textContent = 'View Only';
     count.appendChild(badge);
   }
   
   if (d.editable !== false) {
     const rename = document.createElement('button');
-    rename.className = 'btn btn-outline btn-sm mt-2';
+    rename.className = 'btn btn-outline btn-sm mt-2 w-100';
     rename.innerHTML = `
       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
         <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207 11.207 2.5zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293l6.5-6.5zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325z"/>
