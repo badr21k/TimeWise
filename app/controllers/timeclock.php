@@ -2,7 +2,7 @@
 // app/controllers/timeclock.php
 class timeclock extends Controller
 {
-    private PDO $db;
+    private ?PDO $db;
 
     public function __construct() {
         if (session_status() !== PHP_SESSION_ACTIVE) session_start();
