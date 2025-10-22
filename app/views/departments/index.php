@@ -246,7 +246,7 @@ body {
 /* Department Grid Layout */
 .dept-row {
   display: grid;
-  grid-template-columns: minmax(180px, 1fr) minmax(250px, 1.5fr) minmax(200px, 1.25fr) minmax(250px, 1.5fr) auto;
+  grid-template-columns: minmax(180px, 1fr) minmax(250px, 1.5fr) minmax(250px, 1.5fr) auto;
   gap: 1.5rem;
   align-items: start;
   padding: 2rem;
@@ -260,7 +260,7 @@ body {
 
 .dept-header {
   display: grid;
-  grid-template-columns: minmax(180px, 1fr) minmax(250px, 1.5fr) minmax(200px, 1.25fr) minmax(250px, 1.5fr) auto;
+  grid-template-columns: minmax(180px, 1fr) minmax(250px, 1.5fr) minmax(250px, 1.5fr) auto;
   gap: 1.5rem;
   padding: 1.5rem 2rem;
   background: var(--lighter);
@@ -401,22 +401,20 @@ body {
     grid-template-columns: 1fr 1fr;
     grid-template-areas: 
       "name actions"
-      "roles managers"
+      "roles roles"
       "members members";
     gap: 1.5rem;
   }
   
   .dept-row > div:nth-child(1) { grid-area: name; }
   .dept-row > div:nth-child(2) { grid-area: roles; }
-  .dept-row > div:nth-child(3) { grid-area: managers; }
-  .dept-row > div:nth-child(4) { grid-area: members; }
-  .dept-row > div:nth-child(5) { grid-area: actions; }
+  .dept-row > div:nth-child(3) { grid-area: members; }
+  .dept-row > div:nth-child(4) { grid-area: actions; }
   
   .dept-header > div:nth-child(1) { grid-area: name; }
   .dept-header > div:nth-child(2) { grid-area: roles; }
-  .dept-header > div:nth-child(3) { grid-area: managers; }
-  .dept-header > div:nth-child(4) { grid-area: members; }
-  .dept-header > div:nth-child(5) { grid-area: actions; }
+  .dept-header > div:nth-child(3) { grid-area: members; }
+  .dept-header > div:nth-child(4) { grid-area: actions; }
 }
 
 @media (max-width: 768px) {
@@ -433,7 +431,6 @@ body {
     grid-template-areas: 
       "name"
       "roles"
-      "managers"
       "members"
       "actions";
     gap: 1rem;
@@ -492,7 +489,7 @@ body {
     <div class="d-flex align-items-center justify-content-between page-header">
       <div>
         <h1 class="page-title">Departments & Roles</h1>
-        <p class="page-subtitle">Create departments, attach roles, and assign managers</p>
+        <p class="page-subtitle">Create departments and attach roles</p>
       </div>
       <button class="btn btn-primary" id="btnAddDept">
         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
@@ -506,7 +503,6 @@ body {
       <div class="dept-header">
         <div>Department</div>
         <div>Roles</div>
-        <div>Managers</div>
         <div>Members & Access</div>
         <div>Actions</div>
       </div>
