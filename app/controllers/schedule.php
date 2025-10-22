@@ -49,36 +49,61 @@ class Schedule extends Controller
                 /* ----------------- Employees ----------------- */
                 case 'employees.list':
                     $employees = $this->Employee->all();
+                    $db = db_connect();
+                    
+                    // Enrich employees with department info
+                    foreach ($employees as &$emp) {
+                        // Get department for this employee
+                        $stmt = $db->prepare("
+                            SELECT d.id, d.name
+                            FROM employee_department ed
+                            JOIN departments d ON d.id = ed.department_id
+                            WHERE ed.employee_id = :emp_id
+                            LIMIT 1
+                        ");
+                        $stmt->execute([':emp_id' => $emp['id']]);
+                        $dept = $stmt->fetch(PDO::FETCH_ASSOC);
+                        
+                        $emp['department_id'] = $dept ? (int)$dept['id'] : null;
+                        $emp['department_name'] = $dept ? $dept['name'] : null;
+                    }
+                    unset($emp);
                     
                     // Apply department scoping for Level 4 users (Department Admins)
+                    $userEditableDeptIds = [];
                     if (class_exists('AccessControl')) {
                         $accessLevel = AccessControl::getCurrentUserAccessLevel();
-                        if ($accessLevel === 4) {
-                            $userDeptIds = AccessControl::getUserDepartmentIds();
-                            if (!empty($userDeptIds)) {
-                                $db = db_connect();
+                        
+                        // Level 1 (Full Admin) can edit all departments
+                        if ($accessLevel === 1) {
+                            $stmt = $db->query("SELECT id FROM departments");
+                            $userEditableDeptIds = $stmt->fetchAll(PDO::FETCH_COLUMN);
+                        }
+                        // Level 4 (Department Admin) can only edit their assigned departments
+                        elseif ($accessLevel === 4) {
+                            $userEditableDeptIds = AccessControl::getUserDepartmentIds();
+                            if (empty($userEditableDeptIds)) {
+                                $employees = []; // No departments = no employees visible
+                            } else {
                                 // Filter employees to only those in the user's departments
-                                $employees = array_filter($employees, function($emp) use ($userDeptIds, $db) {
-                                    // Get departments for this employee
-                                    $stmt = $db->prepare("
-                                        SELECT department_id 
-                                        FROM employee_department 
-                                        WHERE employee_id = :emp_id
-                                    ");
-                                    $stmt->execute([':emp_id' => $emp['id']]);
-                                    $empDeptIds = $stmt->fetchAll(PDO::FETCH_COLUMN);
-                                    
-                                    // Check if employee has any department in common with user
-                                    return !empty(array_intersect($empDeptIds, $userDeptIds));
+                                $employees = array_filter($employees, function($emp) use ($userEditableDeptIds) {
+                                    return $emp['department_id'] && in_array($emp['department_id'], $userEditableDeptIds);
                                 });
                                 $employees = array_values($employees); // Re-index array
-                            } else {
-                                $employees = []; // No departments = no employees visible
                             }
+                        }
+                        // Level 3 (Team Lead) can edit all
+                        elseif ($accessLevel === 3) {
+                            $stmt = $db->query("SELECT id FROM departments");
+                            $userEditableDeptIds = $stmt->fetchAll(PDO::FETCH_COLUMN);
                         }
                     }
                     
-                    echo json_encode($employees);
+                    echo json_encode([
+                        'employees' => $employees,
+                        'user_editable_dept_ids' => $userEditableDeptIds,
+                        'access_level' => (int)($_SESSION['access_level'] ?? 1)
+                    ]);
                     break;
 
                 case 'employees.create':
