@@ -123,15 +123,15 @@ class Schedule extends Controller
                     $w    = ScheduleWeek::mondayOf($week);
                     $rows = $this->Shift->forWeek($w);
                     
-                    // Apply department scoping for Level 4 users (Department Admins)
+                    // Level 4 can view all shifts, but tag them with editable flag based on department assignment
                     if (class_exists('AccessControl')) {
                         $accessLevel = AccessControl::getCurrentUserAccessLevel();
                         if ($accessLevel === 4) {
                             $userDeptIds = AccessControl::getUserDepartmentIds();
                             if (!empty($userDeptIds)) {
                                 $db = db_connect();
-                                // Filter shifts to only those for employees in the user's departments
-                                $rows = array_filter($rows, function($shift) use ($userDeptIds, $db) {
+                                // Tag each shift with editable flag
+                                foreach ($rows as &$shift) {
                                     $stmt = $db->prepare("
                                         SELECT department_id 
                                         FROM employee_department 
@@ -140,11 +140,10 @@ class Schedule extends Controller
                                     $stmt->execute([':emp_id' => $shift['employee_id']]);
                                     $empDeptIds = $stmt->fetchAll(PDO::FETCH_COLUMN);
                                     
-                                    return !empty(array_intersect($empDeptIds, $userDeptIds));
-                                });
-                                $rows = array_values($rows);
-                            } else {
-                                $rows = [];
+                                    // Shift is editable if employee is in one of user's departments
+                                    $shift['editable'] = !empty(array_intersect($empDeptIds, $userDeptIds));
+                                }
+                                unset($shift); // Break reference
                             }
                         }
                     }
