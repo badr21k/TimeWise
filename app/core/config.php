@@ -14,11 +14,11 @@ define('LOGS', ROOT . DS . 'logs');
 define('FILES', ROOT . DS. 'files');
 
 // ---------------------  NEW DATABASE TABLE -------------------------
-define('DB_HOST',         'e7eh7.h.filess.io');
-define('DB_USER',         'TimeWise_bushnearby'); 
+define('DB_HOST',         'gateway01.ap-northeast-1.prod.aws.tidbcloud.com');
+define('DB_USER',         '29orPj4SnpUARYN.root'); 
 // define('DB_PASS',         $_ENV['DB_PASS']);
-define('DB_PASS',     'b9250b127b46e200ef002859cacc76928186b0f3');
-define('DB_DATABASE',     'TimeWise_bushnearby');
-define('DB_PORT',         '3305');
+define('DB_PASS',     'BLffq404LOa3TIrG');
+define('DB_DATABASE',     'test');
+define('DB_PORT',         '4000');
 
 
