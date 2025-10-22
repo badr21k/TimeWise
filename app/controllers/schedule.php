@@ -443,9 +443,11 @@ class Schedule extends Controller
     
     private function guardScheduleAccess() {
         $accessLevel = class_exists('AccessControl') ? (int)AccessControl::getCurrentUserAccessLevel() : 1;
-        if ($accessLevel < 1) {
-            throw new Exception('Login required to access schedule');
+        // Allow Level 1 (Regular User) and Level 3+ (Team Lead and above), but NOT Level 2
+        if ($accessLevel === 1 || $accessLevel >= 3) {
+            return;
         }
+        throw new Exception('You do not have access to schedule management');
     }
     
     /**
