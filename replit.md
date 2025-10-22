@@ -10,6 +10,27 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (October 2025)
 
+### Schedule View - Department-Scoped Editing with Visual Grouping (October 22, 2025)
+- **Department Grouping**: Employees now grouped by department with visual headers
+- **Color Coding**: Each department has a unique color (10-color palette)
+  - Department headers show colored dot and left border
+  - Employee rows have colored left border (4px)
+  - Shift blocks have colored left border (3px) and tinted background
+  - Day cells have subtle colored left border
+- **Edit Restrictions**: Only employees from user's assigned departments are editable
+  - Level 1 (Full Admin): Can edit all departments
+  - Level 3 (Team Lead): Can edit all departments
+  - Level 4 (Department Admin): Can only edit assigned departments
+  - Other departments show "View Only" badge and have reduced opacity
+- **UI Behavior**:
+  - Add Shift button only appears for editable employees
+  - Copy button only appears for editable employees
+  - Shift delete/copy actions only appear for editable employees
+- **API Changes**:
+  - `employees.list` now returns department info (department_id, department_name)
+  - Returns `user_editable_dept_ids` array to indicate which departments user can edit
+  - Returns `access_level` for frontend permission checks
+
 ### Team Roster UI - Level 2 View-Only Mode (October 22, 2025)
 - **Department Loading**: Updated to use bootstrap data (matches role loading pattern)
 - **Level 2 Action Hiding**: All admin actions now hidden for Level 2 (Power User) users:
