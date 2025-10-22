@@ -48,6 +48,7 @@ class Schedule extends Controller
 
                 /* ----------------- Employees ----------------- */
                 case 'employees.list':
+                    $this->guardScheduleAccess();
                     $employees = $this->Employee->all();
                     $db = db_connect();
                     $accessLevel = class_exists('AccessControl') ? (int)AccessControl::getCurrentUserAccessLevel() : 1;
@@ -126,6 +127,7 @@ class Schedule extends Controller
 
                 /* ----------------- Shifts: read ----------------- */
                 case 'shifts.week': {
+                    $this->guardScheduleAccess();
                     $week = $_GET['week'] ?? date('Y-m-d');
                     $w    = ScheduleWeek::mondayOf($week);
                     $rows = $this->Shift->forWeek($w);
@@ -185,11 +187,11 @@ class Schedule extends Controller
 
                 /* ----------------- Shifts: write ----------------- */
                 case 'shifts.create':
-                    $this->guardAdmin();
+                    $this->guardScheduleAccess();
                     $in = $this->json();
                     $employeeId = (int)$in['employee_id'];
                     
-                    // Check department access for Level 3 & 4
+                    // Check department access for all users
                     $this->guardDepartmentAccess($employeeId);
                     
                     $id = $this->Shift->create(
@@ -202,7 +204,7 @@ class Schedule extends Controller
                     break;
 
                 case 'shifts.delete':
-                    $this->guardAdmin();
+                    $this->guardScheduleAccess();
                     $id = (int)($_GET['id'] ?? 0);
                     
                     // Get employee_id for the shift
@@ -216,7 +218,7 @@ class Schedule extends Controller
 
                 /* Copy entire week → week (like Homebase) */
                 case 'shifts.copyWeek': {
-                    $this->guardAdmin();
+                    $this->guardScheduleAccess();
                     $in = $this->json();
                     $src = ScheduleWeek::mondayOf($in['source_week'] ?? date('Y-m-d'));
                     $dst = ScheduleWeek::mondayOf($in['target_week'] ?? date('Y-m-d'));
@@ -271,7 +273,7 @@ class Schedule extends Controller
 
                 /* Copy user → user within a week (optionally specific days, optionally overwrite) */
                 case 'shifts.copyUserToUser': {
-                    $this->guardAdmin();
+                    $this->guardScheduleAccess();
                     $in = $this->json();
                     $week = ScheduleWeek::mondayOf($in['week'] ?? date('Y-m-d'));
                     $from = (int)$in['from_employee_id'];
@@ -306,7 +308,7 @@ class Schedule extends Controller
 
                 /* Copy a single shift to another user/date */
                 case 'shifts.copyShift': {
-                    $this->guardAdmin();
+                    $this->guardScheduleAccess();
                     $in = $this->json();
                     $shiftId = (int)$in['shift_id'];
                     $toEmp   = (int)$in['to_employee_id'];
@@ -334,6 +336,7 @@ class Schedule extends Controller
 
                 /* ----------------- Publishing ----------------- */
                 case 'publish.status':
+                    $this->guardScheduleAccess();
                     $week = $_GET['week'] ?? date('Y-m-d');
                     $status = $this->Week->status($week);
                     echo json_encode($status);
@@ -371,6 +374,13 @@ class Schedule extends Controller
     /* ================= helpers ================= */
 
     private function guardAdmin() {
+        $accessLevel = class_exists('AccessControl') ? (int)AccessControl::getCurrentUserAccessLevel() : 1;
+        if ($accessLevel < 3) {
+            throw new Exception('Team Lead access (Level 3+) required');
+        }
+    }
+    
+    private function guardScheduleAccess() {
         $accessLevel = class_exists('AccessControl') ? (int)AccessControl::getCurrentUserAccessLevel() : 1;
         if ($accessLevel < 1) {
             throw new Exception('Login required to access schedule');
