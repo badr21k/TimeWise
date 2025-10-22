@@ -1533,36 +1533,56 @@ document.addEventListener('DOMContentLoaded', function() {
   async function api(action, extraData={}){
     const url = `/timeclock/api?a=${action}&_=${Date.now()}`;
     
-    // Prepare form data with timezone context
-    const formData = new FormData();
-    formData.append('tz', getTimezoneName());
-    formData.append('client_time_iso', getClientTimeISO());
-    
-    // Add any extra data (like satisfaction)
-    Object.keys(extraData).forEach(key => {
-      formData.append(key, extraData[key]);
-    });
+    try {
+      // Prepare form data with timezone context
+      const formData = new FormData();
+      formData.append('tz', getTimezoneName());
+      formData.append('client_time_iso', getClientTimeISO());
+      
+      // Add any extra data (like satisfaction)
+      Object.keys(extraData).forEach(key => {
+        formData.append(key, extraData[key]);
+      });
 
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: {'Accept': 'application/json'},
-      body: formData
-    });
-    
-    if(!res.ok) {
-      const text = await res.text();
-      try {
-        const json = JSON.parse(text);
-        throw new Error(json.error || 'Request failed');
-      } catch {
-        throw new Error('Request failed');
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {'Accept': 'application/json'},
+        body: formData
+      });
+      
+      if(!res.ok) {
+        const text = await res.text();
+        try {
+          const json = JSON.parse(text);
+          throw new Error(json.error || `Request failed with status ${res.status}`);
+        } catch (e) {
+          if (e.message && e.message !== 'Request failed') {
+            throw e;
+          }
+          throw new Error(`Request failed with status ${res.status}`);
+        }
       }
+      
+      const data = await res.json();
+      return data;
+    } catch (error) {
+      // Provide more helpful error messages
+      if (error.message && error.message.includes('Failed to fetch')) {
+        throw new Error('Network error - please check your internet connection');
+      }
+      throw error;
     }
-    return res.json();
   }
 
   async function loadState(){
     try{
+      // Show loading indicator during initial load
+      if (state.status === 'loading') {
+        if (typeof Spinner !== 'undefined') {
+          Spinner.show('Loading time clock data...');
+        }
+      }
+      
       const r = await api('status');
       
       // Map backend response to frontend state
@@ -1641,27 +1661,53 @@ document.addEventListener('DOMContentLoaded', function() {
     }catch(e){
       console.error('Failed to load state:', e);
       pill('','<i class="fas fa-triangle-exclamation"></i> Connection Error');
-      $('#statusDetail').textContent='Could not load state. Please check your connection.';
-      toast('Failed to load time clock data', 'error');
+      const statusDetailEl = $('#statusDetail');
+      if (statusDetailEl) statusDetailEl.textContent = 'Could not load state. Please check your connection.';
+      toast('Failed to load time clock data. Please refresh the page or check your connection.', 'error');
+    } finally {
+      // Hide loading indicator
+      if (typeof Spinner !== 'undefined') {
+        Spinner.hide();
+      }
     }
   }
 
   async function doAction(actionName, label, extraData={}){
-    setBusy(true, label+'…');
-    try{
-      const r = await api(actionName, extraData);
-      if(r && r.ok !== false){ 
-        await loadState(); 
-        toast(r.message || 'Action completed successfully'); 
+    // Use global Spinner if available, fallback to setBusy
+    if (typeof Spinner !== 'undefined') {
+      try {
+        await Spinner.wrap(async () => {
+          const r = await api(actionName, extraData);
+          if(r && r.ok !== false){ 
+            await loadState(); 
+            toast(r.message || 'Action completed successfully'); 
+          }
+          else{ 
+            toast((r && r.error) || 'Action failed', 'error'); 
+          }
+        }, label + '...');
+      } catch(e) { 
+        console.error('Action failed:', e);
+        toast(e.message || 'Network error - please try again', 'error'); 
       }
-      else{ 
-        toast((r && r.error) || 'Action failed', 'error'); 
+    } else {
+      // Fallback to old method
+      setBusy(true, label+'…');
+      try{
+        const r = await api(actionName, extraData);
+        if(r && r.ok !== false){ 
+          await loadState(); 
+          toast(r.message || 'Action completed successfully'); 
+        }
+        else{ 
+          toast((r && r.error) || 'Action failed', 'error'); 
+        }
+      }catch(e){ 
+        console.error('Action failed:', e);
+        toast(e.message || 'Network error - please try again', 'error'); 
       }
-    }catch(e){ 
-      console.error('Action failed:', e);
-      toast(e.message || 'Network error - please try again', 'error'); 
+      finally{ setBusy(false); }
     }
-    finally{ setBusy(false); }
   }
 
   // Event Listeners
