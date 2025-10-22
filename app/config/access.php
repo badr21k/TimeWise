@@ -40,11 +40,13 @@ return [
         
         // Reports dropdown - Team Leads and above
         'reports' => 'level:3',
+        'access_map' => 'level:3',              // Level 3+ (Team Lead and above)
     ],
     
     // Controller-level access rules (server-side enforcement)
     'controllers' => [
         'reports' => 'level:3',                 // Team Leads and above
+        'access_map' => 'level:3',              // Access Level Map - Team Leads and above
         'departments' => 'exact:1 | exact:4',   // Only Level 1 (Full Admin) and Level 4 (Dept Admin)
         'team' => 'level:1',                    // All users can access team roster
         'schedule' => [

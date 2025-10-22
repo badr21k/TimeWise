@@ -593,6 +593,12 @@
                       <li><a class="dropdown-item <?= $path === '/reports/hours' ? 'active' : '' ?>" href="/reports/hours">
                         <i class="fas fa-hourglass-half me-2"></i>Weekly Hours
                       </a></li>
+                      <?php if (class_exists('AccessControl') && AccessControl::hasAccess('access_map', 'navigation')): ?>
+                      <li><hr class="dropdown-divider"></li>
+                      <li><a class="dropdown-item <?= preg_match('#^/access-map\\b#', $path) ? 'active' : '' ?>" href="/access-map">
+                        <i class="fas fa-sitemap me-2"></i>Access Level Map
+                      </a></li>
+                      <?php endif; ?>
                     </ul>
                   </li>
                   <?php endif; ?>
@@ -727,6 +733,12 @@
                       <li><a class="dropdown-item <?= $path === '/reports/hours' ? 'active' : '' ?>" href="/reports/hours">
                         <i class="fas fa-hourglass-half me-2"></i>Weekly Hours
                       </a></li>
+                      <?php if (class_exists('AccessControl') && AccessControl::hasAccess('access_map', 'navigation')): ?>
+                      <li><hr class="dropdown-divider"></li>
+                      <li><a class="dropdown-item <?= preg_match('#^/access-map\\b#', $path) ? 'active' : '' ?>" href="/access-map">
+                        <i class="fas fa-sitemap me-2"></i>Access Level Map
+                      </a></li>
+                      <?php endif; ?>
                     </ul>
                   </li>
                   <?php endif; ?>
