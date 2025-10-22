@@ -1397,7 +1397,7 @@ async function onHireSave(){
       wage:      parseFloat(v('h_wage')||0),
       rate:      v('h_rate'),
       access_level: parseInt(v('h_access'),10),
-      departments: [selectedDeptId],  // Send as array with single department
+      department_id: selectedDeptId,  // Send as single department ID
       start_date:v('h_start'),
       password:  v('h_password')
     };
