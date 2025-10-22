@@ -246,11 +246,13 @@ require 'app/views/templates/spinner.php';
 .schedule-grid { 
   background: white; 
   border-radius: 1rem; 
-  overflow: hidden; 
+  overflow: auto; 
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08); 
   margin-bottom: clamp(2rem, 4vw, 3rem); 
   border: 1px solid var(--gray-200);
   transition: box-shadow 0.3s ease;
+  max-height: 75vh;
+  position: relative;
 }
 .schedule-grid:hover {
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
@@ -259,28 +261,33 @@ require 'app/views/templates/spinner.php';
   display: grid; 
   grid-template-columns: 240px repeat(7, 1fr); 
   background: linear-gradient(135deg, var(--primary) 0%, #0a1b50 100%); 
-  border-bottom: 2px solid rgba(181, 158, 95, 0.3); 
+  border-bottom: 2px solid rgba(181, 158, 95, 0.3);
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 .grid-header-cell { 
   padding: clamp(0.875rem, 2vw, 1.125rem) clamp(0.625rem, 1.5vw, 0.875rem); 
   font-weight: 700; 
   color: white; 
-  font-size: clamp(0.8rem, 1.2vw, 0.875rem); 
+  font-size: 0.75rem; 
   text-align: center; 
   border-right: 1px solid rgba(255,255,255,0.15); 
   letter-spacing: 0.02em;
   text-transform: uppercase;
-  font-size: 0.75rem;
+  background: linear-gradient(135deg, var(--primary) 0%, #0a1b50 100%);
+  line-height: 1.2;
 }
 .grid-header-cell:first-child { 
   text-align: left; 
-  background: rgba(181, 158, 95, 0.15); 
+  background: linear-gradient(135deg, rgba(9, 25, 77, 0.95) 0%, rgba(10, 27, 80, 0.95) 100%);
   text-transform: none;
   font-size: clamp(0.8rem, 1.2vw, 0.875rem);
+  position: sticky;
+  left: 0;
+  z-index: 11;
 }
 .grid-body { 
-  max-height: 70vh; 
-  overflow-y: auto;
   background: var(--gray-50);
 }
 .grid-row { 
@@ -301,7 +308,7 @@ require 'app/views/templates/spinner.php';
 /* Department grouping */
 .department-group-header {
   padding: clamp(0.875rem, 2vw, 1.125rem) clamp(0.875rem, 2vw, 1.25rem);
-  background: linear-gradient(135deg, var(--gray-100) 0%, var(--gray-50) 100%);
+  background: linear-gradient(135deg, rgba(243, 244, 246, 0.98) 0%, rgba(249, 250, 251, 0.98) 100%);
   font-size: clamp(0.85rem, 1.3vw, 0.925rem);
   font-weight: 700;
   color: var(--primary);
@@ -310,9 +317,10 @@ require 'app/views/templates/spinner.php';
   margin-top: 1rem;
   letter-spacing: -0.01em;
   position: sticky;
-  top: 0;
-  z-index: 5;
+  top: var(--grid-header-height, 3.5rem);
+  z-index: 9;
   backdrop-filter: blur(10px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
 }
 .department-group-header:first-child {
   margin-top: 0;
@@ -326,7 +334,9 @@ require 'app/views/templates/spinner.php';
   display: flex; 
   flex-direction: column; 
   gap: 0.375rem; 
-  position: relative;
+  position: sticky;
+  left: 0;
+  z-index: 2;
 }
 .employee-cell::before {
   content: '';
@@ -335,7 +345,17 @@ require 'app/views/templates/spinner.php';
   top: 0;
   bottom: 0;
   width: 3px;
-  background: inherit;
+  background: linear-gradient(135deg, var(--gray-50) 0%, white 100%);
+}
+.employee-cell::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--gray-200);
+  box-shadow: 2px 0 4px rgba(0, 0, 0, 0.08);
 }
 .employee-name { 
   font-weight: 700; 
@@ -606,13 +626,17 @@ require 'app/views/templates/spinner.php';
     padding: 1.5rem 0;
   }
   .schedule-grid { 
-    overflow-x: auto;
     border-radius: 0.75rem;
     -webkit-overflow-scrolling: touch;
   } 
   .grid-header, .grid-row { 
     min-width: 1000px;
-    grid-template-columns: 220px repeat(7, minmax(110px, 1fr)); 
+    grid-template-columns: 200px repeat(7, minmax(110px, 1fr)); 
+  }
+  .grid-header-cell:first-child,
+  .employee-cell {
+    position: sticky;
+    left: 0;
   }
   .week-controls {
     flex-wrap: wrap;
@@ -1113,6 +1137,9 @@ async function loadWeek() {
     // show/hide tools for Level 1 and Level 3+ (exclude Level 2)
     const toolsWrap = document.getElementById('toolsWrap');
     if (toolsWrap) toolsWrap.style.display = (accessLevel === 1 || accessLevel >= 3) ? 'block' : 'none';
+    
+    // Update grid header height after rendering
+    setTimeout(setGridHeaderHeight, 0);
   } catch (e) {
     console.error('Error loading week:', e);
     showError('Failed to load schedule data');
@@ -1437,6 +1464,33 @@ function totalHours(list) {
 function escapeHtml(t=''){ const d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
 function showError(message) { alert('Error: ' + message); }
 function showSuccess(message) { alert('Success: ' + message); }
+
+// Measure and set grid header height as CSS variable for sticky positioning
+function setGridHeaderHeight() {
+  const gridHeader = document.querySelector('.grid-header');
+  if (gridHeader) {
+    const height = gridHeader.offsetHeight;
+    document.documentElement.style.setProperty('--grid-header-height', `${height}px`);
+  }
+}
+
+// Debounce helper
+function debounce(func, wait) {
+  let timeout;
+  return function executedFunction(...args) {
+    const later = () => {
+      clearTimeout(timeout);
+      func(...args);
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
+}
+
+// Call on load, resize (debounced), and orientation change
+window.addEventListener('DOMContentLoaded', setGridHeaderHeight);
+window.addEventListener('resize', debounce(setGridHeaderHeight, 150));
+window.addEventListener('orientationchange', setGridHeaderHeight);
 
 window.deleteShift = deleteShift;
 window.openCopyUserModal = openCopyUserModal;
