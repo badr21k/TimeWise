@@ -1575,12 +1575,12 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   async function loadState(){
+    const isInitialLoad = state.status === 'loading';
+    
     try{
-      // Show loading indicator during initial load
-      if (state.status === 'loading') {
-        if (typeof Spinner !== 'undefined') {
-          Spinner.show('Loading time clock data...');
-        }
+      // Show loading indicator during initial load only
+      if (isInitialLoad && typeof Spinner !== 'undefined') {
+        Spinner.show('Loading time clock data...');
       }
       
       const r = await api('status');
@@ -1665,49 +1665,30 @@ document.addEventListener('DOMContentLoaded', function() {
       if (statusDetailEl) statusDetailEl.textContent = 'Could not load state. Please check your connection.';
       toast('Failed to load time clock data. Please refresh the page or check your connection.', 'error');
     } finally {
-      // Hide loading indicator
-      if (typeof Spinner !== 'undefined') {
+      // Hide loading indicator only if this was the initial load
+      if (isInitialLoad && typeof Spinner !== 'undefined') {
         Spinner.hide();
       }
     }
   }
 
   async function doAction(actionName, label, extraData={}){
-    // Use global Spinner if available, fallback to setBusy
-    if (typeof Spinner !== 'undefined') {
-      try {
-        await Spinner.wrap(async () => {
-          const r = await api(actionName, extraData);
-          if(r && r.ok !== false){ 
-            await loadState(); 
-            toast(r.message || 'Action completed successfully'); 
-          }
-          else{ 
-            toast((r && r.error) || 'Action failed', 'error'); 
-          }
-        }, label + '...');
-      } catch(e) { 
-        console.error('Action failed:', e);
-        toast(e.message || 'Network error - please try again', 'error'); 
+    // Use setBusy for action feedback (separate from page load spinner)
+    setBusy(true, label+'…');
+    try{
+      const r = await api(actionName, extraData);
+      if(r && r.ok !== false){ 
+        await loadState(); 
+        toast(r.message || 'Action completed successfully'); 
       }
-    } else {
-      // Fallback to old method
-      setBusy(true, label+'…');
-      try{
-        const r = await api(actionName, extraData);
-        if(r && r.ok !== false){ 
-          await loadState(); 
-          toast(r.message || 'Action completed successfully'); 
-        }
-        else{ 
-          toast((r && r.error) || 'Action failed', 'error'); 
-        }
-      }catch(e){ 
-        console.error('Action failed:', e);
-        toast(e.message || 'Network error - please try again', 'error'); 
+      else{ 
+        toast((r && r.error) || 'Action failed', 'error'); 
       }
-      finally{ setBusy(false); }
+    }catch(e){ 
+      console.error('Action failed:', e);
+      toast(e.message || 'Network error - please try again', 'error'); 
     }
+    finally{ setBusy(false); }
   }
 
   // Event Listeners

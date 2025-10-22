@@ -7,7 +7,13 @@ class timeclock extends Controller
     public function __construct() {
         if (session_status() !== PHP_SESSION_ACTIVE) session_start();
         if (empty($_SESSION['auth'])) { header('Location: /login'); exit; }
+        
         $this->db = db_connect();
+        if (!$this->db) {
+            error_log('TimeClock: Database connection failed');
+            throw new Exception('Database connection failed. Please try again later.');
+        }
+        
         $this->ensureTables();
     }
 
