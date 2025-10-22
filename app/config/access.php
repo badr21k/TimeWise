@@ -34,7 +34,7 @@ return [
         // Team & Schedule dropdown items
         'team_roster' => 'level:1',             // Level 1+ (All users can view team roster)
         'departments_roles' => 'exact:1 | exact:4',  // Only Level 1 (Full Admin) and Level 4 (Dept Admin)
-        'schedule' => 'level:3',                // Level 3+ (Team Lead and above)
+        'schedule' => 'level:1',                // Level 1+ (All users - department-scoped)
         'my_shifts' => 'level:1',               // Level 1+ (Regular User and above)
         'time_clock' => 'level:1',              // Level 1+ (Regular User and above)
         
@@ -50,7 +50,7 @@ return [
         'departments' => 'exact:1 | exact:4',   // Only Level 1 (Full Admin) and Level 4 (Dept Admin)
         'team' => 'level:1',                    // All users can access team roster
         'schedule' => [
-            'index' => 'level:3',               // Schedule management - Team Leads and above
+            'index' => 'level:1',               // Schedule management - All users (department-scoped)
             'my' => 'level:1',                  // My shifts - available to all
         ],
         'notes' => 'level:1',                   // Reminders available to all
@@ -69,7 +69,7 @@ return [
         'reports.hoursEmployee' => 'level:3',
         'team.roster' => 'level:1',             // All users can access team roster
         'departments.index' => 'exact:1 | exact:4',  // Only Level 1 (Full Admin) and Level 4 (Dept Admin)
-        'schedule.index' => 'level:3',
+        'schedule.index' => 'level:1',
         'timeclock.index' => 'level:1',
         'timeclock.api' => 'level:1',
     ],
