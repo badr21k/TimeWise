@@ -19,7 +19,7 @@ Preferred communication style: Simple, everyday language.
 
 ### Technical Implementations
 - **Role-Based Access Control (RBAC)**: A 5-tier `access_level` system (0-4) governs feature access. Access Control is unified using `AccessControl::enforceAccess()` and rules like `auth`, `level:N`, `exact:N`, `role:name`, and `dept:Name`.
-- **Department Scoping**: Levels 3 (Team Lead) and 4 (Department Admin) have department-scoped access to features like Schedule and Departments & Roles, meaning they can only manage their assigned departments. Level 1 (Full Admin) has unrestricted access.
+- **Department Scoping**: All users (Level 1+) have department-scoped access to the Schedule feature, meaning they can only view and manage schedules for employees in their assigned departments. Levels 3 (Team Lead) and 4 (Department Admin) also have department-scoped access to other features like Departments & Roles.
 - **Single Department Model**: Employees are assigned to a single department and a single role.
 - **PHP Backend**: Core application logic and authentication.
 - **Node.js Chat Server**: Built with ES modules, using Socket.io for real-time WebSocket communication, operating on a configurable port (default 3001).
@@ -30,7 +30,7 @@ Preferred communication style: Simple, everyday language.
 
 ### Feature Specifications
 - **Real-time Chat**: Provided by the Node.js server with Socket.io.
-- **Scheduling**: Supports department-grouped employee schedules with color-coding and department-scoped editing for specific access levels.
+- **Scheduling**: Supports department-grouped employee schedules with color-coding. All users (Level 1+) have department-scoped access, meaning they can only view and manage schedules for employees in their assigned departments.
 - **Time Tracking**: Enhanced Time Clock page with global Spinner loading indicators, robust error handling with clear user feedback, network error detection, and seamless integration with the global loading state system. Includes break timer tracking and satisfaction surveys on clock out.
 - **Department Management**: Creation, assignment of roles, and user department changes (restricted by access level).
 - **Team Roster**: Displays employee information, including department assignments, with administrative actions hidden for view-only users.

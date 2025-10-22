@@ -130,6 +130,32 @@ class Schedule extends Controller
                     $w    = ScheduleWeek::mondayOf($week);
                     $rows = $this->Shift->forWeek($w);
                     
+                    // Apply department filtering for all users (Level 1+)
+                    $accessLevel = class_exists('AccessControl') ? (int)AccessControl::getCurrentUserAccessLevel() : 1;
+                    if ($accessLevel >= 1) {
+                        $userDeptIds = class_exists('AccessControl') ? AccessControl::getUserDepartmentIds() : [];
+                        
+                        if (!empty($userDeptIds)) {
+                            $db = db_connect();
+                            // Filter shifts to only those for employees in user's departments
+                            $rows = array_filter($rows, function($shift) use ($db, $userDeptIds) {
+                                $stmt = $db->prepare("
+                                    SELECT ed.department_id
+                                    FROM employee_department ed
+                                    WHERE ed.employee_id = :emp_id
+                                    LIMIT 1
+                                ");
+                                $stmt->execute([':emp_id' => $shift['employee_id']]);
+                                $empDeptId = $stmt->fetchColumn();
+                                
+                                return $empDeptId && in_array($empDeptId, $userDeptIds);
+                            });
+                            $rows = array_values($rows); // Re-index array
+                        } else {
+                            $rows = []; // No departments = no shifts
+                        }
+                    }
+                    
                     echo json_encode([
                         'week_start' => $w,
                         'shifts' => $rows,
@@ -200,7 +226,28 @@ class Schedule extends Controller
                     $this->Week->status($dst);
 
                     if ($overwrite) {
-                        $this->Shift->deleteForWeek($dst);
+                        // Only delete shifts for employees in user's departments (department-scoped)
+                        $userDeptIds = class_exists('AccessControl') ? AccessControl::getUserDepartmentIds() : [];
+                        if (!empty($userDeptIds)) {
+                            $db = db_connect();
+                            $destShifts = $this->Shift->forWeek($dst);
+                            foreach ($destShifts as $shift) {
+                                // Check if employee's department is in user's permitted list
+                                $stmt = $db->prepare("
+                                    SELECT ed.department_id
+                                    FROM employee_department ed
+                                    WHERE ed.employee_id = :emp_id
+                                    LIMIT 1
+                                ");
+                                $stmt->execute([':emp_id' => $shift['employee_id']]);
+                                $empDeptId = $stmt->fetchColumn();
+                                
+                                // Only delete shifts for employees in user's departments
+                                if ($empDeptId && in_array($empDeptId, $userDeptIds)) {
+                                    $this->Shift->delete((int)$shift['id']);
+                                }
+                            }
+                        }
                     }
 
                     $rows = $this->Shift->forWeek($src);
@@ -210,6 +257,9 @@ class Schedule extends Controller
                     $diffDays = (int)$srcDate->diff($dstDate)->format('%r%a');
 
                     foreach ($rows as $r) {
+                        // Check department access for the employee being copied
+                        $this->guardDepartmentAccess((int)$r['employee_id']);
+                        
                         $s = new DateTime($r['start_dt']); $s->modify(($diffDays>=0?'+':'') . $diffDays . ' day');
                         $e = new DateTime($r['end_dt']);   $e->modify(($diffDays>=0?'+':'') . $diffDays . ' day');
                         $this->Shift->create((int)$r['employee_id'], $s->format('Y-m-d H:i:s'), $e->format('Y-m-d H:i:s'), $r['notes']);
@@ -228,6 +278,10 @@ class Schedule extends Controller
                     $to   = (int)$in['to_employee_id'];
                     $days = isset($in['days']) && is_array($in['days']) ? array_values(array_map('intval',$in['days'])) : null;
                     $overwrite = !empty($in['overwrite']);
+
+                    // Check department access for both source and target employees
+                    $this->guardDepartmentAccess($from);
+                    $this->guardDepartmentAccess($to);
 
                     if ($overwrite) {
                         $this->Shift->deleteForWeekEmployee($week, $to, $days);
@@ -260,6 +314,10 @@ class Schedule extends Controller
 
                     $orig = $this->Shift->get($shiftId);
                     if (!$orig) throw new Exception('Shift not found');
+
+                    // Check department access for both source and target employees
+                    $this->guardDepartmentAccess((int)$orig['employee_id']);
+                    $this->guardDepartmentAccess($toEmp);
 
                     $s = new DateTime($orig['start_dt']);
                     $e = new DateTime($orig['end_dt']);
