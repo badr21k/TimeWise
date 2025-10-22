@@ -397,39 +397,18 @@ class departments extends Controller
     
     /**
      * Optimized: Load departments with their roles in a single query
-     * For Level 4 users, only their assigned departments are returned
+     * Level 4 users can VIEW all departments but EDIT only their assigned ones
      */
     private function listDepartmentsWithRolesOptimized(): array {
         $accessLevel = $this->getUserAccessLevel();
+        $userDeptIds = [];
         
-        // Level 4 users only see departments they're assigned to
+        // Get user's assigned department IDs (for Level 4 edit permissions)
         if ($accessLevel === 4 && class_exists('AccessControl')) {
             $userDeptIds = AccessControl::getUserDepartmentIds();
-            
-            if (empty($userDeptIds)) {
-                return []; // No departments assigned
-            }
-            
-            $placeholders = implode(',', array_fill(0, count($userDeptIds), '?'));
-            $sql = "
-                SELECT 
-                    d.id as dept_id,
-                    d.name as dept_name,
-                    r.id as role_id,
-                    r.name as role_name
-                FROM departments d
-                LEFT JOIN department_roles dr ON dr.department_id = d.id
-                LEFT JOIN roles r ON r.id = dr.role_id
-                WHERE d.id IN ($placeholders)
-                ORDER BY d.name ASC, r.name ASC
-            ";
-            
-            $stmt = $this->db->prepare($sql);
-            $stmt->execute($userDeptIds);
-            return $this->groupDepartmentRoles($stmt->fetchAll(PDO::FETCH_ASSOC));
         }
         
-        // For all other users (Level 1 full access), show all departments
+        // Load ALL departments (Level 4 can view all)
         $sql = "
             SELECT 
                 d.id as dept_id,
@@ -442,13 +421,14 @@ class departments extends Controller
             ORDER BY d.name ASC, r.name ASC
         ";
         
-        return $this->groupDepartmentRoles($this->db->query($sql)->fetchAll(PDO::FETCH_ASSOC));
+        return $this->groupDepartmentRoles($this->db->query($sql)->fetchAll(PDO::FETCH_ASSOC), $userDeptIds, $accessLevel);
     }
     
     /**
      * Group flat department-role result set into nested structure
+     * Adds 'editable' flag for Level 4 users
      */
-    private function groupDepartmentRoles(array $rows): array {
+    private function groupDepartmentRoles(array $rows, array $userDeptIds = [], int $accessLevel = 1): array {
         $departments = [];
         $deptMap = [];
         
@@ -458,11 +438,20 @@ class departments extends Controller
             // Add department if not yet added
             if (!isset($deptMap[$deptId])) {
                 $deptMap[$deptId] = count($departments);
+                
+                // Determine if this department is editable by the current user
+                $editable = true;
+                if ($accessLevel === 4) {
+                    // Level 4 can only edit their assigned departments
+                    $editable = in_array($deptId, $userDeptIds);
+                }
+                
                 $departments[] = [
                     'id' => $deptId,
                     'name' => $row['dept_name'],
                     'roles' => [],
-                    'role_count' => 0
+                    'role_count' => 0,
+                    'editable' => $editable
                 ];
             }
             
