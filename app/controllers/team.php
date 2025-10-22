@@ -335,6 +335,41 @@ class Team extends Controller
                     echo json_encode(['ok'=>true]);
                     break;
 
+                /* Change employee's department */
+                case 'change_department':
+                    $this->guardAdmin();
+                    $in = $this->json();
+                    $user_id = (int)($in['user_id'] ?? 0);
+                    $new_department_id = (int)($in['department_id'] ?? 0);
+                    
+                    if ($user_id <= 0) throw new Exception('user_id required');
+                    if ($new_department_id <= 0) throw new Exception('department_id required');
+                    
+                    // Get employee_id
+                    $stmt = $this->db->prepare("
+                        SELECT id FROM employees WHERE user_id = :uid LIMIT 1
+                    ");
+                    $stmt->execute([':uid' => $user_id]);
+                    $employee_id = $stmt->fetchColumn();
+                    
+                    if (!$employee_id) throw new Exception('Employee not found');
+                    
+                    // Verify access to the new department
+                    $this->guardDepartmentAccess($new_department_id);
+                    
+                    // Clear existing department assignments
+                    $this->db->prepare("DELETE FROM employee_department WHERE employee_id = :eid")
+                             ->execute([':eid' => $employee_id]);
+                    
+                    // Insert new department assignment
+                    $this->db->prepare("
+                        INSERT INTO employee_department (employee_id, department_id)
+                        VALUES (:eid, :did)
+                    ")->execute([':eid' => $employee_id, ':did' => $new_department_id]);
+                    
+                    echo json_encode(['ok'=>true]);
+                    break;
+
                 /* Simple search list refresh */
                 case 'list':
                     echo json_encode(['users'=>$this->getAllUsers()]);

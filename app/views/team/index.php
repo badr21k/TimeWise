@@ -826,6 +826,7 @@ body::before {
             <tr>
               <th>Team Member</th>
               <th>Contact</th>
+              <th>Department</th>
               <th>Access</th>
               <th>Role</th>
               <th>Wage</th>
@@ -994,6 +995,38 @@ body::before {
   </div>
 </div>
 
+<!-- Change Department modal -->
+<div class="modal fade" id="changeDeptModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M0 3a2 2 0 0 1 2-2h13.5a.5.5 0 0 1 0 1H15v2a1 1 0 0 1 1 1v8.5a1.5 1.5 0 0 1-1.5 1.5h-12A2.5 2.5 0 0 1 0 12.5V3zm1 1.732V12.5A1.5 1.5 0 0 0 2.5 14h12a.5.5 0 0 0 .5-.5V5H2a1.99 1.99 0 0 1-1-.268zM1 3a1 1 0 0 0 1 1h12V2H2a1 1 0 0 0-1 1z"/>
+          </svg>
+          Change Department
+        </h5>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="cd_user_id">
+        <div class="mb-3">
+          <label class="form-label">Select Department</label>
+          <select class="form-select" id="cd_department">
+            <option value="">Select a department...</option>
+            <!-- Will be populated by JavaScript -->
+          </select>
+          <div class="form-text">Select the employee's new department</div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn btn-primary" id="changeDeptSave">Save Changes</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <?php require 'app/views/templates/footer.php'; ?>
 
 <script>
@@ -1005,6 +1038,7 @@ let USER_DEPARTMENT_IDS = [];
 
 const M_hire  = new bootstrap.Modal(document.getElementById('hireModal'));
 const M_term  = new bootstrap.Modal(document.getElementById('termModal'));
+const M_changeDept = new bootstrap.Modal(document.getElementById('changeDeptModal'));
 
 document.addEventListener('DOMContentLoaded', async () => {
   await bootstrapTeam();
@@ -1047,6 +1081,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('h_departments').addEventListener('change', filterRolesByDepartments);
   document.getElementById('hireSave').addEventListener('click', onHireSave);
   document.getElementById('termSave').addEventListener('click', onTermSave);
+  document.getElementById('changeDeptSave').addEventListener('click', onChangeDeptSave);
 });
 
 /* ---------- Bootstrap roster ---------- */
@@ -1251,7 +1286,7 @@ function render() {
   // Render each department group
   Object.keys(deptGroups).sort().forEach(deptName => {
     // Department header row (colspan depends on whether Actions column is visible)
-    const colspan = ACCESS_LEVEL === 2 ? 6 : 7;
+    const colspan = ACCESS_LEVEL === 2 ? 7 : 8;
     const headerRow = document.createElement('tr');
     headerRow.classList.add('department-header');
     headerRow.innerHTML = `
@@ -1288,6 +1323,16 @@ function render() {
         <td data-label="Contact">
           <div>${escapeHtml(u.email||'—')}</div>
           <div class="small-text">${escapeHtml(u.phone||'—')}</div>
+        </td>
+        <td data-label="Department">
+          <div id="dept-display-${u.id}">
+            ${escapeHtml(u.department_name||'No Department')}
+            ${canEdit && (ACCESS_LEVEL === 1 || ACCESS_LEVEL === 3 || ACCESS_LEVEL === 4) 
+              ? `<button class="btn btn-sm btn-outline" style="margin-left: 0.5rem; padding: 0.25rem 0.5rem;" onclick="openChangeDepartment(${u.id}, ${u.department_id || 0})">
+                  Change
+                 </button>` 
+              : ''}
+          </div>
         </td>
         <td data-label="Access">
           ${(() => {
@@ -1455,6 +1500,48 @@ async function rehire(user_id){
     showSuccess('Team member rehired successfully');
   } catch (error) {
     showError('Failed to rehire team member: ' + error.message);
+  }
+}
+
+/* ---------- Change Department ---------- */
+async function openChangeDepartment(userId, currentDeptId) {
+  document.getElementById('cd_user_id').value = userId;
+  
+  // Populate department dropdown
+  const deptSelect = document.getElementById('cd_department');
+  deptSelect.innerHTML = '<option value="">Select a department...</option>';
+  DEPARTMENTS.forEach(dept => {
+    const option = document.createElement('option');
+    option.value = dept.id;
+    option.textContent = dept.name;
+    if (dept.id === currentDeptId) {
+      option.selected = true;
+    }
+    deptSelect.appendChild(option);
+  });
+  
+  M_changeDept.show();
+}
+
+async function onChangeDeptSave() {
+  const userId = parseInt(document.getElementById('cd_user_id').value);
+  const newDeptId = parseInt(document.getElementById('cd_department').value);
+  
+  if (!newDeptId) {
+    showError('Please select a department');
+    return;
+  }
+  
+  try {
+    await post('/team/api?a=change_department', { 
+      user_id: userId, 
+      department_id: newDeptId 
+    });
+    M_changeDept.hide();
+    await refreshRoster();
+    showSuccess('Department changed successfully');
+  } catch (error) {
+    showError('Failed to change department: ' + error.message);
   }
 }
 
