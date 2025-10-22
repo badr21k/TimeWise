@@ -10,6 +10,21 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (October 2025)
 
+### Access Level Map (October 22, 2025)
+- **Visual Access Matrix**: Added new Access Level Map page showing comprehensive feature-by-level permission matrix
+- **Navigation**: Accessible from Reports dropdown menu (separated by divider)
+- **Access Control**: Available to users with access level 3+ (Team Lead, Department Admin, Full Admin)
+- **Features**:
+  - Visual table displaying all features (Dashboard, Chat, Time Clock, Schedule, etc.)
+  - Column for each access level (0-4) showing what each level can access
+  - Color-coded icons: ✓ (green) = Full Access, 👁️ (blue) = View Only, ✗ (gray) = No Access
+  - Special annotations for department-scoped features (Level 3 & 4)
+  - Helps administrators understand the complete permission structure at a glance
+- **Implementation**: 
+  - Controller: `app/controllers/access_map.php`
+  - View: `app/views/access_map/index.php`
+  - Route: `/access-map` with `level:3` access requirement
+
 ### Department Scoping Reintroduced (October 22, 2025)
 - **Department-Scoped Access**: Level 3 and 4 users now have department-scoped access to Schedule and Departments & Roles
 - **Access Matrix**:
