@@ -10,6 +10,22 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (October 2025)
 
+### Level 4 Access Control Update (October 22, 2025)
+- **View All, Edit Scoped**: Level 4 users now have VIEW access to all departments but EDIT access only to assigned departments
+- **Schedule View**:
+  - Shows ALL employees grouped by department
+  - Color-coded department grouping (10-color palette)
+  - "View Only" badge appears on non-editable departments
+  - Edit controls (Add Shift, Copy, Delete) only appear for assigned departments
+- **Departments & Roles View**:
+  - Shows ALL departments
+  - "View Only" badge appears on non-editable departments  
+  - Edit controls (Rename, Delete, Add/Remove Roles) only appear for assigned departments
+- **Access Matrix**:
+  - Level 1 (Full Admin): View all + Edit all
+  - Level 3 (Team Lead): View all + Edit all
+  - Level 4 (Department Admin): View all + Edit assigned departments only
+
 ### Schedule View - Department-Scoped Editing with Visual Grouping (October 22, 2025)
 - **Department Grouping**: Employees now grouped by department with visual headers
 - **Color Coding**: Each department has a unique color (10-color palette)
@@ -20,7 +36,7 @@ Preferred communication style: Simple, everyday language.
 - **Edit Restrictions**: Only employees from user's assigned departments are editable
   - Level 1 (Full Admin): Can edit all departments
   - Level 3 (Team Lead): Can edit all departments
-  - Level 4 (Department Admin): Can only edit assigned departments
+  - Level 4 (Department Admin): Can VIEW all but EDIT only assigned departments
   - Other departments show "View Only" badge and have reduced opacity
 - **UI Behavior**:
   - Add Shift button only appears for editable employees
@@ -100,7 +116,7 @@ The application implements a 5-tier access level system stored in `users.access_
 - **Level 1 - Full Admin**: Full access to all features, all departments, all roles (unrestricted) - includes Team Roster, Departments & Roles
 - **Level 2 - Power User**: Dashboard, Chat, Time Clock, My Shifts, Reminders, Team Roster (view only)
 - **Level 3 - Team Lead**: Dashboard, Chat, Team Roster, Schedule Management, Reminders, Admin Reports
-- **Level 4 - Department Admin**: Dashboard, Chat, Team Roster (scoped), Departments & Roles (scoped with full edit access), Admin Reports (scoped) - can only manage assigned departments
+- **Level 4 - Department Admin**: Dashboard, Chat, Team Roster, Schedule, Departments & Roles, Admin Reports - can VIEW all departments but EDIT only assigned departments
 
 ### Access Control Implementation
 
