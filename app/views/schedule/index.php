@@ -241,6 +241,22 @@ require 'app/views/templates/spinner.php';
 .grid-row:nth-child(even) {
   background: rgba(255,255,255,0.5);
 }
+
+/* Department grouping */
+.department-group-header {
+  padding: 0.75rem 1rem;
+  background: var(--light);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--primary);
+  border-bottom: 1px solid var(--gray-300);
+  margin-top: 0.5rem;
+  border-radius: var(--radius) var(--radius) 0 0;
+}
+.department-group-header:first-child {
+  margin-top: 0;
+}
+
 .employee-cell { 
   background: var(--light); 
   padding: 1rem 0.75rem; 
@@ -748,10 +764,30 @@ let employees = [];
 let shifts = [];
 let currentWeekStart = null;
 let accessLevel = 1;
+let userEditableDeptIds = [];
 let shiftModal, copyWeekModal, copyUserModal, copyOneModal;
 let currentEmployee = null;
 let selectedDays = new Set();
 let cuSelectedDays = new Set();
+
+// Department colors (consistent palette)
+const DEPT_COLORS = [
+  '#3b82f6', // blue
+  '#10b981', // green
+  '#f59e0b', // amber
+  '#8b5cf6', // purple
+  '#ec4899', // pink
+  '#06b6d4', // cyan
+  '#f97316', // orange
+  '#6366f1', // indigo
+  '#14b8a6', // teal
+  '#a855f7'  // violet
+];
+
+function getDepartmentColor(deptId) {
+  if (!deptId) return '#9ca3af'; // gray for no department
+  return DEPT_COLORS[(deptId - 1) % DEPT_COLORS.length];
+}
 
 // ===== Dates =====
 function mondayOf(dateStr) {
@@ -867,8 +903,17 @@ function changeWeek(deltaDays) {
 
 // ===== Loads =====
 async function loadEmployees() {
-  try { employees = await fetchJSON('/schedule/api?a=employees.list'); }
-  catch (e) { console.error('Error loading employees:', e); employees = []; }
+  try { 
+    const data = await fetchJSON('/schedule/api?a=employees.list');
+    employees = data.employees || [];
+    userEditableDeptIds = data.user_editable_dept_ids || [];
+    accessLevel = parseInt(data.access_level || 1);
+  }
+  catch (e) { 
+    console.error('Error loading employees:', e); 
+    employees = [];
+    userEditableDeptIds = [];
+  }
 }
 
 async function loadWeek() {
@@ -930,64 +975,106 @@ function renderGrid() {
 
   const days = weekDays(currentWeekStart);
 
+  // Group employees by department
+  const grouped = {};
   activeEmployees.forEach(emp => {
-    const row = document.createElement('div');
-    row.className = 'grid-row fade-in';
+    const deptId = emp.department_id || 0;
+    const deptName = emp.department_name || 'No Department';
+    if (!grouped[deptId]) {
+      grouped[deptId] = { id: deptId, name: deptName, employees: [] };
+    }
+    grouped[deptId].employees.push(emp);
+  });
 
-    const empCell = document.createElement('div');
-    empCell.className = 'employee-cell';
+  // Sort departments by name
+  const depts = Object.values(grouped).sort((a, b) => a.name.localeCompare(b.name));
 
-    const empShifts = shifts.filter(s => s.employee_id === emp.id);
-    const hours = totalHours(empShifts);
+  // Render each department group
+  depts.forEach(dept => {
+    const deptColor = getDepartmentColor(dept.id);
+    const isEditable = userEditableDeptIds.includes(dept.id);
 
-    empCell.innerHTML = `
-      <div class="d-flex align-items-center justify-content-between">
-        <div>
-          <div class="employee-name">${escapeHtml(emp.name)}</div>
-          <div class="employee-role">${escapeHtml(emp.role_title || '')}</div>
-        </div>
-        ${accessLevel >= 3 ? `<button class="btn btn-outline btn-sm" title="Copy this user's shifts to another user" onclick="openCopyUserModal(${emp.id})">
-          <i class="fas fa-copy me-1"></i>Copy
-        </button>` : ''}
+    // Department header
+    const deptHeader = document.createElement('div');
+    deptHeader.className = 'department-group-header';
+    deptHeader.style.borderLeft = `4px solid ${deptColor}`;
+    deptHeader.innerHTML = `
+      <div style="display: flex; align-items: center; gap: 0.5rem;">
+        <div style="width: 12px; height: 12px; border-radius: 50%; background: ${deptColor};"></div>
+        <strong>${escapeHtml(dept.name)}</strong>
+        <span style="color: var(--neutral); font-size: 0.875rem;">(${dept.employees.length})</span>
+        ${!isEditable ? '<span class="badge" style="background: var(--gray-400); color: white; font-size: 0.7rem;">View Only</span>' : ''}
       </div>
-      <div class="employee-hours">${hours.toFixed(2)} hrs</div>
     `;
-    row.appendChild(empCell);
+    body.appendChild(deptHeader);
 
-    days.forEach(day => {
-      const cell = document.createElement('div');
-      cell.className = 'day-cell';
+    // Render employees in this department
+    dept.employees.forEach(emp => {
+      const row = document.createElement('div');
+      row.className = 'grid-row fade-in';
+      row.style.borderLeft = `4px solid ${deptColor}`;
 
-      const todays = empShifts.filter(s => (s.start_dt || '').slice(0,10) === day.date);
-      todays.forEach(shift => cell.appendChild(shiftBlock(shift)));
+      const empCell = document.createElement('div');
+      empCell.className = 'employee-cell';
+      if (!isEditable) empCell.style.opacity = '0.7';
 
-      if (accessLevel >= 3) {
-        const add = document.createElement('div'); 
-        add.className = 'add-shift-area';
-        const btn = document.createElement('button');
-        btn.className = 'add-shift-btn';
-        btn.innerHTML = `
-          <i class="fas fa-plus"></i> Add shift
-        `;
-        btn.addEventListener('click', () => openShiftModal(emp, day.date));
-        add.appendChild(btn);
-        cell.appendChild(add);
-      }
-      row.appendChild(cell);
+      const empShifts = shifts.filter(s => s.employee_id === emp.id);
+      const hours = totalHours(empShifts);
+
+      empCell.innerHTML = `
+        <div class="d-flex align-items-center justify-content-between">
+          <div>
+            <div class="employee-name">${escapeHtml(emp.name)}</div>
+            <div class="employee-role">${escapeHtml(emp.role_title || '')}</div>
+          </div>
+          ${accessLevel >= 3 && isEditable ? `<button class="btn btn-outline btn-sm" title="Copy this user's shifts to another user" onclick="openCopyUserModal(${emp.id})">
+            <i class="fas fa-copy me-1"></i>Copy
+          </button>` : ''}
+        </div>
+        <div class="employee-hours">${hours.toFixed(2)} hrs</div>
+      `;
+      row.appendChild(empCell);
+
+      days.forEach(day => {
+        const cell = document.createElement('div');
+        cell.className = 'day-cell';
+        cell.style.borderLeft = `1px solid ${deptColor}20`; // 20% opacity
+
+        const todays = empShifts.filter(s => (s.start_dt || '').slice(0,10) === day.date);
+        todays.forEach(shift => cell.appendChild(shiftBlock(shift, deptColor, isEditable)));
+
+        // Only allow adding shifts for editable departments
+        if (accessLevel >= 3 && isEditable) {
+          const add = document.createElement('div'); 
+          add.className = 'add-shift-area';
+          const btn = document.createElement('button');
+          btn.className = 'add-shift-btn';
+          btn.innerHTML = `
+            <i class="fas fa-plus"></i> Add shift
+          `;
+          btn.addEventListener('click', () => openShiftModal(emp, day.date));
+          add.appendChild(btn);
+          cell.appendChild(add);
+        }
+        row.appendChild(cell);
+      });
+      body.appendChild(row);
     });
-    body.appendChild(row);
   });
 }
 
-function shiftBlock(shift) {
+function shiftBlock(shift, deptColor, isEditable) {
   const div = document.createElement('div');
   div.className = 'shift-block';
+  div.style.borderLeft = `3px solid ${deptColor}`;
+  div.style.background = `linear-gradient(135deg, ${deptColor}15, ${deptColor}08)`;
+  
   const t1 = (shift.start_dt || '').slice(11,16);
   const t2 = (shift.end_dt   || '').slice(11,16);
   div.innerHTML = `
     <div class="shift-time">${t1}-${t2}</div>
     <div class="shift-role">${escapeHtml(shift.notes || shift.employee_role || '')}</div>
-    ${accessLevel >= 3 ? `
+    ${accessLevel >= 3 && isEditable ? `
       <div class="shift-actions">
         <button class="shift-mini" title="Copy" onclick="openCopyOne(${shift.id}, '${(shift.start_dt||'').slice(0,10)}')">
           <i class="fas fa-copy"></i>
