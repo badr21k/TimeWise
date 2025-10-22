@@ -71,9 +71,18 @@ class Schedule extends Controller
                     }
                     unset($emp);
                     
-                    // Filter employees by department access for all users (Level 1+)
-                    // All users are now department-scoped
-                    if ($accessLevel >= 1) {
+                    // Filter employees by department access
+                    // Level 1 & 4: Full access (see all employees)
+                    // Level 3: Department-scoped (only see employees in their departments)
+                    $userEditableDeptIds = [];
+                    
+                    if ($accessLevel === 1 || $accessLevel === 4) {
+                        // Level 1 (Full Admin) and Level 4 (Department Admin) see all employees
+                        // and can edit all departments
+                        $stmt = $db->query("SELECT id FROM departments WHERE 1=1");
+                        $userEditableDeptIds = $stmt->fetchAll(PDO::FETCH_COLUMN);
+                    } elseif ($accessLevel === 3) {
+                        // Level 3 (Team Lead): Filter to only their assigned departments
                         $userDeptIds = class_exists('AccessControl') ? AccessControl::getUserDepartmentIds() : [];
                         
                         // If user has no department assignments, return empty list (no access)
@@ -85,14 +94,8 @@ class Schedule extends Controller
                                 return $emp['department_id'] && in_array($emp['department_id'], $userDeptIds);
                             });
                             $employees = array_values($employees); // Re-index array
+                            $userEditableDeptIds = $userDeptIds;
                         }
-                    }
-                    
-                    // Determine which departments the user can edit
-                    // All users can only edit their assigned departments (department-scoped)
-                    $userEditableDeptIds = [];
-                    if (class_exists('AccessControl') && $accessLevel >= 1) {
-                        $userEditableDeptIds = AccessControl::getUserDepartmentIds();
                     }
                     
                     echo json_encode([
@@ -132,9 +135,13 @@ class Schedule extends Controller
                     $w    = ScheduleWeek::mondayOf($week);
                     $rows = $this->Shift->forWeek($w);
                     
-                    // Apply department filtering for all users (Level 1+)
+                    // Apply department filtering
+                    // Level 1 & 4: See all shifts (no filtering)
+                    // Level 3: Only see shifts for employees in their departments
                     $accessLevel = class_exists('AccessControl') ? (int)AccessControl::getCurrentUserAccessLevel() : 1;
-                    if ($accessLevel >= 1) {
+                    
+                    if ($accessLevel === 3) {
+                        // Level 3 (Team Lead): Filter to only their assigned departments
                         $userDeptIds = class_exists('AccessControl') ? AccessControl::getUserDepartmentIds() : [];
                         
                         if (!empty($userDeptIds)) {
@@ -157,6 +164,7 @@ class Schedule extends Controller
                             $rows = []; // No departments = no shifts
                         }
                     }
+                    // Level 1 & 4: No filtering, see all shifts
                     
                     echo json_encode([
                         'week_start' => $w,
@@ -365,9 +373,13 @@ class Schedule extends Controller
                     $week = $_GET['week'] ?? date('Y-m-d');
                     $w = ScheduleWeek::mondayOf($week);
                     
-                    // Department scoping: Only allow if user has access to at least one employee in the week
+                    // Department scoping
+                    // Level 1 & 4: Full access (no checks)
+                    // Level 3: Only allow if all shifts in week are from their departments
                     $accessLevel = class_exists('AccessControl') ? (int)AccessControl::getCurrentUserAccessLevel() : 1;
-                    if ($accessLevel >= 1) {
+                    
+                    if ($accessLevel === 3) {
+                        // Level 3 (Team Lead): Check department scoping
                         $userDeptIds = class_exists('AccessControl') ? AccessControl::getUserDepartmentIds() : [];
                         
                         // Fail closed: If user has no departments, deny access
@@ -396,8 +408,8 @@ class Schedule extends Controller
                                 }
                             }
                         }
-                        // Allow access to empty weeks (no shifts exist yet) for users with departments
                     }
+                    // Level 1 & 4: No restrictions
                     
                     $status = $this->Week->status($w);
                     echo json_encode($status);
