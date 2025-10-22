@@ -634,7 +634,17 @@ function deptRow(d) {
   const count = document.createElement('div');
   count.className = 'dept-count';
   count.textContent = `${d.role_count} role${d.role_count !== 1 ? 's' : ''}`;
-  if (!IS_VIEW_ONLY) {
+  
+  // Add "View Only" badge if not editable
+  if (d.editable === false) {
+    const badge = document.createElement('span');
+    badge.className = 'badge';
+    badge.style.cssText = 'background: var(--gray-400); color: white; font-size: 0.7rem; margin-left: 0.5rem;';
+    badge.textContent = 'View Only';
+    count.appendChild(badge);
+  }
+  
+  if (d.editable !== false) {
     const rename = document.createElement('button');
     rename.className = 'btn btn-outline btn-sm mt-2';
     rename.innerHTML = `
@@ -776,7 +786,7 @@ function deptRow(d) {
   const delCol = document.createElement('div');
   delCol.className = 'd-flex justify-content-end';
   
-  if (!IS_VIEW_ONLY) {
+  if (d.editable !== false) {
     const del = document.createElement('button');
     del.className = 'btn btn-icon btn-danger';
     del.innerHTML = `
