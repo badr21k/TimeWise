@@ -14,6 +14,8 @@ Preferred communication style: Simple, everyday language.
 - **Access Level Map**: Features a visual access matrix with color-coded icons (✓ Full Access, 👁️ View Only, ✗ No Access) for clear permission understanding.
 - **Department-Grouped Schedule**: Employees are grouped by department with unique color coding (10-color palette) for visual distinction in schedule views.
 - **Responsive Design**: Grid layouts and UI elements are adapted for various breakpoints (1024px, 768px, 480px).
+- **Loading Indicators**: Global Spinner component (twSpinner) provides consistent loading feedback across the application. Time Clock page shows clear loading states during initial data fetch and user actions (clock in/out, breaks).
+- **Error Handling**: User-friendly error messages with toast notifications differentiate between network errors, API failures, and connection issues.
 
 ### Technical Implementations
 - **Role-Based Access Control (RBAC)**: A 5-tier `access_level` system (0-4) governs feature access. Access Control is unified using `AccessControl::enforceAccess()` and rules like `auth`, `level:N`, `exact:N`, `role:name`, and `dept:Name`.
@@ -29,7 +31,7 @@ Preferred communication style: Simple, everyday language.
 ### Feature Specifications
 - **Real-time Chat**: Provided by the Node.js server with Socket.io.
 - **Scheduling**: Supports department-grouped employee schedules with color-coding and department-scoped editing for specific access levels.
-- **Time Tracking**: Core functionality (implied, but details not in provided text).
+- **Time Tracking**: Enhanced Time Clock page with global Spinner loading indicators, robust error handling with clear user feedback, network error detection, and seamless integration with the global loading state system. Includes break timer tracking and satisfaction surveys on clock out.
 - **Department Management**: Creation, assignment of roles, and user department changes (restricted by access level).
 - **Team Roster**: Displays employee information, including department assignments, with administrative actions hidden for view-only users.
 - **Access Level Map**: A dedicated page displaying a comprehensive matrix of permissions per access level.
