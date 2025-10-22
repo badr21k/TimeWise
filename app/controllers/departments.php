@@ -117,13 +117,13 @@ class departments extends Controller
                     if (!$roleId && $roleName === '') throw new Exception('role_id or role_name required');
 
                     if (!$roleId) {
-                        // find or create by name
-                        $stmt = $this->db->prepare("SELECT id FROM roles WHERE name=:n LIMIT 1");
-                        $stmt->execute([':n'=>$roleName]);
+                        // find or create by name within this department
+                        $stmt = $this->db->prepare("SELECT id FROM roles WHERE department_id=:d AND name=:n LIMIT 1");
+                        $stmt->execute([':d'=>$deptId, ':n'=>$roleName]);
                         $roleId = (int)$stmt->fetchColumn();
                         if (!$roleId) {
-                            $ins = $this->db->prepare("INSERT INTO roles (name, is_active) VALUES (:n, 1)");
-                            $ins->execute([':n'=>$roleName]);
+                            $ins = $this->db->prepare("INSERT INTO roles (department_id, name, is_active) VALUES (:d, :n, 1)");
+                            $ins->execute([':d'=>$deptId, ':n'=>$roleName]);
                             $roleId = (int)$this->db->lastInsertId();
                         }
                     }
@@ -164,7 +164,7 @@ class departments extends Controller
                     $sql = "
                         SELECT DISTINCT 
                             u.id,
-                            u.label,
+                            COALESCE(NULLIF(TRIM(u.full_name),''), u.username) AS label,
                             u.access_level,
                             e.id as employee_id
                         FROM employee_department ed
@@ -172,7 +172,7 @@ class departments extends Controller
                         JOIN users u ON u.id = e.user_id
                         WHERE ed.department_id = :dept_id
                         AND e.is_active = 1
-                        ORDER BY u.label ASC
+                        ORDER BY label ASC
                     ";
                     $stmt = $this->db->prepare($sql);
                     $stmt->execute([':dept_id' => $deptId]);

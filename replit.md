@@ -10,6 +10,20 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (October 2025)
 
+### Database Migration to TiDB Cloud (October 22, 2025)
+- **SSL Connection**: Updated database.php to support TiDB Cloud's required SSL/TLS encryption
+- **Complete Schema Creation**: Generated all 12 tables with proper relationships and indexes
+- **Schema Fixes**: 
+  - Fixed role creation to require department_id (roles are now scoped to departments)
+  - Fixed members.list API query to use proper column aliasing for user labels
+  - Updated Department model's ensureRole method to include department_id parameter
+- **Default Data**: Pre-loaded departments, roles, and admin accounts
+- **Login Credentials**:
+  - Admin: username=admin, password=admin123, access_level=1 (Full Admin)
+  - Manager: username=manager, password=manager123, access_level=3 (Team Lead)
+
+## Recent Changes (October 2025)
+
 ### Access Control Redesign (October 21, 2025)
 - **Level 1 Full Admin Access**: Level 1 users now have FULL access to all departments and roles (no restrictions)
 - **Level 4 Scoped Admin Access**: Level 4 users have FULL EDIT access scoped to their assigned departments only

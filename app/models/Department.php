@@ -139,16 +139,18 @@ class Department
 
     /* ===== Roles in Dept ===== */
 
-    public function ensureRole(string $name): int
+    public function ensureRole(string $name, int $deptId = 0): int
     {
         if ($name === '') throw new Exception('Role name required');
-        $sel = $this->db->prepare("SELECT id FROM roles WHERE name = :n");
-        $sel->execute([':n'=>$name]);
+        if ($deptId <= 0) throw new Exception('Department ID required');
+        
+        $sel = $this->db->prepare("SELECT id FROM roles WHERE department_id = :d AND name = :n");
+        $sel->execute([':d'=>$deptId, ':n'=>$name]);
         $id = (int)$sel->fetchColumn();
         if ($id) return $id;
 
-        $ins = $this->db->prepare("INSERT INTO roles (name, is_active) VALUES (:n, 1)");
-        $ins->execute([':n'=>$name]);
+        $ins = $this->db->prepare("INSERT INTO roles (department_id, name, is_active) VALUES (:d, :n, 1)");
+        $ins->execute([':d'=>$deptId, ':n'=>$name]);
         return (int)$this->db->lastInsertId();
     }
 
