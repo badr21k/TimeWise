@@ -338,7 +338,43 @@ class Schedule extends Controller
                 case 'publish.status':
                     $this->guardScheduleAccess();
                     $week = $_GET['week'] ?? date('Y-m-d');
-                    $status = $this->Week->status($week);
+                    $w = ScheduleWeek::mondayOf($week);
+                    
+                    // Department scoping: Only allow if user has access to at least one employee in the week
+                    $accessLevel = class_exists('AccessControl') ? (int)AccessControl::getCurrentUserAccessLevel() : 1;
+                    if ($accessLevel >= 1) {
+                        $userDeptIds = class_exists('AccessControl') ? AccessControl::getUserDepartmentIds() : [];
+                        
+                        // Fail closed: If user has no departments, deny access
+                        if (empty($userDeptIds)) {
+                            throw new Exception('No department assignments - access denied');
+                        }
+                        
+                        $db = db_connect();
+                        $weekShifts = $this->Shift->forWeek($w);
+                        
+                        // Strict department scoping: Deny if ANY shift is from a department user doesn't have access to
+                        if (!empty($weekShifts)) {
+                            foreach ($weekShifts as $shift) {
+                                $stmt = $db->prepare("
+                                    SELECT ed.department_id
+                                    FROM employee_department ed
+                                    WHERE ed.employee_id = :emp_id
+                                    LIMIT 1
+                                ");
+                                $stmt->execute([':emp_id' => $shift['employee_id']]);
+                                $empDeptId = $stmt->fetchColumn();
+                                
+                                // Deny if shift belongs to a department outside user's scope
+                                if (!$empDeptId || !in_array($empDeptId, $userDeptIds)) {
+                                    throw new Exception('Access denied to this week');
+                                }
+                            }
+                        }
+                        // Allow access to empty weeks (no shifts exist yet) for users with departments
+                    }
+                    
+                    $status = $this->Week->status($w);
                     echo json_encode($status);
                     break;
 

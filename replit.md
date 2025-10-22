@@ -30,7 +30,7 @@ Preferred communication style: Simple, everyday language.
 
 ### Feature Specifications
 - **Real-time Chat**: Provided by the Node.js server with Socket.io.
-- **Scheduling**: Supports department-grouped employee schedules with color-coding. All users (Level 1+) have department-scoped access, meaning they can only view and manage schedules for employees in their assigned departments.
+- **Scheduling**: Supports department-grouped employee schedules with color-coding. All users (Level 1+) have department-scoped access, meaning they can only view and manage schedules for employees in their assigned departments. Schedule publish status uses strict scoping - users can only view publish status for weeks containing exclusively their departments' shifts.
 - **Time Tracking**: Enhanced Time Clock page with global Spinner loading indicators, robust error handling with clear user feedback, network error detection, and seamless integration with the global loading state system. Includes break timer tracking and satisfaction surveys on clock out.
 - **Department Management**: Creation, assignment of roles, and user department changes (restricted by access level).
 - **Team Roster**: Displays employee information, including department assignments, with administrative actions hidden for view-only users.
