@@ -795,7 +795,7 @@ body::before {
         <h1 class="page-title">Team Roster</h1>
         <p class="page-subtitle">Add (hire) or terminate team members. Hiring creates rows in <b>users</b> and <b>employees</b> tables.</p>
       </div>
-      <button class="btn btn-primary" id="btnAdd">
+      <button class="btn btn-primary admin-action" id="btnAdd">
         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
           <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
         </svg>
@@ -814,7 +814,7 @@ body::before {
           </span>
           <input id="q" class="form-control" placeholder="Search team members…">
         </div>
-        <div class="form-check">
+        <div class="form-check admin-action">
           <input class="form-check-input" type="checkbox" id="showTerminated">
           <label class="form-check-label" for="showTerminated">Show terminated</label>
         </div>
@@ -830,7 +830,7 @@ body::before {
               <th>Role</th>
               <th>Wage</th>
               <th>Status</th>
-              <th class="text-end">Actions</th>
+              <th class="text-end admin-action">Actions</th>
             </tr>
           </thead>
           <tbody id="rows"></tbody>
@@ -844,7 +844,7 @@ body::before {
           </svg>
         </div>
         <div class="empty-state-text">No team members found</div>
-        <button class="btn btn-primary" id="btnAddEmpty">
+        <button class="btn btn-primary admin-action" id="btnAddEmpty">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
             <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
           </svg>
@@ -1057,6 +1057,14 @@ async function bootstrapTeam() {
     USERS = data.users || [];
     ACCESS_LEVEL = parseInt(data.access_level || 1);
     USER_DEPARTMENT_IDS = data.user_department_ids || [];
+    
+    // Hide admin actions for Level 2 users (Power User - view only)
+    if (ACCESS_LEVEL === 2) {
+      document.querySelectorAll('.admin-action').forEach(el => {
+        el.style.display = 'none';
+      });
+    }
+    
     render();
   } catch (error) {
     console.error('Failed to load team data:', error);
@@ -1249,11 +1257,12 @@ function render() {
   
   // Render each department group
   Object.keys(deptGroups).sort().forEach(deptName => {
-    // Department header row
+    // Department header row (colspan depends on whether Actions column is visible)
+    const colspan = ACCESS_LEVEL === 2 ? 6 : 7;
     const headerRow = document.createElement('tr');
     headerRow.classList.add('department-header');
     headerRow.innerHTML = `
-      <td colspan="7" style="background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 100%); 
+      <td colspan="${colspan}" style="background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 100%); 
                              color: white; font-weight: 700; padding: 0.75rem 1rem; 
                              font-size: 0.875rem; letter-spacing: 0.5px;">
         ${escapeHtml(deptName)}
@@ -1311,7 +1320,7 @@ function render() {
             : `<span class="badge badge-danger">Terminated</span>
                <div class="small-text">${escapeHtml(u.termination_reason||'')}</div>`}
         </td>
-        <td data-label="Actions" class="text-end">
+        <td data-label="Actions" class="text-end admin-action">
           ${u.status==1
               ? `<button class="btn btn-sm btn-outline-danger" ${canEdit?'':'disabled'} onclick="openTerminate(${u.id})">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">

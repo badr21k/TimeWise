@@ -10,6 +10,15 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (October 2025)
 
+### Team Roster UI - Level 2 View-Only Mode (October 22, 2025)
+- **Department Loading**: Updated to use bootstrap data (matches role loading pattern)
+- **Level 2 Action Hiding**: All admin actions now hidden for Level 2 (Power User) users:
+  - "+ Add Team Member" button hidden (header and empty state)
+  - "Show Terminated" checkbox hidden
+  - "Actions" column completely hidden (header + all cells)
+  - Table colspan adjusted from 7 to 6 when Actions column is hidden
+- **Implementation**: Uses "admin-action" CSS class with display:none for ACCESS_LEVEL === 2
+
 ### Database Migration & Access Control Fixes (October 22, 2025)
 - **SSL Connection**: Updated database.php to support TiDB Cloud's required SSL/TLS encryption
 - **Complete Schema Creation**: Generated all 12 tables with proper relationships and indexes
