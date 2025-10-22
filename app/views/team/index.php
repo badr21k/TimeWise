@@ -1381,19 +1381,13 @@ function render() {
   });
 }
 
-/* Check if current user can edit a specific user (department scoping for Level 4) */
+/* Check if current user can edit a specific user */
 function canEditUser(user) {
   // Level 0 and 2 cannot edit
   if (ACCESS_LEVEL === 0 || ACCESS_LEVEL === 2) return false;
   
-  // Level 1 and 3 can edit all
-  if (ACCESS_LEVEL === 1 || ACCESS_LEVEL === 3) return true;
-  
-  // Level 4 can only edit users in their assigned departments
-  if (ACCESS_LEVEL === 4) {
-    const userDeptId = parseInt(user.department_id);
-    return userDeptId > 0 && USER_DEPARTMENT_IDS.includes(userDeptId);
-  }
+  // Level 1, 3, and 4 can edit all users (full access)
+  if (ACCESS_LEVEL === 1 || ACCESS_LEVEL === 3 || ACCESS_LEVEL === 4) return true;
   
   return false;
 }
