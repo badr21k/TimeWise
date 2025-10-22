@@ -46,15 +46,21 @@ require 'app/views/templates/spinner.php';
 }
 
 .page-header { 
-  margin-bottom: clamp(2rem, 4vw, 3rem);
-  padding-bottom: clamp(1.5rem, 3vw, 2rem);
-  border-bottom: 2px solid rgba(9, 25, 77, 0.08);
+  margin-bottom: clamp(1.5rem, 3vw, 2rem);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(1.25rem, 2.5vw, 1.75rem);
+}
+.page-header-top {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 .page-title { 
   font-size: clamp(1.75rem, 4vw, 2.25rem); 
   font-weight: 800; 
   color: var(--primary); 
-  margin-bottom: 0.75rem;
+  margin: 0;
   display: flex;
   align-items: center;
   gap: 0.75rem;
@@ -66,9 +72,10 @@ require 'app/views/templates/spinner.php';
 }
 .page-subtitle { 
   color: var(--gray-600); 
-  font-size: clamp(1rem, 2vw, 1.125rem); 
+  font-size: clamp(0.95rem, 1.8vw, 1.05rem); 
   font-weight: 500;
   line-height: 1.5;
+  margin: 0;
 }
 
 .btn { 
@@ -151,18 +158,20 @@ require 'app/views/templates/spinner.php';
 .week-controls { 
   display: flex; 
   align-items: center; 
+  justify-content: space-between;
   gap: clamp(1rem, 2.5vw, 1.5rem); 
-  flex-wrap: wrap; 
+  flex-wrap: wrap;
+  padding: clamp(1rem, 2vw, 1.25rem);
+  background: white;
+  border-radius: 0.75rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border: 1px solid var(--gray-200);
 }
 .week-navigation { 
   display: flex; 
   align-items: center; 
   gap: 0.75rem;
-  background: white;
-  padding: 0.5rem 0.75rem;
-  border-radius: 0.75rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  border: 1px solid var(--gray-200);
+  flex: 1 1 auto;
 }
 .week-nav-btn { 
   background: linear-gradient(135deg, var(--lighter) 0%, white 100%); 
@@ -201,6 +210,7 @@ require 'app/views/templates/spinner.php';
   align-items: center; 
   gap: clamp(0.75rem, 1.5vw, 1rem); 
   flex-wrap: wrap;
+  flex-shrink: 0;
 }
 
 /* tools dropdown */
@@ -620,14 +630,18 @@ require 'app/views/templates/spinner.php';
 
 /* Mobile Large (640px - 767px) */
 @media (max-width: 767px) {
+  .page-header-top {
+    margin-bottom: 0.5rem;
+  }
   .week-controls { 
     flex-direction: column; 
     align-items: stretch; 
-    gap: 1rem;
-    width: 100%;
+    gap: 1.25rem;
+    padding: 1rem;
   }
   .week-navigation {
     width: 100%;
+    justify-content: center;
   }
   .publish-section { 
     width: 100%; 
@@ -646,8 +660,18 @@ require 'app/views/templates/spinner.php';
     padding-right: 1rem; 
   }
   .page-header {
-    margin-bottom: 1.5rem;
-    padding-bottom: 1rem;
+    margin-bottom: 1.25rem;
+  }
+  .page-title {
+    font-size: 1.5rem;
+  }
+  .week-controls {
+    padding: 0.875rem;
+  }
+  .week-nav-btn {
+    padding: 0.5rem;
+    min-width: 40px;
+    min-height: 40px;
   }
   .time-input-group { 
     flex-direction: column; 
@@ -656,22 +680,24 @@ require 'app/views/templates/spinner.php';
   .time-separator { 
     text-align: center; 
   }
-  .btn {
-    width: 100%;
+  .publish-section .btn {
+    flex: 1;
   }
 }
 </style>
 
 <div class="schedule-container">
   <div class="container-fluid px-3 px-md-4 py-4">
-    <div class="d-flex align-items-center justify-content-between page-header">
-      <div>
+    <!-- Page Header -->
+    <div class="page-header">
+      <div class="page-header-top">
         <h1 class="page-title">
           <i class="fas fa-calendar-alt me-2"></i>Schedule
         </h1>
         <p class="page-subtitle">Manage your team's work schedule</p>
       </div>
-
+      
+      <!-- Week Controls Row -->
       <div class="week-controls">
         <div class="week-navigation" role="group" aria-label="Week navigation">
           <button class="week-nav-btn" id="prevWeekBtn" title="Previous week" aria-label="Previous week">
