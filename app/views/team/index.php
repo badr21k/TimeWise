@@ -902,7 +902,7 @@ body::before {
           </div>
 
           <div class="col-md-6">
-            <label class="form-label">Departments (optional)</label>
+            <label class="form-label">Departments</label>
             <select class="form-select" id="h_departments" multiple size="4">
               <!-- Will be populated by JavaScript -->
             </select>
@@ -910,9 +910,9 @@ body::before {
           </div>
 
           <div class="col-md-6">
-            <label class="form-label">Role</label>
-            <select class="form-select" id="h_role"></select>
-            <div class="form-text">Filtered by selected departments</div>
+            <label class="form-label">Role <span class="text-danger">*</span></label>
+            <select class="form-select" id="h_role" required></select>
+            <div class="form-text">Required - Filtered by selected departments</div>
           </div>
           
           <div class="col-md-3">
@@ -1367,6 +1367,12 @@ async function onHireSave(){
     return;
   }
   
+  const roleTitle = v('h_role');
+  if (!roleTitle) {
+    showError('Role is required');
+    return;
+  }
+  
   const deptSel = document.getElementById('h_departments');
   const selectedDepts = Array.from(deptSel.selectedOptions).map(opt => parseInt(opt.value));
   
@@ -1376,7 +1382,7 @@ async function onHireSave(){
       full_name: v('h_fullname'),
       email:     v('h_email'),
       phone:     v('h_phone'),
-      role_title: v('h_role'),
+      role_title: roleTitle,
       wage:      parseFloat(v('h_wage')||0),
       rate:      v('h_rate'),
       access_level: parseInt(v('h_access'),10),

@@ -10,7 +10,7 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (October 2025)
 
-### Database Migration to TiDB Cloud (October 22, 2025)
+### Database Migration & Access Control Fixes (October 22, 2025)
 - **SSL Connection**: Updated database.php to support TiDB Cloud's required SSL/TLS encryption
 - **Complete Schema Creation**: Generated all 12 tables with proper relationships and indexes
 - **Schema Fixes**: 
@@ -21,6 +21,15 @@ Preferred communication style: Simple, everyday language.
 - **Login Credentials**:
   - Admin: username=admin, password=admin123, access_level=1 (Full Admin)
   - Manager: username=manager, password=manager123, access_level=3 (Team Lead)
+
+### Access Control & Form Improvements (October 22, 2025)
+- **Exact Level Matching**: Added new `exact:N` rule to AccessControl for precise level matching (vs. minimum level with `level:N`)
+- **Departments & Roles Access**: Fixed to only show for Level 1 (Full Admin) and Level 4 (Department Admin) - blocked for Level 2 and 3
+- **Team Roster Access**: Extended to all users (Level 1+) - all authenticated users can now view Team Roster
+- **Add Team Member Form**:
+  - Made Role field required (added asterisk, required attribute, and validation)
+  - Updated Departments label to remove "(optional)" text
+  - All departments now load in the form for selection
 
 ## Recent Changes (October 2025)
 
@@ -53,8 +62,8 @@ Preferred communication style: Simple, everyday language.
 The application implements a 5-tier access level system stored in `users.access_level`:
 
 - **Level 0 - Inactive**: Cannot login (disabled account)
-- **Level 1 - Full Admin**: Full access to all features, all departments, all roles (unrestricted)
-- **Level 2 - Power User**: Dashboard, Chat, Time Clock, My Shifts, Reminders
+- **Level 1 - Full Admin**: Full access to all features, all departments, all roles (unrestricted) - includes Team Roster, Departments & Roles
+- **Level 2 - Power User**: Dashboard, Chat, Time Clock, My Shifts, Reminders, Team Roster (view only)
 - **Level 3 - Team Lead**: Dashboard, Chat, Team Roster, Schedule Management, Reminders, Admin Reports
 - **Level 4 - Department Admin**: Dashboard, Chat, Team Roster (scoped), Departments & Roles (scoped with full edit access), Admin Reports (scoped) - can only manage assigned departments
 
@@ -65,9 +74,11 @@ The application implements a 5-tier access level system stored in `users.access_
 - **Rule Syntax**: 
   - `auth`: Any logged-in user
   - `level:N`: Minimum access level N (e.g., level:3 means levels 3 and 4 can access)
+  - `exact:N`: Exact access level N (e.g., exact:1 means only level 1)
   - `role:name`: Specific role name (legacy support)
   - `dept:Name`: Department-scoped access
   - Combine rules with `&` for AND logic
+  - Combine rules with `|` for OR logic (e.g., exact:1 | exact:4)
 
 ### Department Scoping
 
