@@ -345,14 +345,31 @@ class Team extends Controller
                     if ($user_id <= 0) throw new Exception('user_id required');
                     if ($new_department_id <= 0) throw new Exception('department_id required');
                     
-                    // Get employee_id
+                    // Get user info
+                    $stmt = $this->db->prepare("
+                        SELECT id, username, full_name FROM users WHERE id = :uid LIMIT 1
+                    ");
+                    $stmt->execute([':uid' => $user_id]);
+                    $userData = $stmt->fetch(PDO::FETCH_ASSOC);
+                    
+                    if (!$userData) throw new Exception('User not found');
+                    
+                    // Get or create employee record
                     $stmt = $this->db->prepare("
                         SELECT id FROM employees WHERE user_id = :uid LIMIT 1
                     ");
                     $stmt->execute([':uid' => $user_id]);
                     $employee_id = $stmt->fetchColumn();
                     
-                    if (!$employee_id) throw new Exception('Employee not found');
+                    // If no employee record exists, create one
+                    if (!$employee_id) {
+                        $name = $userData['full_name'] ?: $userData['username'];
+                        $this->db->prepare("
+                            INSERT INTO employees (user_id, name, is_active, eligible_for_rehire, wage, rate, start_date)
+                            VALUES (:uid, :name, 1, 1, 0, 'hourly', CURDATE())
+                        ")->execute([':uid' => $user_id, ':name' => $name]);
+                        $employee_id = (int)$this->db->lastInsertId();
+                    }
                     
                     // Verify access to the new department
                     $this->guardDepartmentAccess($new_department_id);
