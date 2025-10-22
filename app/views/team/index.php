@@ -1195,9 +1195,20 @@ function filterRolesByDepartments() {
   
   // If a department is selected, filter roles for that department
   if (selectedDeptId > 0) {
+    // Debug: Log first role to see structure
+    if (ALL_ROLES.length > 0) {
+      console.log('Sample role structure:', ALL_ROLES[0]);
+      console.log('Selected department ID:', selectedDeptId);
+    }
+    
     filteredRoles = ALL_ROLES.filter(r => {
-      return parseInt(r.department_id) === selectedDeptId;
+      // Try different possible field names for department ID
+      const deptId = r.department_id || r.dept_id || r.departmentId;
+      console.log(`Role "${r.name || r.title}" has dept_id: ${deptId}`);
+      return parseInt(deptId) === selectedDeptId;
     });
+    
+    console.log('Filtered roles count:', filteredRoles.length);
   }
   
   // Add roles to dropdown
