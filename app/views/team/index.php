@@ -1132,20 +1132,23 @@ let ALL_DEPARTMENTS = [];
 let ALL_ROLES = [];
 
 async function loadDepartments() {
-  try {
-    const data = await get('/departments/api?a=list');
-    ALL_DEPARTMENTS = data.departments || [];
-    
-    const sel = document.getElementById('h_departments');
-    sel.innerHTML = '';
+  const sel = document.getElementById('h_departments');
+  sel.innerHTML = '<option>Loading…</option>';
+  
+  // Use bootstrap data (already loaded from /team/api?a=bootstrap)
+  ALL_DEPARTMENTS = DEPARTMENTS || [];
+  
+  sel.innerHTML = '';
+  
+  if (ALL_DEPARTMENTS.length > 0) {
     ALL_DEPARTMENTS.forEach(dept => {
       const opt = document.createElement('option');
       opt.value = dept.id;
       opt.textContent = dept.name;
       sel.appendChild(opt);
     });
-  } catch (e) {
-    console.error('Failed to load departments:', e);
+  } else {
+    sel.innerHTML = '<option value="">— No departments found —</option>';
   }
 }
 

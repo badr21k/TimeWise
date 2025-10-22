@@ -54,6 +54,12 @@ class departments extends Controller
                     ]);
                     break;
 
+                /* ---------- List all departments ---------- */
+                case 'list':
+                    $departments = $this->listDepartmentsWithRolesOptimized();
+                    echo json_encode(['departments' => $departments]);
+                    break;
+
                 /* ---------- Departments CRUD ---------- */
                 case 'department.create':
                     $this->guardAdmin();
