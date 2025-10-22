@@ -1327,7 +1327,7 @@ function render() {
         <td data-label="Department">
           <div id="dept-display-${u.id}">
             ${escapeHtml(u.department_name||'No Department')}
-            ${canEdit && (ACCESS_LEVEL === 1 || ACCESS_LEVEL === 3 || ACCESS_LEVEL === 4) 
+            ${canEdit && (ACCESS_LEVEL === 1 || ACCESS_LEVEL === 4) 
               ? `<button class="btn btn-sm btn-outline" style="margin-left: 0.5rem; padding: 0.25rem 0.5rem;" onclick="openChangeDepartment(${u.id}, ${u.department_id || 0})">
                   Change
                  </button>` 

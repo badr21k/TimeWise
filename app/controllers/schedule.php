@@ -50,6 +50,7 @@ class Schedule extends Controller
                 case 'employees.list':
                     $employees = $this->Employee->all();
                     $db = db_connect();
+                    $accessLevel = class_exists('AccessControl') ? (int)AccessControl::getCurrentUserAccessLevel() : 1;
                     
                     // Enrich employees with department info
                     foreach ($employees as &$emp) {
@@ -69,15 +70,33 @@ class Schedule extends Controller
                     }
                     unset($emp);
                     
+                    // Filter employees by department access for Level 3 & 4
+                    if ($accessLevel === 3 || $accessLevel === 4) {
+                        $userDeptIds = class_exists('AccessControl') ? AccessControl::getUserDepartmentIds() : [];
+                        
+                        // If user has no department assignments, return empty list (no access)
+                        if (empty($userDeptIds)) {
+                            $employees = [];
+                        } else {
+                            // Filter to only show employees in user's assigned departments
+                            $employees = array_filter($employees, function($emp) use ($userDeptIds) {
+                                return $emp['department_id'] && in_array($emp['department_id'], $userDeptIds);
+                            });
+                            $employees = array_values($employees); // Re-index array
+                        }
+                    }
+                    
                     // Determine which departments the user can edit
                     $userEditableDeptIds = [];
                     if (class_exists('AccessControl')) {
-                        $accessLevel = AccessControl::getCurrentUserAccessLevel();
-                        
-                        // Level 1, 3, and 4 can edit all departments
-                        if ($accessLevel === 1 || $accessLevel >= 3) {
+                        // Level 1 can edit all departments
+                        if ($accessLevel === 1) {
                             $stmt = $db->query("SELECT id FROM departments");
                             $userEditableDeptIds = $stmt->fetchAll(PDO::FETCH_COLUMN);
+                        }
+                        // Level 3 and 4 can only edit their assigned departments
+                        elseif ($accessLevel === 3 || $accessLevel === 4) {
+                            $userEditableDeptIds = AccessControl::getUserDepartmentIds();
                         }
                     }
                     
@@ -148,8 +167,13 @@ class Schedule extends Controller
                 case 'shifts.create':
                     $this->guardAdmin();
                     $in = $this->json();
+                    $employeeId = (int)$in['employee_id'];
+                    
+                    // Check department access for Level 3 & 4
+                    $this->guardDepartmentAccess($employeeId);
+                    
                     $id = $this->Shift->create(
-                        (int)$in['employee_id'],
+                        $employeeId,
                         $in['start_dt'],
                         $in['end_dt'],
                         $in['notes'] ?? null
@@ -160,6 +184,13 @@ class Schedule extends Controller
                 case 'shifts.delete':
                     $this->guardAdmin();
                     $id = (int)($_GET['id'] ?? 0);
+                    
+                    // Get employee_id for the shift
+                    $shift = $this->Shift->get($id);
+                    if ($shift) {
+                        $this->guardDepartmentAccess((int)$shift['employee_id']);
+                    }
+                    
                     echo json_encode(['ok'=>$this->Shift->delete($id)]);
                     break;
 
@@ -288,10 +319,52 @@ class Schedule extends Controller
     /* ================= helpers ================= */
 
     private function guardAdmin() {
-        $accessLevel = class_exists('AccessControl') ? AccessControl::getCurrentUserAccessLevel() : 1;
+        $accessLevel = class_exists('AccessControl') ? (int)AccessControl::getCurrentUserAccessLevel() : 1;
         if ($accessLevel < 3) {
             throw new Exception('Team Lead access (Level 3+) required');
         }
+    }
+    
+    /**
+     * Verify user has access to a specific department (via employee)
+     * Level 1: Full access to all departments
+     * Level 3 & 4: Only their assigned departments
+     */
+    private function guardDepartmentAccess(int $employeeId): void {
+        $accessLevel = class_exists('AccessControl') ? (int)AccessControl::getCurrentUserAccessLevel() : 1;
+        
+        // Level 1 (Full Admin) has access to all departments
+        if ($accessLevel === 1) {
+            return;
+        }
+        
+        // Level 3 and 4: Check if employee's department is in their assigned list
+        if ($accessLevel === 3 || $accessLevel === 4) {
+            $db = db_connect();
+            
+            // Get employee's department
+            $stmt = $db->prepare("
+                SELECT ed.department_id
+                FROM employee_department ed
+                WHERE ed.employee_id = :emp_id
+                LIMIT 1
+            ");
+            $stmt->execute([':emp_id' => $employeeId]);
+            $empDeptId = $stmt->fetchColumn();
+            
+            if (!$empDeptId) {
+                throw new Exception('Employee has no department assigned');
+            }
+            
+            $userDeptIds = class_exists('AccessControl') ? AccessControl::getUserDepartmentIds() : [];
+            
+            if (empty($userDeptIds) || !in_array($empDeptId, $userDeptIds)) {
+                throw new Exception('Access denied to this employee\'s department');
+            }
+            return;
+        }
+        
+        throw new Exception('Insufficient access level');
     }
 
     private function json(): array {

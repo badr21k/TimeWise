@@ -277,17 +277,34 @@ class departments extends Controller
     }
     
     /**
-     * Verify user has access to a specific department (currently no restrictions)
+     * Verify user has access to a specific department
+     * Level 1: Full access to all departments
+     * Level 3 & 4: Only their assigned departments
      */
     private function guardDepartmentAccess(int $deptId): void {
-        // All admin users (Level 1, 3, 4) have full access to all departments
-        // No scoping needed
-        return;
+        $accessLevel = $this->getUserAccessLevel();
+        
+        // Level 1 (Full Admin) has access to all departments
+        if ($accessLevel === 1) {
+            return;
+        }
+        
+        // Level 3 and 4: Check if department is in their assigned list
+        if ($accessLevel === 3 || $accessLevel === 4) {
+            $userDeptIds = class_exists('AccessControl') ? AccessControl::getUserDepartmentIds() : [];
+            
+            if (empty($userDeptIds) || !in_array($deptId, $userDeptIds)) {
+                throw new Exception('Access denied to this department');
+            }
+            return;
+        }
+        
+        throw new Exception('Insufficient access level');
     }
     
     private function getUserAccessLevel(): int {
         if (class_exists('AccessControl')) {
-            return AccessControl::getCurrentUserAccessLevel();
+            return (int)AccessControl::getCurrentUserAccessLevel();
         }
         return 1; // Default to regular user if AccessControl not available
     }
@@ -312,8 +329,8 @@ class departments extends Controller
     private function listDepartmentsWithCounts(): array {
         $accessLevel = $this->getUserAccessLevel();
         
-        // Level 4 users only see departments they're assigned to
-        if ($accessLevel === 4 && class_exists('AccessControl')) {
+        // Level 3 and 4 users only see departments they're assigned to
+        if (($accessLevel === 3 || $accessLevel === 4) && class_exists('AccessControl')) {
             $userDeptIds = AccessControl::getUserDepartmentIds();
             
             if (empty($userDeptIds)) {
@@ -336,7 +353,7 @@ class departments extends Controller
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         }
         
-        // For all other users, show all departments
+        // Level 1 users see all departments
         $sql = "
             SELECT d.id, d.name, 
                    COUNT(dr.role_id) AS role_count
@@ -374,8 +391,39 @@ class departments extends Controller
     
     /**
      * Optimized: Load departments with their roles in a single query
+     * Filters by user's department access for Level 3 & 4
      */
     private function listDepartmentsWithRolesOptimized(): array {
+        $accessLevel = $this->getUserAccessLevel();
+        
+        // Level 3 and 4 users only see departments they're assigned to
+        if (($accessLevel === 3 || $accessLevel === 4) && class_exists('AccessControl')) {
+            $userDeptIds = AccessControl::getUserDepartmentIds();
+            
+            if (empty($userDeptIds)) {
+                return []; // No departments assigned
+            }
+            
+            $placeholders = implode(',', array_fill(0, count($userDeptIds), '?'));
+            $sql = "
+                SELECT 
+                    d.id as dept_id,
+                    d.name as dept_name,
+                    r.id as role_id,
+                    r.name as role_name
+                FROM departments d
+                LEFT JOIN department_roles dr ON dr.department_id = d.id
+                LEFT JOIN roles r ON r.id = dr.role_id
+                WHERE d.id IN ($placeholders)
+                ORDER BY d.name ASC, r.name ASC
+            ";
+            
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute($userDeptIds);
+            return $this->groupDepartmentRoles($stmt->fetchAll(PDO::FETCH_ASSOC));
+        }
+        
+        // Level 1 users see all departments
         $sql = "
             SELECT 
                 d.id as dept_id,

@@ -10,12 +10,14 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (October 2025)
 
-### Level 4 Access Control Simplified (October 22, 2025)
-- **Full Access**: Level 4 users now have the same full access as Level 3 (Team Lead)
+### Department Scoping Reintroduced (October 22, 2025)
+- **Department-Scoped Access**: Level 3 and 4 users now have department-scoped access to Schedule and Departments & Roles
 - **Access Matrix**:
-  - Level 1 (Full Admin): Full access to all features and data
-  - Level 3 (Team Lead): Full access to all administrative features
-  - Level 4 (Department Admin): Same as Level 3 - Full access to all administrative features
+  - Level 1 (Full Admin): Full access to all features, departments, and data (no restrictions)
+  - Level 3 (Team Lead): Department-scoped access to Schedule and Departments & Roles (can only manage their assigned departments)
+  - Level 4 (Department Admin): Department-scoped access to Schedule and Departments & Roles (can only manage their assigned departments)
+  - Level 2 (Power User): View-only access where applicable
+- **Department Change Button**: Now only visible to Level 1 and Level 4 users (removed from Level 3)
 
 ### Schedule View - Department-Grouped Display (October 22, 2025)
 - **Department Grouping**: Employees now grouped by department with visual headers
@@ -25,7 +27,8 @@ Preferred communication style: Simple, everyday language.
   - Shift blocks have colored left border (3px) and tinted background
   - Day cells have subtle colored left border
 - **Access Control**: 
-  - Level 1, 3, and 4: Full edit access to all departments
+  - Level 1: Full edit access to all departments
+  - Level 3 & 4: Edit access only to their assigned departments (department-scoped)
   - Level 2: View-only access
 - **API Changes**:
   - `employees.list` now returns department info (department_id, department_name)
@@ -34,10 +37,11 @@ Preferred communication style: Simple, everyday language.
 
 ### Team Roster - Department Management (October 22, 2025)
 - **Department Column**: Added Department column to roster table displaying each user's department assignment
-- **Change Department**: Admin users (Level 1, 3, 4) can change user departments directly from roster
-  - "Change" button appears next to department name for editable users
+- **Change Department**: Level 1 and Level 4 users can change user departments directly from roster
+  - "Change" button appears next to department name for Level 1 and Level 4 only (not Level 3)
   - Opens modal with department dropdown selector
   - New API endpoint: `change_department` action in team.php
+  - Auto-creates employee records if they don't exist when assigning departments
 - **Department Loading**: Updated to use bootstrap data (matches role loading pattern)
 - **Level 2 View-Only Mode**: All admin actions now hidden for Level 2 (Power User) users:
   - "+ Add Team Member" button hidden (header and empty state)
@@ -77,9 +81,9 @@ Preferred communication style: Simple, everyday language.
 
 ### Access Control Redesign (October 21-22, 2025)
 - **Level 1 Full Admin Access**: Level 1 users have FULL access to all departments and roles (no restrictions)
-- **Level 3 & 4 Unified Access**: Level 3 (Team Lead) and Level 4 (Department Admin) now have identical full administrative access
+- **Department Scoping for Level 3 & 4**: Level 3 and 4 users have department-scoped access (can only manage their assigned departments in Schedule and Departments & Roles)
 - **Single Department Model**: Changed from multi-department to single department + single role per employee
-- **Simplified Permissions**: Removed department scoping for Level 4 - all admin levels (1, 3, 4) have full access
+- **Department Change Permission**: Only Level 1 and Level 4 can change user departments (Level 3 cannot)
 - **Optimized Bootstrap**: Single preloaded query for departments+roles in departments controller
 
 ### Complete is_admin to access_level Migration
@@ -101,8 +105,8 @@ The application implements a 5-tier access level system stored in `users.access_
 - **Level 0 - Inactive**: Cannot login (disabled account)
 - **Level 1 - Full Admin**: Full access to all features, all departments, all roles (unrestricted) - includes Team Roster, Departments & Roles
 - **Level 2 - Power User**: Dashboard, Chat, Time Clock, My Shifts, Reminders, Team Roster (view only)
-- **Level 3 - Team Lead**: Dashboard, Chat, Team Roster, Schedule Management, Reminders, Admin Reports
-- **Level 4 - Department Admin**: Same access as Level 3 (Team Lead) - Full access to all administrative features
+- **Level 3 - Team Lead**: Dashboard, Chat, Team Roster, Schedule Management (department-scoped), Reminders, Admin Reports
+- **Level 4 - Department Admin**: Dashboard, Chat, Team Roster, Schedule Management (department-scoped), Departments & Roles (department-scoped), Reminders, Admin Reports, Department Change capability
 
 ### Access Control Implementation
 
@@ -119,34 +123,38 @@ The application implements a 5-tier access level system stored in `users.access_
 
 ### Department Access
 
-All administrative users (Level 1, 3, and 4) have full access to all departments:
+Department access varies by user level:
 
-- **Departments View**: 
-  - All admin users can view and edit all departments
-  - Full access to rename, delete, manage roles, and assign managers
-  - No scoping restrictions
+- **Level 1 (Full Admin)**:
+  - Full access to all departments across all features
+  - Can view, edit, rename, and delete any department
+  - Can manage roles, assign managers, and change user departments
+  - No restrictions or scoping limitations
 
-- **Team Roster View**:
-  - All admin users can view and manage all employees
-  - Can hire new employees into any department
-  - Can update employees in any department
-  - Full access to all team operations
+- **Level 3 (Team Lead)**:
+  - **Department-Scoped Access**: Can only access their assigned departments in:
+    - Schedule Management: View and manage shifts only for employees in assigned departments
+    - Departments & Roles: View and manage only assigned departments
+  - **Full Access (No Scoping)**: Team Roster view and manage all employees
+  - **Cannot**: Change user departments (no "Change" button)
 
-- **Schedule View**:
-  - All admin users can view and manage all employee schedules
-  - Full access to create, edit, and delete shifts for any employee
-  - Department-grouped display with color-coding for visual organization
+- **Level 4 (Department Admin)**:
+  - **Department-Scoped Access**: Can only access their assigned departments in:
+    - Schedule Management: View and manage shifts only for employees in assigned departments
+    - Departments & Roles: View and manage only assigned departments
+  - **Full Access (No Scoping)**: Team Roster view and manage all employees
+  - **Can**: Change user departments for any user ("Change" button available)
 
-- **Reports View**:
-  - All admin users can view reports for all departments and employees
-  - User satisfaction reports: All users
-  - Department satisfaction reports: All departments
-  - Hours reports: All employees
-  - No filtering or scoping restrictions
+- **Level 2 (Power User)**:
+  - View-only access to Team Roster
+  - View-only access to Schedule (if granted)
+  - No administrative capabilities
 
 - **Implementation**: 
-  - employee_department junction table links employees to departments (single department per employee)
-  - guardDepartmentAccess() method allows full access for all admin levels
+  - `guardDepartmentAccess()` method enforces department scoping for Level 3 & 4
+  - `employees.list` API filters employees by department for Level 3 & 4
+  - `listDepartmentsWithRolesOptimized()` filters departments by user assignment
+  - Employee department junction table links employees to departments (single department per employee)
   - Level 2 users have view-only access where applicable
 
 ### Database Schema

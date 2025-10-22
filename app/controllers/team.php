@@ -404,7 +404,7 @@ class Team extends Controller
     /* ===== Helpers ===== */
 
     private function guardAdmin(): void {
-        $accessLevel = class_exists('AccessControl') ? AccessControl::getCurrentUserAccessLevel() : 1;
+        $accessLevel = class_exists('AccessControl') ? (int)AccessControl::getCurrentUserAccessLevel() : 1;
         // Allow Level 1 (Full Admin), Level 3 (Team Lead), Level 4 (Department Admin)
         if ($accessLevel !== 1 && $accessLevel !== 3 && $accessLevel !== 4) {
             throw new Exception('Admin access required (Level 1, 3, or 4)');
@@ -412,12 +412,33 @@ class Team extends Controller
     }
     
     /**
-     * Verify user has access to a specific department (no restrictions for admin users)
+     * Verify user has access to a specific department
+     * Level 1: Full access to all departments
+     * Level 3 & 4: Only their assigned departments
      */
     private function guardDepartmentAccess(?int $deptId): void {
-        // All admin users (Level 1, 3, 4) have full access to all departments
-        // No scoping needed
-        return;
+        if (!$deptId) {
+            throw new Exception('Department ID required');
+        }
+        
+        $accessLevel = class_exists('AccessControl') ? (int)AccessControl::getCurrentUserAccessLevel() : 1;
+        
+        // Level 1 (Full Admin) has access to all departments
+        if ($accessLevel === 1) {
+            return;
+        }
+        
+        // Level 3 and 4: Check if department is in their assigned list
+        if ($accessLevel === 3 || $accessLevel === 4) {
+            $userDeptIds = class_exists('AccessControl') ? AccessControl::getUserDepartmentIds() : [];
+            
+            if (empty($userDeptIds) || !in_array($deptId, $userDeptIds)) {
+                throw new Exception('Access denied to this department');
+            }
+            return;
+        }
+        
+        throw new Exception('Insufficient access level');
     }
     
     private function json(): array {
