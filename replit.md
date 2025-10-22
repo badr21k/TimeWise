@@ -12,8 +12,10 @@ Preferred communication style: Simple, everyday language.
 
 ### UI/UX Decisions
 - **Access Level Map**: Features a visual access matrix with color-coded icons (✓ Full Access, 👁️ View Only, ✗ No Access) for clear permission understanding.
-- **Department-Grouped Schedule**: Employees are grouped by department with unique color coding (10-color palette) for visual distinction in schedule views.
-- **Responsive Design**: Grid layouts and UI elements are adapted for various breakpoints (1024px, 768px, 480px).
+- **Department-Grouped Schedule**: Employees are grouped by department with unique color coding (10-color palette) for visual distinction in schedule views. Enhanced with modern design including gradient headers, sticky department headers with backdrop blur, improved shift blocks with hover animations, and comprehensive responsive breakpoints.
+- **Schedule Page Layout**: Unified header structure with title/subtitle stacked separately from a white card containing week navigation and publish controls. This creates proper visual hierarchy and prevents disorganization during horizontal scrolling.
+- **Responsive Design**: Comprehensive breakpoints for desktop (1200px+), tablet landscape (1024-1199px), tablet portrait (768-1023px), and mobile (640-767px, <640px). Mobile uses card-based stacked layout for schedule views.
+- **Design System**: Utilizes clamp() for fluid typography and spacing, cubic-bezier transitions for smooth animations, gradient backgrounds for depth, and consistent shadow system for elevation hierarchy.
 - **Loading Indicators**: Global Spinner component (twSpinner) provides consistent loading feedback across the application. Time Clock page shows clear loading states during initial data fetch and user actions (clock in/out, breaks).
 - **Error Handling**: User-friendly error messages with toast notifications differentiate between network errors, API failures, and connection issues.
 
