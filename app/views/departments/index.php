@@ -815,57 +815,81 @@ function deptRow(d) {
 
   /* middle: roles (chips + add input) */
   const mid = document.createElement('div');
+  
+  // Role chips section
+  const chipsSection = document.createElement('div');
+  chipsSection.style.marginBottom = '1rem';
+  
   const chips = document.createElement('div'); 
   chips.className='mb-2';
-  mid.appendChild(chips);
+  chips.style.minHeight = '2rem';
+  chipsSection.appendChild(chips);
+  
+  mid.appendChild(chipsSection);
 
-  const addWrap = document.createElement('div');
-  addWrap.className = 'input-group';
-  const sel = document.createElement('select');
-  sel.className = 'input';
-  sel.innerHTML = `<option value="">Select existing role</option>` + 
-    ALL_ROLES.map(r => `<option value="${r.id}">${escapeHtml(r.name)}</option>`).join('');
-  
-  const txt = document.createElement('input'); 
-  txt.className='input'; 
-  txt.placeholder='Or enter new role name';
-  
-  const addBtn = document.createElement('button'); 
-  addBtn.className='btn btn-primary btn-sm';
-  addBtn.innerHTML = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-      <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
-    </svg>
-  `;
-  
-  addBtn.addEventListener('click', async () => {
-    if (!sel.value && !txt.value.trim()) {
-      alert('Please select an existing role or enter a new role name');
-      return;
-    }
+  // Add role section - only show if editable
+  if (d.editable !== false) {
+    const addSection = document.createElement('div');
+    addSection.style.cssText = 'border-top: 1px solid var(--border); padding-top: 1rem; margin-top: 0.5rem;';
     
-    try {
-      if (txt.value.trim()) {
-        await fetchJSON('/departments/api?a=role.attach', { 
-          method:'POST', 
-          body: JSON.stringify({ department_id: d.id, role_name: txt.value.trim() }) 
-        });
-        txt.value='';
-      } else {
-        await fetchJSON('/departments/api?a=role.attach', { 
-          method:'POST', 
-          body: JSON.stringify({ department_id: d.id, role_id: parseInt(sel.value,10) }) 
-        });
-        sel.value='';
+    const addLabel = document.createElement('div');
+    addLabel.style.cssText = 'font-size: 0.8rem; color: var(--muted); margin-bottom: 0.5rem; font-weight: 500;';
+    addLabel.textContent = 'Add Role';
+    addSection.appendChild(addLabel);
+    
+    const addWrap = document.createElement('div');
+    addWrap.style.cssText = 'display: flex; gap: 0.5rem; flex-wrap: wrap;';
+    
+    const sel = document.createElement('select');
+    sel.className = 'input';
+    sel.style.flex = '1 1 120px';
+    sel.innerHTML = `<option value="">Select existing...</option>` + 
+      ALL_ROLES.map(r => `<option value="${r.id}">${escapeHtml(r.name)}</option>`).join('');
+    
+    const txt = document.createElement('input'); 
+    txt.className='input'; 
+    txt.style.flex = '1 1 120px';
+    txt.placeholder='...or create new';
+    
+    const addBtn = document.createElement('button'); 
+    addBtn.className='btn btn-primary btn-icon';
+    addBtn.title = 'Add role to department';
+    addBtn.innerHTML = `
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+        <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+      </svg>
+    `;
+    
+    addBtn.addEventListener('click', async () => {
+      if (!sel.value && !txt.value.trim()) {
+        alert('Please select an existing role or enter a new role name');
+        return;
       }
-      await refreshRoles(d.id, chips, count, d);
-    } catch (error) {
-      alert('Failed to add role: ' + error.message);
-    }
-  });
-  
-  addWrap.append(sel, txt, addBtn);
-  mid.appendChild(addWrap);
+      
+      try {
+        if (txt.value.trim()) {
+          await fetchJSON('/departments/api?a=role.attach', { 
+            method:'POST', 
+            body: JSON.stringify({ department_id: d.id, role_name: txt.value.trim() }) 
+          });
+          txt.value='';
+        } else {
+          await fetchJSON('/departments/api?a=role.attach', { 
+            method:'POST', 
+            body: JSON.stringify({ department_id: d.id, role_id: parseInt(sel.value,10) }) 
+          });
+          sel.value='';
+        }
+        await refreshRoles(d.id, chips, count, d);
+      } catch (error) {
+        alert('Failed to add role: ' + error.message);
+      }
+    });
+    
+    addWrap.append(sel, txt, addBtn);
+    addSection.appendChild(addWrap);
+    mid.appendChild(addSection);
+  }
 
   /* members section with access level management */
   const membersCol = document.createElement('div');
