@@ -203,6 +203,31 @@ class Schedule extends Controller
                     echo json_encode(['ok'=>true,'id'=>$id]);
                     break;
 
+                case 'shifts.update':
+                    $this->guardScheduleAccess();
+                    $in = $this->json();
+                    $shiftId = (int)$in['id'];
+                    $employeeId = (int)$in['employee_id'];
+                    
+                    // Check department access for the target employee
+                    $this->guardDepartmentAccess($employeeId);
+                    
+                    // Also verify original shift belongs to user's department
+                    $originalShift = $this->Shift->get($shiftId);
+                    if ($originalShift) {
+                        $this->guardDepartmentAccess((int)$originalShift['employee_id']);
+                    }
+                    
+                    $success = $this->Shift->update(
+                        $shiftId,
+                        $employeeId,
+                        $in['start_dt'],
+                        $in['end_dt'],
+                        $in['notes'] ?? null
+                    );
+                    echo json_encode(['ok' => $success]);
+                    break;
+
                 case 'shifts.delete':
                     $this->guardScheduleAccess();
                     $id = (int)($_GET['id'] ?? 0);

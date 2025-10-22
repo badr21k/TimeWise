@@ -76,6 +76,23 @@ class Shift
         return (int)$db->lastInsertId();
     }
 
+    public function update(int $id, int $employeeId, string $startDt, string $endDt, ?string $notes): bool
+    {
+        $db = db_connect();
+        $stmt = $db->prepare("
+            UPDATE shifts 
+            SET employee_id = :emp, start_dt = :start_dt, end_dt = :end_dt, notes = :notes
+            WHERE id = :id
+        ");
+        return $stmt->execute([
+            ':id'       => $id,
+            ':emp'      => $employeeId,
+            ':start_dt' => $startDt,
+            ':end_dt'   => $endDt,
+            ':notes'    => $notes
+        ]);
+    }
+
     public function delete(int $id): bool
     {
         $db = db_connect();
