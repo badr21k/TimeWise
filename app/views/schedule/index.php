@@ -1027,7 +1027,7 @@ function renderGrid() {
             <div class="employee-name">${escapeHtml(emp.name)}</div>
             <div class="employee-role">${escapeHtml(emp.role_title || '')}</div>
           </div>
-          ${accessLevel >= 3 && isEditable ? `<button class="btn btn-outline btn-sm" title="Copy this user's shifts to another user" onclick="openCopyUserModal(${emp.id})">
+          ${isEditable ? `<button class="btn btn-outline btn-sm" title="Copy this user's shifts to another user" onclick="openCopyUserModal(${emp.id})">
             <i class="fas fa-copy me-1"></i>Copy
           </button>` : ''}
         </div>
@@ -1044,7 +1044,7 @@ function renderGrid() {
         todays.forEach(shift => cell.appendChild(shiftBlock(shift, deptColor, isEditable)));
 
         // Only allow adding shifts for editable departments
-        if (accessLevel >= 3 && isEditable) {
+        if (isEditable) {
           const add = document.createElement('div'); 
           add.className = 'add-shift-area';
           const btn = document.createElement('button');
@@ -1074,7 +1074,7 @@ function shiftBlock(shift, deptColor, isEditable) {
   div.innerHTML = `
     <div class="shift-time">${t1}-${t2}</div>
     <div class="shift-role">${escapeHtml(shift.notes || shift.employee_role || '')}</div>
-    ${accessLevel >= 3 && isEditable ? `
+    ${isEditable ? `
       <div class="shift-actions">
         <button class="shift-mini" title="Copy" onclick="openCopyOne(${shift.id}, '${(shift.start_dt||'').slice(0,10)}')">
           <i class="fas fa-copy"></i>
