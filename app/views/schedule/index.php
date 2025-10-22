@@ -512,7 +512,7 @@ require 'app/views/templates/spinner.php';
           <i class="fas fa-calendar-alt me-2"></i>Schedule
         </h1>
         <p class="page-subtitle">Manage your team's work schedule</p>
-      </div>
+      </div><br>
 
       <div class="week-controls">
         <div class="week-navigation" role="group" aria-label="Week navigation">
