@@ -15,9 +15,11 @@
  * Rules support:
  * - auth: any logged-in user
  * - level:N: minimum access level (e.g., level:3 means level 3 or higher)
+ * - exact:N: exact access level (e.g., exact:1 means only level 1)
  * - role:manager,admin: specific roles (comma-separated) [legacy support]
  * - dept:Department Name: department-based access
  * - Combine with & (AND): level:3 & dept:Food Pantry
+ * - Combine with | (OR): exact:1 | exact:4
  * 
  * To change access rules, simply edit this file - no need to modify controllers or views.
  */
@@ -31,7 +33,7 @@ return [
         
         // Team & Schedule dropdown items
         'team_roster' => 'level:3',             // Level 3+ (Team Lead and above)
-        'departments_roles' => 'level:1 | level:4',  // Only Level 1 (FULL) and Level 4 (scoped)
+        'departments_roles' => 'exact:1 | exact:4',  // Only Level 1 (Full Admin) and Level 4 (Dept Admin)
         'schedule' => 'level:3',                // Level 3+ (Team Lead and above)
         'my_shifts' => 'level:1',               // Level 1+ (Regular User and above)
         'time_clock' => 'level:1',              // Level 1+ (Regular User and above)
@@ -43,7 +45,7 @@ return [
     // Controller-level access rules (server-side enforcement)
     'controllers' => [
         'reports' => 'level:3',                 // Team Leads and above
-        'departments' => 'level:1 | level:4',   // Only Level 1 (FULL) and Level 4 (scoped)
+        'departments' => 'exact:1 | exact:4',   // Only Level 1 (Full Admin) and Level 4 (Dept Admin)
         'team' => 'level:3',                    // Team Leads and above
         'schedule' => [
             'index' => 'level:3',               // Schedule management - Team Leads and above
@@ -64,7 +66,7 @@ return [
         'reports.hours' => 'level:3',
         'reports.hoursEmployee' => 'level:3',
         'team.roster' => 'level:3',
-        'departments.index' => 'level:1 | level:4',  // Only Level 1 (FULL) and Level 4 (scoped)
+        'departments.index' => 'exact:1 | exact:4',  // Only Level 1 (Full Admin) and Level 4 (Dept Admin)
         'schedule.index' => 'level:3',
         'timeclock.index' => 'level:1',
         'timeclock.api' => 'level:1',

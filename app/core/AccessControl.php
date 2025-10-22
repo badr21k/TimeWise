@@ -308,6 +308,12 @@ class AccessControl
             return ($user['access_level'] ?? 0) >= $requiredLevel;
         }
         
+        // Exact level match (e.g., "exact:1" means only level 1)
+        if (strpos($rule, 'exact:') === 0) {
+            $exactLevel = (int)trim(substr($rule, 6));
+            return ($user['access_level'] ?? 0) === $exactLevel;
+        }
+        
         // Unknown rule type - deny access
         return false;
     }
