@@ -727,50 +727,6 @@ function deptRow(d) {
   addWrap.append(sel, txt, addBtn);
   mid.appendChild(addWrap);
 
-  /* right: managers multi-select */
-  const right = document.createElement('div');
-  const mgrBox = document.createElement('div'); 
-  mgrBox.className='select-multi';
-  right.appendChild(mgrBox);
-
-  const chooseWrap = document.createElement('div');
-  chooseWrap.className = 'input-group';
-  const choose = document.createElement('select'); 
-  choose.className='input';
-  choose.innerHTML = `<option value="">Select user to add as manager</option>` + 
-    ALL_USERS.map(u => `<option value="${u.id}">${escapeHtml(u.label)}</option>`).join('');
-  
-  const addManagerBtn = document.createElement('button');
-  addManagerBtn.className = 'btn btn-primary btn-sm';
-  addManagerBtn.innerHTML = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-      <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
-    </svg>
-  `;
-  
-  chooseWrap.appendChild(choose);
-  chooseWrap.appendChild(addManagerBtn);
-  right.appendChild(chooseWrap);
-
-  addManagerBtn.addEventListener('click', async () => {
-    const uid = parseInt(choose.value,10);
-    if (!uid) {
-      alert('Please select a user');
-      return;
-    }
-    
-    try {
-      await fetchJSON('/departments/api?a=manager.add', { 
-        method:'POST', 
-        body: JSON.stringify({ department_id: d.id, user_id: uid }) 
-      });
-      choose.value = '';
-      await refreshManagers(d.id, mgrBox);
-    } catch (error) {
-      alert('Failed to add manager: ' + error.message);
-    }
-  });
-
   /* members section with access level management */
   const membersCol = document.createElement('div');
   const membersBox = document.createElement('div');
@@ -808,16 +764,14 @@ function deptRow(d) {
     delCol.appendChild(del);
   }
   
-  row.append(left, mid, right, membersCol, delCol);
+  row.append(left, mid, membersCol, delCol);
 
-  // initial role, manager, and member chips with loading state
+  // initial role and member chips with loading state
   showLoadingRoles(chips);
-  showLoadingManagers(mgrBox);
   showLoadingMembers(membersBox);
   
   // load actual data
   refreshRoles(d.id, chips, count, d);
-  refreshManagers(d.id, mgrBox);
   refreshMembers(d.id, membersBox);
 
   return row;
@@ -827,12 +781,6 @@ function showLoadingRoles(container) {
   container.innerHTML = `
     <div class="loading-shimmer" style="width: 80%"></div>
     <div class="loading-shimmer" style="width: 60%"></div>
-  `;
-}
-
-function showLoadingManagers(container) {
-  container.innerHTML = `
-    <div class="loading-shimmer" style="width: 70%"></div>
   `;
 }
 
@@ -873,43 +821,6 @@ async function refreshRoles(deptId, chipsEl, countEl, deptRef) {
   } catch (error) {
     chipsEl.innerHTML = '<span class="small-text" style="color: var(--danger)">Failed to load roles</span>';
     console.error('Failed to refresh roles:', error);
-  }
-}
-
-async function refreshManagers(deptId, boxEl) {
-  try {
-    const r = await fetchJSON(`/departments/api?a=departments.roles.managers&id=${deptId}`);
-    boxEl.innerHTML = '';
-    
-    if (r.managers && r.managers.length > 0) {
-      r.managers.forEach(m => {
-        const b = document.createElement('span'); 
-        b.className='badge';
-        b.innerHTML = `
-          ${escapeHtml(m.label)} 
-          <span class="remove" title="Remove manager">×</span>
-        `;
-        b.querySelector('.remove').addEventListener('click', async () => {
-          if (!confirm(`Remove "${m.label}" as manager?`)) return;
-          
-          try {
-            await fetchJSON('/departments/api?a=manager.remove', { 
-              method:'POST', 
-              body: JSON.stringify({ department_id: deptId, user_id: m.id }) 
-            });
-            await refreshManagers(deptId, boxEl);
-          } catch (error) {
-            alert('Failed to remove manager: ' + error.message);
-          }
-        });
-        boxEl.appendChild(b);
-      });
-    } else {
-      boxEl.innerHTML = '<span class="small-text">No managers assigned</span>';
-    }
-  } catch (error) {
-    boxEl.innerHTML = '<span class="small-text" style="color: var(--danger)">Failed to load managers</span>';
-    console.error('Failed to refresh managers:', error);
   }
 }
 
