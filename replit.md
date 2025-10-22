@@ -32,17 +32,23 @@ Preferred communication style: Simple, everyday language.
   - Returns `user_editable_dept_ids` array (all departments for Level 3+)
   - Returns `access_level` for frontend permission checks
 
-### Team Roster UI - Level 2 View-Only Mode (October 22, 2025)
+### Team Roster - Department Management (October 22, 2025)
+- **Department Column**: Added Department column to roster table displaying each user's department assignment
+- **Change Department**: Admin users (Level 1, 3, 4) can change user departments directly from roster
+  - "Change" button appears next to department name for editable users
+  - Opens modal with department dropdown selector
+  - New API endpoint: `change_department` action in team.php
 - **Department Loading**: Updated to use bootstrap data (matches role loading pattern)
-- **Level 2 Action Hiding**: All admin actions now hidden for Level 2 (Power User) users:
+- **Level 2 View-Only Mode**: All admin actions now hidden for Level 2 (Power User) users:
   - "+ Add Team Member" button hidden (header and empty state)
   - "Show Terminated" checkbox hidden
   - "Actions" column completely hidden (header + all cells)
-  - Table colspan adjusted from 7 to 6 when Actions column is hidden
+  - Table colspan adjusted from 8 to 7 when Actions column is hidden (now includes Department column)
 - **Implementation**: Uses "admin-action" CSS class with display:none for ACCESS_LEVEL === 2
 - **Add Team Member Form**:
   - Changed Department field from multi-select to single dropdown
   - Department selection is required before saving
+  - Fixed: Frontend now sends `department_id` (singular) instead of `departments` array to match backend expectations
   - Roles show all available options (can be used across departments)
   - Form displays helpful validation messages for required fields
 
