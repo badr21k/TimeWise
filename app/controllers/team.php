@@ -413,8 +413,8 @@ class Team extends Controller
     
     /**
      * Verify user has access to a specific department
-     * Level 1: Full access to all departments
-     * Level 3 & 4: Only their assigned departments
+     * Level 1 & 4: Full access to all departments (bypass scoping)
+     * Level 3: Only their assigned departments (department-scoped)
      */
     private function guardDepartmentAccess(?int $deptId): void {
         if (!$deptId) {
@@ -423,13 +423,13 @@ class Team extends Controller
         
         $accessLevel = class_exists('AccessControl') ? (int)AccessControl::getCurrentUserAccessLevel() : 1;
         
-        // Level 1 (Full Admin) has access to all departments
-        if ($accessLevel === 1) {
+        // Level 1 (Full Admin) and Level 4 (Department Admin) have full access - bypass department scoping
+        if ($accessLevel === 1 || $accessLevel === 4) {
             return;
         }
         
-        // Level 3 and 4: Check if department is in their assigned list
-        if ($accessLevel === 3 || $accessLevel === 4) {
+        // Level 3 (Team Lead): Check if department is in their assigned list
+        if ($accessLevel === 3) {
             $userDeptIds = class_exists('AccessControl') ? AccessControl::getUserDepartmentIds() : [];
             
             if (empty($userDeptIds) || !in_array($deptId, $userDeptIds)) {

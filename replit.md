@@ -19,7 +19,7 @@ Preferred communication style: Simple, everyday language.
 
 ### Technical Implementations
 - **Role-Based Access Control (RBAC)**: A 5-tier `access_level` system (0-4) governs feature access. Access Control is unified using `AccessControl::enforceAccess()` and rules like `auth`, `level:N`, `exact:N`, `role:name`, and `dept:Name`.
-- **Department Scoping**: Level 1 (Regular User) and Level 3+ users have department-scoped access to the Schedule feature, meaning they can only view and manage schedules for employees in their assigned departments. Level 2 users do not have access to the Schedule feature. Levels 3 (Team Lead) and 4 (Department Admin) also have department-scoped access to other features like Departments & Roles.
+- **Department Scoping**: Level 1 (Full Admin) and Level 4 (Department Admin) have full access to all departments and can manage all schedules. Level 3 (Team Lead) has department-scoped access, meaning they can only view and manage schedules for employees in their assigned departments. Level 2 users do not have access to the Schedule feature.
 - **Single Department Model**: Employees are assigned to a single department and a single role.
 - **PHP Backend**: Core application logic and authentication.
 - **Node.js Chat Server**: Built with ES modules, using Socket.io for real-time WebSocket communication, operating on a configurable port (default 3001).
@@ -30,7 +30,7 @@ Preferred communication style: Simple, everyday language.
 
 ### Feature Specifications
 - **Real-time Chat**: Provided by the Node.js server with Socket.io.
-- **Scheduling**: Supports department-grouped employee schedules with color-coding. Level 1 (Regular User) and Level 3+ users have department-scoped access, meaning they can only view and manage schedules for employees in their assigned departments. Level 2 users do not have access to the Schedule feature. Schedule publish status uses strict scoping - users can only view publish status for weeks containing exclusively their departments' shifts.
+- **Scheduling**: Supports department-grouped employee schedules with color-coding. Level 1 (Full Admin) and Level 4 (Department Admin) have full access to manage all schedules across all departments. Level 3 (Team Lead) has department-scoped access to their assigned departments only. Level 2 users do not have access to the Schedule feature.
 - **Time Tracking**: Enhanced Time Clock page with global Spinner loading indicators, robust error handling with clear user feedback, network error detection, and seamless integration with the global loading state system. Includes break timer tracking and satisfaction surveys on clock out.
 - **Department Management**: Creation, assignment of roles, and user department changes (restricted by access level).
 - **Team Roster**: Displays employee information, including department assignments, with administrative actions hidden for view-only users.

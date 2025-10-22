@@ -452,13 +452,19 @@ class Schedule extends Controller
     
     /**
      * Verify user has access to a specific department (via employee)
-     * All users (Level 1+): Only their assigned departments (department-scoped)
+     * Level 1 & 4: Full access to all departments (bypass scoping)
+     * Level 3: Only their assigned departments (department-scoped)
      */
     private function guardDepartmentAccess(int $employeeId): void {
         $accessLevel = class_exists('AccessControl') ? (int)AccessControl::getCurrentUserAccessLevel() : 1;
         
-        // All users (Level 1, 3, 4): Check if employee's department is in their assigned list
-        if ($accessLevel >= 1) {
+        // Level 1 (Full Admin) and Level 4 (Department Admin) have full access - bypass department scoping
+        if ($accessLevel === 1 || $accessLevel === 4) {
+            return;
+        }
+        
+        // Level 3 (Team Lead): Check if employee's department is in their assigned list
+        if ($accessLevel === 3) {
             $db = db_connect();
             
             // Get employee's department
