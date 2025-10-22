@@ -69,33 +69,21 @@ class Schedule extends Controller
                     }
                     unset($emp);
                     
-                    // Apply department scoping for Level 4 users (Department Admins)
+                    // Determine which departments the user can edit
                     $userEditableDeptIds = [];
                     if (class_exists('AccessControl')) {
                         $accessLevel = AccessControl::getCurrentUserAccessLevel();
                         
-                        // Level 1 (Full Admin) can edit all departments
-                        if ($accessLevel === 1) {
+                        // Level 1 (Full Admin) and Level 3 (Team Lead) can edit all departments
+                        if ($accessLevel === 1 || $accessLevel === 3) {
                             $stmt = $db->query("SELECT id FROM departments");
                             $userEditableDeptIds = $stmt->fetchAll(PDO::FETCH_COLUMN);
                         }
-                        // Level 4 (Department Admin) can only edit their assigned departments
+                        // Level 4 (Department Admin) can VIEW all but EDIT only their assigned departments
                         elseif ($accessLevel === 4) {
                             $userEditableDeptIds = AccessControl::getUserDepartmentIds();
-                            if (empty($userEditableDeptIds)) {
-                                $employees = []; // No departments = no employees visible
-                            } else {
-                                // Filter employees to only those in the user's departments
-                                $employees = array_filter($employees, function($emp) use ($userEditableDeptIds) {
-                                    return $emp['department_id'] && in_array($emp['department_id'], $userEditableDeptIds);
-                                });
-                                $employees = array_values($employees); // Re-index array
-                            }
-                        }
-                        // Level 3 (Team Lead) can edit all
-                        elseif ($accessLevel === 3) {
-                            $stmt = $db->query("SELECT id FROM departments");
-                            $userEditableDeptIds = $stmt->fetchAll(PDO::FETCH_COLUMN);
+                            // Note: We do NOT filter employees - Level 4 can see all employees
+                            // but editing is restricted via userEditableDeptIds
                         }
                     }
                     
