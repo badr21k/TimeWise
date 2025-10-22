@@ -1191,25 +1191,8 @@ function filterRolesByDepartments() {
   
   sel.innerHTML = '';
   
+  // Show all roles (roles can be used across departments)
   let filteredRoles = ALL_ROLES;
-  
-  // If a department is selected, filter roles for that department
-  if (selectedDeptId > 0) {
-    // Debug: Log first role to see structure
-    if (ALL_ROLES.length > 0) {
-      console.log('Sample role structure:', ALL_ROLES[0]);
-      console.log('Selected department ID:', selectedDeptId);
-    }
-    
-    filteredRoles = ALL_ROLES.filter(r => {
-      // Try different possible field names for department ID
-      const deptId = r.department_id || r.dept_id || r.departmentId;
-      console.log(`Role "${r.name || r.title}" has dept_id: ${deptId}`);
-      return parseInt(deptId) === selectedDeptId;
-    });
-    
-    console.log('Filtered roles count:', filteredRoles.length);
-  }
   
   // Add roles to dropdown
   if (filteredRoles.length > 0) {
@@ -1225,10 +1208,7 @@ function filterRolesByDepartments() {
   
   // If no roles available, show message
   if (sel.options.length === 0) {
-    const msg = selectedDeptId > 0 
-      ? '— No roles for this department —' 
-      : '— Select a department first —';
-    sel.innerHTML = `<option value="">${msg}</option>`;
+    sel.innerHTML = '<option value="">— No roles available —</option>';
   }
 }
 
