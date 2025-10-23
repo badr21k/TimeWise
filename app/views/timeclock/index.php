@@ -714,193 +714,472 @@ body {
 .col-xl-8 {
   grid-column: 1 / -1;
 }
+  /* Tablet: 2-column layout */
+  @media (min-width: 768px) {
+    .row.g-4 {
+      grid-template-columns: repeat(2, 1fr);
+      gap: clamp(1rem, 2vw, 1.5rem);
+    }
 
-/* Tablet: 2-column layout */
-@media (min-width: 768px) {
-  .row.g-4 {
-    grid-template-columns: repeat(2, 1fr);
-    gap: clamp(1rem, 2vw, 1.5rem);
+    .tw-actions {
+      flex-direction: row;
+      flex-wrap: wrap;
+      justify-content: center;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .btn {
+      min-width: min(160px, calc(50% - 0.5rem));
+      flex: 1;
+      font-size: 0.875rem;
+      padding: 0.875rem 1.25rem;
+    }
   }
 
-  .tw-actions {
-    flex-direction: row;
-    flex-wrap: wrap;
+  /* Mobile: Organized & polished layout for phones */
+  @media (max-width: 767px) {
+    .container {
+      max-width: 100%;
+      padding: 1rem 0.75rem;
+    }
+
+    .row.g-4 {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+      max-width: 100%;
+    }
+
+    /* Cards - cleaner appearance */
+    .tw-card {
+      max-width: 100%;
+      margin: 0 auto 1rem;
+      border-radius: 20px;
+      box-shadow: 0 4px 20px rgba(9, 25, 77, 0.08);
+    }
+
+    .tw-card__header {
+      padding: 1.25rem 1rem;
+      border-radius: 20px 20px 0 0;
+    }
+
+    .tw-card__body {
+      padding: 1.25rem 1rem;
+    }
+
+    .tw-card__title {
+      font-size: 1.5rem;
+      gap: 8px;
+    }
+
+    /* Clock display - prominent and clean */
+    .tc-clock {
+      padding: 1.5rem 1rem;
+      margin-bottom: 1.25rem;
+      border-radius: 18px;
+      max-width: 100%;
+      background: linear-gradient(135deg, rgba(181, 158, 95, 0.06) 0%, rgba(141, 119, 171, 0.06) 100%);
+      border: 1px solid rgba(181, 158, 95, 0.15);
+    }
+
+    .tc-date {
+      font-size: 0.875rem;
+      opacity: 0.85;
+      font-weight: 500;
+    }
+
+    /* Work duration timer - large and readable */
+    #tcWorkDuration {
+      text-align: center;
+      max-width: 100%;
+      margin-top: 0.5rem;
+    }
+
+    #tcWorkDuration > div:first-child {
+      font-size: 0.7rem;
+      letter-spacing: 0.12em;
+      margin-bottom: 0.75rem;
+      opacity: 0.7;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    #workDurationTimer {
+      font-size: 2.75rem !important;
+      font-weight: 800;
+      line-height: 1.1;
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-secondary) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      display: block;
+    }
+
+    /* Badges - stacked and centered */
+    .tc-badges {
+      flex-direction: column;
+      align-items: center;
+      gap: 0.625rem;
+      max-width: 100%;
+      margin-top: 1rem;
+    }
+
+    .tc-badge {
+      width: auto;
+      min-width: 220px;
+      max-width: 300px;
+      justify-content: center;
+      text-align: center;
+      padding: 0.875rem 1.25rem;
+      font-size: 0.9rem;
+      border-radius: 14px;
+    }
+
+    /* Action buttons - full width and prominent */
+    .tw-actions {
+      flex-direction: column;
+      gap: 0.625rem;
+      max-width: 100%;
+      width: 100%;
+      margin-top: 1.25rem;
+    }
+
+    .btn {
+      min-width: auto;
+      width: 100%;
+      max-width: 100%;
+      margin: 0;
+      padding: 1rem 1.25rem;
+      font-size: 1rem;
+      font-weight: 600;
+      min-height: 54px;
+      border-radius: 16px;
+      box-shadow: 0 2px 12px rgba(9, 25, 77, 0.1);
+    }
+
+    .btn i {
+      font-size: 1.1rem;
+      margin-right: 0.25rem;
+    }
+
+    /* Mini cards - compact */
+    .tw-mini {
+      padding: 1.125rem;
+      border-radius: 16px;
+      max-width: 100%;
+      margin-bottom: 1rem;
+    }
+
+    /* Status detail - centered and readable */
+    #statusDetail {
+      font-size: 0.875rem;
+      padding: 1rem;
+      text-align: center;
+      border-radius: 14px;
+      max-width: 100%;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+
+    /* Status pill - centered */
+    .tw-status {
+      margin: 0.75rem auto 0;
+      padding: 0.75rem 1.25rem;
+      font-size: 0.8rem;
+      max-width: fit-content;
+    }
+
+    /* Table - scrollable */
+    .table-responsive {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      margin: 0 -0.75rem;
+      width: calc(100% + 1.5rem);
+      max-width: 100vw;
+      border-radius: 12px;
+    }
+
+    .table {
+      min-width: 600px;
+      max-width: 100%;
+    }
+
+    .table tbody td {
+      padding: 0.75rem 0.5rem;
+      font-size: 0.875rem;
+    }
+
+    .table thead th {
+      padding: 0.75rem 0.5rem;
+      font-size: 0.85rem;
+    }
+
+    /* Total hours display - prominent */
+    .total-hours-display {
+      justify-content: center;
+      text-align: center;
+      flex-direction: column;
+      gap: 0.5rem;
+      max-width: 100%;
+      padding: 1.25rem 1rem;
+    }
+
+    .total-hours-display h3 {
+      font-size: 1.25rem;
+      margin-bottom: 0.5rem;
+    }
+
+    /* Alert notes - full width */
+    .alert-note {
+      margin: 0 0 1rem 0;
+      padding: 1rem;
+      border-radius: 14px;
+      font-size: 0.875rem;
+      line-height: 1.6;
+    }
+
+    /* Spacing adjustments */
+    .mb-5 {
+      margin-bottom: 1.25rem !important;
+    }
+
+    .mb-4 {
+      margin-bottom: 1rem !important;
+    }
+
+    .mb-3 {
+      margin-bottom: 0.875rem !important;
+    }
   }
 
-  .btn {
-    min-width: min(180px, calc(50% - 0.5rem));
-    flex: 1;
-  }
-}
+  /* Small Mobile Optimizations */
+  @media (max-width: 480px) {
+    .container {
+      padding: 0.75rem 0.5rem;
+      max-width: 100%;
+    }
 
-/* Mobile: Better organized layout */
-@media (max-width: 767px) {
-  .row.g-4 {
-    grid-template-columns: 1fr;
-    gap: 1rem;
-  }
+    .tw-card {
+      border-radius: 16px;
+      max-width: 100%;
+    }
 
-  .tw-actions {
-    flex-direction: column;
-    gap: 0.75rem;
-  }
+    .tw-card__header {
+      padding: 1.25rem 0.75rem;
+    }
 
-  .btn {
-    min-width: 100%;
-    width: 100%;
-    padding: 1rem;
-    font-size: 1rem;
-  }
+    .tw-card__body {
+      padding: 1.25rem 0.75rem;
+    }
 
-  .table-responsive {
-    overflow-x: auto;
-  }
+    .tc-clock {
+      padding: 1.25rem 0.75rem;
+      margin-bottom: 1.25rem;
+      max-width: 100%;
+    }
 
-  .table {
-    min-width: 600px;
-  }
+    .tc-time {
+      font-size: 2.25rem;
+    }
 
-  .total-hours-display {
-    justify-content: center;
-    text-align: center;
-  }
+    .tw-mini {
+      padding: 1rem 0.75rem;
+      max-width: 100%;
+    }
 
-  .tc-badges {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 0.75rem;
-  }
+    .btn {
+      max-width: 260px;
+      padding: 0.875rem 1rem;
+      font-size: 0.875rem;
+    }
 
-  .tc-badge {
-    width: 100%;
-    justify-content: center;
-  }
+    .tc-badge {
+      min-width: 180px;
+      max-width: 240px;
+    }
 
-  .tc-clock {
-    padding: 1.5rem 1rem;
-    margin-bottom: 1.5rem !important;
-  }
+    .modal-body {
+      padding: 1rem;
+    }
 
-  #tcWorkDuration {
-    text-align: center;
-  }
+    .modal-header {
+      padding: 1rem 1.25rem;
+    }
 
-  #tcWorkDuration > div:first-child {
-    font-size: 0.75rem;
-    letter-spacing: 0.1em;
-    margin-bottom: 0.75rem;
-  }
+    .modal-footer {
+      padding: 1rem 1.25rem;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
 
-  .tw-card__header {
-    padding: 1.5rem 1rem;
-  }
+    .modal-footer .btn {
+      margin: 0;
+      width: 100%;
+      max-width: 100%;
+    }
 
-  .tw-card__body {
-    padding: 1.5rem 1rem;
-  }
+    .alert-note {
+      padding: 1rem 0.75rem;
+      flex-direction: column;
+      text-align: center;
+      gap: 0.5rem;
+      border-radius: 12px;
+      max-width: 100%;
+    }
 
-  .tw-mini {
-    padding: 1.25rem;
-  }
+    .tw-status {
+      padding: 0.75rem 1rem;
+      font-size: 0.875rem;
+      text-align: center;
+      justify-content: center;
+      max-width: 200px;
+      margin-left: auto;
+      margin-right: auto;
+    }
 
-  #statusDetail {
-    font-size: 0.875rem;
-    padding: 1rem;
-  }
-}
+    .table-responsive {
+      margin: 0 -0.5rem;
+      width: calc(100% + 1rem);
+    }
 
-/* Small Mobile Optimizations */
-@media (max-width: 480px) {
-  .container {
-    padding: 1rem 0.75rem;
-  }
-
-  .tw-card__header {
-    padding: 1.25rem 1rem;
-  }
-
-  .tw-card__body {
-    padding: 1.5rem 1rem;
-  }
-
-  .tc-clock {
-    padding: 1.5rem 1rem;
+    .table {
+      min-width: 550px;
+    }
   }
 
-  .tc-time {
-    font-size: 2.5rem;
+  /* Extra Small Mobile */
+  @media (max-width: 360px) {
+    .container {
+      padding: 0.5rem;
+    }
+
+    .tw-card__title {
+      font-size: 1.25rem;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .tc-time {
+      font-size: 2rem;
+    }
+
+    .btn {
+      padding: 0.75rem 1rem;
+      font-size: 0.85rem;
+      min-height: 48px;
+      border-radius: 14px;
+      max-width: 240px;
+    }
+
+    .table thead th,
+    .table tbody td {
+      padding: 0.625rem 0.375rem;
+      font-size: 0.75rem;
+    }
+
+    .table {
+      min-width: 500px;
+    }
+
+    .tw-card__header,
+    .tw-card__body {
+      padding: 1rem 0.75rem;
+    }
+
+    .tc-clock {
+      padding: 1rem 0.75rem;
+    }
+
+    .tw-mini {
+      padding: 0.875rem 0.75rem;
+    }
+
+    .tc-badge {
+      min-width: 160px;
+      max-width: 220px;
+      font-size: 0.8rem;
+      padding: 0.625rem 0.875rem;
+    }
+
+    /* Stack action buttons more tightly */
+    .tw-actions {
+      gap: 0.5rem;
+    }
   }
 
-  .tw-mini {
-    padding: 1.25rem 1rem;
+  /* Touch Device Optimizations */
+  @media (hover: none) and (pointer: coarse) {
+    .tw-card:hover {
+      transform: none;
+      box-shadow: var(--shadow);
+    }
+
+    .btn:hover:not(:disabled) {
+      transform: none;
+      filter: none;
+    }
+
+    .btn:active:not(:disabled) {
+      transform: scale(0.98);
+      filter: brightness(0.95);
+    }
+
+    .tw-mini:hover {
+      transform: none;
+      box-shadow: 0 4px 16px rgba(9, 25, 77, 0.05);
+    }
+
+    .table tbody tr:hover {
+      transform: none;
+      background: white;
+    }
+
+    .table tbody tr:active {
+      background: var(--lighter);
+    }
+
+    /* Improve touch feedback */
+    .btn {
+      transition: transform 0.1s ease, filter 0.1s ease;
+    }
+
+    .tc-badge:active,
+    .tw-status:active {
+      transform: scale(0.98);
+    }
   }
 
-  .modal-body {
-    padding: 1.25rem;
-  }
+  /* Very short screens (landscape phones) */
+  @media (max-height: 500px) and (max-width: 767px) {
+    .tw-card__header {
+      padding: 1rem 0.75rem;
+    }
 
-  .modal-header {
-    padding: 1.25rem 1.5rem;
-  }
+    .tw-card__body {
+      padding: 1rem 0.75rem;
+    }
 
-  .modal-footer {
-    padding: 1rem 1.5rem;
-  }
+    .tc-clock {
+      padding: 1rem 0.75rem;
+      margin-bottom: 1rem;
+    }
 
-  .alert-note {
-    padding: 1rem;
-    flex-direction: column;
-    text-align: center;
-    gap: 0.5rem;
-  }
+    .tc-time {
+      font-size: 1.75rem;
+      margin-bottom: 0.5rem;
+    }
 
-  .tw-status {
-    padding: 0.75rem 1rem;
-    font-size: 0.875rem;
-  }
-}
+    .tw-actions {
+      margin-top: 1rem;
+    }
 
-/* Extra Small Mobile */
-@media (max-width: 360px) {
-  .tw-card__title {
-    font-size: 1.25rem;
+    .btn {
+      max-width: 220px;
+      padding: 0.75rem 1rem;
+      min-height: 44px;
+    }
   }
-
-  .tc-time {
-    font-size: 2rem;
-  }
-
-  .btn {
-    padding: 0.875rem 1rem;
-    font-size: 0.875rem;
-    min-height: 48px;
-  }
-
-  .table thead th,
-  .table tbody td {
-    padding: 0.875rem 0.75rem;
-    font-size: 0.8rem;
-  }
-}
-
-/* Touch Device Optimizations */
-@media (hover: none) and (pointer: coarse) {
-  .tw-card:hover {
-    transform: none;
-  }
-
-  .btn:hover:not(:disabled) {
-    transform: none;
-  }
-
-  .tw-mini:hover {
-    transform: none;
-  }
-
-  .table tbody tr:hover {
-    transform: none;
-  }
-}
 
 /* High Contrast Mode Support */
 @media (prefers-contrast: high) {
