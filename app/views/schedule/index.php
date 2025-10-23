@@ -948,7 +948,7 @@ require 'app/views/templates/spinner.php';
   </div>
 </div>
 
-<?php require_once 'app/views/templates/footer.php'; ?>
+<?php require 'app/views/templates/footer.php'; ?>
 
 <script>
 // ===== Spinner-aware strict JSON fetch =====
