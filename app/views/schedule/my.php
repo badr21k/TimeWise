@@ -847,7 +847,9 @@ class MobileShifts {
     try {
       const data = await this.fetchJSON(`/schedule/api?a=shifts.week&week=${this.weekStart}`);
       this.allWeekShifts = data.shifts || [];
-      this.employees = await this.fetchJSON('/schedule/api?a=employees.list');
+      
+      const employeesData = await this.fetchJSON('/schedule/api?a=employees.list');
+      this.employees = employeesData.employees || [];
       
       this.updateStats();
       this.renderMyShifts();
