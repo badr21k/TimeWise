@@ -36,7 +36,7 @@ Preferred communication style: Simple, everyday language.
 - **Scheduling**: Supports department-grouped employee schedules with color-coding. Level 1 (Full Admin) and Level 4 (Department Admin) have full access to manage all schedules across all departments. Level 3 (Team Lead) has department-scoped access to their assigned departments only. Level 2 users do not have access to the Schedule feature.
 - **Time Tracking**: Enhanced Time Clock page with global Spinner loading indicators, robust error handling with clear user feedback, network error detection, and seamless integration with the global loading state system. Includes break timer tracking and satisfaction surveys on clock out.
 - **Department Management**: Creation, assignment of roles, and user department changes (restricted by access level).
-- **Team Roster**: Displays employee information, including department assignments, with administrative actions hidden for view-only users.
+- **Team Roster**: Displays employee information grouped by department. Mobile-optimized with collapsible cards - tap any employee to expand and see full details (contact, access level, role, wage, actions). Collapsed view shows name, avatar, and status badge for quick scanning.
 - **Access Level Map**: A dedicated page displaying a comprehensive matrix of permissions per access level.
 
 ## External Dependencies
