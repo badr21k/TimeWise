@@ -258,14 +258,165 @@ body {
   padding: 0 1rem 2rem;
 }
 
-/* Day Cards for Mobile */
+/* Day Cards - Compact Weekly Overview */
 .day-cards {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.5rem;
   margin-bottom: 1rem;
 }
 
+/* Compact day card - shows entire week at a glance */
+.compact-day-card {
+  background: white;
+  border-radius: var(--radius-md);
+  padding: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--light);
+  transition: all 0.2s ease;
+  min-height: 60px;
+}
+
+.compact-day-card.has-shift {
+  border-left: 3px solid var(--accent);
+  background: linear-gradient(135deg, #fff 0%, #fffef8 100%);
+}
+
+.compact-day-card.no-shift {
+  border-left: 3px solid var(--neutral-light);
+  opacity: 0.7;
+}
+
+.compact-day-card.today {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-light);
+}
+
+.day-indicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 50px;
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-sm);
+  background: var(--lighter);
+}
+
+.day-indicator.today-indicator {
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
+  color: white;
+}
+
+.day-indicator .day-name {
+  font-weight: 700;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--primary);
+}
+
+.day-indicator.today-indicator .day-name {
+  color: white;
+}
+
+.day-indicator .day-date {
+  font-size: 0.7rem;
+  color: var(--neutral);
+  margin-top: 2px;
+}
+
+.day-indicator.today-indicator .day-date {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.shift-summary {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+/* Individual shift rows for multiple shifts per day */
+.mini-shift-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.25rem 0;
+}
+
+.mini-shift-row:not(:last-child) {
+  border-bottom: 1px solid var(--light);
+  padding-bottom: 0.5rem;
+}
+
+.mini-shift-time {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.mini-shift-time i {
+  color: var(--accent);
+  font-size: 0.8rem;
+}
+
+.mini-shift-role {
+  font-size: 0.8rem;
+  color: var(--neutral);
+  padding-left: 1.5rem;
+}
+
+.shift-time-range {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.shift-time-range i {
+  color: var(--accent);
+  font-size: 0.85rem;
+}
+
+.shift-role-text {
+  font-size: 0.8rem;
+  color: var(--neutral);
+}
+
+.shift-duration-badge {
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
+  color: white;
+  padding: 0.35rem 0.75rem;
+  border-radius: var(--radius-lg);
+  font-weight: 700;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.no-shift-text {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--neutral);
+  font-size: 0.85rem;
+  font-style: italic;
+}
+
+.no-shift-text i {
+  color: var(--neutral-light);
+}
+
+/* OLD styles kept for backward compatibility */
 .day-card {
   background: white;
   border-radius: var(--radius-lg);
@@ -645,12 +796,6 @@ button:focus-visible,
   <main class="main-content">
     <!-- My Shifts View -->
     <div id="myShiftsView">
-      <div class="swipe-hint">
-        <i class="fas fa-arrow-left text-neutral"></i>
-        <span class="text-neutral">Swipe to navigate weeks</span>
-        <i class="fas fa-arrow-right text-neutral"></i>
-      </div>
-      
       <div class="day-cards" id="dayCards">
         <!-- Days will be populated by JavaScript -->
         <div class="loading-shift"></div>
@@ -885,7 +1030,7 @@ class MobileShifts {
     const daysContainer = document.getElementById('dayCards');
     const today = new Date().toISOString().slice(0, 10);
 
-    // Generate days for the week
+    // Compact weekly overview - all days visible at once
     let daysHTML = '';
     for (let i = 0; i < 7; i++) {
       const date = new Date(this.weekStart);
@@ -896,21 +1041,51 @@ class MobileShifts {
       const isToday = dateStr === today;
       const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
       const dateDisplay = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      const hasShifts = dayShifts.length > 0;
 
-      daysHTML += `
-        <div class="day-card ${isToday ? 'today' : ''}">
-          <div class="day-header">
-            <div class="day-name">${dayName}</div>
-            <div class="day-date">${dateDisplay}</div>
+      if (hasShifts) {
+        // Compact card for days with shifts - show ALL shifts
+        const totalHours = dayShifts.reduce((sum, s) => sum + parseFloat(this.calculateShiftDuration(s)), 0);
+        
+        // Build shift items HTML
+        const shiftsHTML = dayShifts.map(shift => {
+          const startTime = shift.start_dt.slice(11, 16);
+          const endTime = shift.end_dt.slice(11, 16);
+          const role = shift.notes || shift.employee_role || 'Shift';
+          return `
+            <div class="mini-shift-row">
+              <span class="mini-shift-time"><i class="fas fa-clock"></i> ${startTime} - ${endTime}</span>
+              <span class="mini-shift-role">${this.escapeHtml(role)}</span>
+            </div>
+          `;
+        }).join('');
+
+        daysHTML += `
+          <div class="compact-day-card has-shift ${isToday ? 'today' : ''}">
+            <div class="day-indicator ${isToday ? 'today-indicator' : ''}">
+              <div class="day-name">${dayName}</div>
+              <div class="day-date">${dateDisplay}</div>
+            </div>
+            <div class="shift-summary">
+              ${shiftsHTML}
+            </div>
+            <div class="shift-duration-badge">${totalHours.toFixed(1)}h</div>
           </div>
-          <div class="shifts-list">
-            ${dayShifts.length > 0 ? 
-              dayShifts.map(shift => this.renderShiftItem(shift)).join('') : 
-              '<div class="empty-shift">No shifts scheduled</div>'
-            }
+        `;
+      } else {
+        // Minimal card for days without shifts
+        daysHTML += `
+          <div class="compact-day-card no-shift ${isToday ? 'today' : ''}">
+            <div class="day-indicator ${isToday ? 'today-indicator' : ''}">
+              <div class="day-name">${dayName}</div>
+              <div class="day-date">${dateDisplay}</div>
+            </div>
+            <div class="no-shift-text">
+              <i class="fas fa-moon"></i> Day off
+            </div>
           </div>
-        </div>
-      `;
+        `;
+      }
     }
 
     daysContainer.innerHTML = daysHTML;
