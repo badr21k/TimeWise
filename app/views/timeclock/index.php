@@ -66,7 +66,7 @@ body {
 
 .container {
   max-width: 1200px;
-  padding: 32px 20px;
+  padding: clamp(1.5rem, 3vw, 2rem) clamp(1rem, 2vw, 1.25rem);
 }
 
 /* Enhanced Card Design */
@@ -78,7 +78,7 @@ body {
   overflow: hidden;
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   backdrop-filter: blur(20px);
-  margin-bottom: 32px;
+  margin-bottom: clamp(1.5rem, 3vw, 2rem);
   position: relative;
 }
 
@@ -104,7 +104,7 @@ body {
 }
 
 .tw-card__header {
-  padding: 32px 28px;
+  padding: clamp(1.5rem, 3vw, 2rem) clamp(1.25rem, 2vw, 1.75rem);
   text-align: center;
   background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
   color: white;
@@ -125,7 +125,7 @@ body {
 
 .tw-card__title {
   margin: 0;
-  font-size: 2rem;
+  font-size: clamp(1.5rem, 4vw, 2rem);
   font-weight: 800;
   letter-spacing: -0.02em;
   position: relative;
@@ -133,10 +133,11 @@ body {
   align-items: center;
   justify-content: center;
   gap: 12px;
+  line-height: 1.2;
 }
 
 .tw-card__body {
-  padding: 36px 32px;
+  padding: clamp(1.5rem, 3vw, 2.25rem) clamp(1.25rem, 2vw, 2rem);
 }
 
 /* Enhanced Status Indicators */
@@ -144,11 +145,11 @@ body {
   display: inline-flex;
   gap: 10px;
   align-items: center;
-  padding: 12px 24px;
+  padding: clamp(0.75rem, 1.5vw, 0.875rem) clamp(1rem, 2vw, 1.5rem);
   border-radius: 50px;
   background: rgba(255, 255, 255, 0.15);
   color: white;
-  font-size: 1rem;
+  font-size: clamp(0.875rem, 1.2vw, 1rem);
   font-weight: 700;
   border: 2px solid rgba(255, 255, 255, 0.2);
   backdrop-filter: blur(20px);
@@ -177,8 +178,8 @@ body {
 /* Enhanced Clock Display */
 .tc-clock {
   text-align: center;
-  margin-bottom: 32px;
-  padding: 32px;
+  margin-bottom: clamp(1.5rem, 3vw, 2rem);
+  padding: clamp(1.5rem, 3vw, 2rem);
   background: linear-gradient(135deg, rgba(181, 158, 95, 0.05) 0%, rgba(141, 119, 171, 0.05) 100%);
   border-radius: var(--radius-lg);
   border: 2px solid var(--border);
@@ -199,9 +200,9 @@ body {
 
 .tc-time {
   font-variant-numeric: tabular-nums;
-  font-size: 5rem;
+  font-size: clamp(2.5rem, 8vw, 5rem);
   line-height: 1;
-  margin-bottom: 16px;
+  margin-bottom: clamp(0.75rem, 1.5vw, 1rem);
   font-weight: 300;
   color: var(--primary);
   text-shadow: 0 4px 12px rgba(9, 25, 77, 0.1);
@@ -211,16 +212,17 @@ body {
 
 .tc-date {
   color: var(--muted);
-  font-size: 1.25rem;
+  font-size: clamp(1rem, 1.5vw, 1.25rem);
   font-weight: 600;
-  margin-bottom: 24px;
+  margin-bottom: clamp(1rem, 2vw, 1.5rem);
   position: relative;
+  line-height: 1.4;
 }
 
 .tc-badges {
-  margin-top: 24px;
+  margin-top: clamp(1rem, 2vw, 1.5rem);
   display: flex;
-  gap: 16px;
+  gap: clamp(0.75rem, 1.5vw, 1rem);
   justify-content: center;
   flex-wrap: wrap;
   position: relative;
@@ -231,10 +233,10 @@ body {
   gap: 10px;
   align-items: center;
   background: var(--light);
-  padding: 12px 20px;
+  padding: clamp(0.75rem, 1.5vw, 0.875rem) clamp(1rem, 2vw, 1.25rem);
   border-radius: 50px;
   color: var(--primary);
-  font-size: 1rem;
+  font-size: clamp(0.875rem, 1.2vw, 1rem);
   font-weight: 700;
   border: 2px solid var(--border);
   transition: all 0.3s ease;
@@ -268,8 +270,8 @@ body {
   background: linear-gradient(135deg, var(--accent-secondary) 0%, var(--accent-tertiary) 100%);
   color: white;
   border-color: var(--accent-secondary);
-  font-size: 1.2rem;
-  padding: 14px 24px;
+  font-size: clamp(1rem, 1.5vw, 1.2rem);
+  padding: clamp(0.875rem, 1.5vw, 1rem) clamp(1.25rem, 2vw, 1.5rem);
   animation: pulse-glow 2s ease-in-out infinite;
 }
 
@@ -278,7 +280,7 @@ body {
   background: linear-gradient(135deg, var(--lighter) 0%, white 100%);
   border: 2px solid var(--border);
   border-radius: var(--radius-lg);
-  padding: 28px;
+  padding: clamp(1.25rem, 2vw, 1.75rem);
   transition: all 0.3s ease;
   height: 100%;
   box-shadow: 0 4px 16px rgba(9, 25, 77, 0.05);
@@ -309,16 +311,17 @@ body {
 }
 
 .tw-mini strong {
-  font-size: 1.1rem;
+  font-size: clamp(1rem, 1.2vw, 1.1rem);
   display: flex;
   align-items: center;
   gap: 10px;
   color: var(--primary);
+  line-height: 1.3;
 }
 
 .tw-badge {
-  font-size: 0.8rem;
-  padding: 8px 16px;
+  font-size: clamp(0.75rem, 1vw, 0.8rem);
+  padding: clamp(0.5rem, 1vw, 0.625rem) clamp(1rem, 1.5vw, 1.25rem);
   border-radius: 50px;
   border: 2px solid var(--border);
   font-weight: 700;
@@ -359,9 +362,9 @@ body {
 
 .small {
   color: var(--muted);
-  font-size: 1rem;
+  font-size: clamp(0.875rem, 1.1vw, 1rem);
   line-height: 1.6;
-  margin-top: 12px;
+  margin-top: clamp(0.75rem, 1.2vw, 1rem);
 }
 
 /* Enhanced Alert */
@@ -370,34 +373,35 @@ body {
   color: var(--primary);
   border: 2px solid var(--accent-light);
   border-radius: var(--radius-lg);
-  padding: 20px 24px;
-  font-size: 1rem;
+  padding: clamp(1rem, 1.5vw, 1.25rem) clamp(1.25rem, 2vw, 1.5rem);
+  font-size: clamp(0.875rem, 1.1vw, 1rem);
   display: flex;
   align-items: center;
   gap: 12px;
   box-shadow: 0 4px 16px rgba(181, 158, 95, 0.1);
-  margin-bottom: 24px;
+  margin-bottom: clamp(1rem, 2vw, 1.5rem);
+  line-height: 1.4;
 }
 
 .alert-note i {
   color: var(--accent);
-  font-size: 1.2rem;
+  font-size: clamp(1rem, 1.3vw, 1.2rem);
 }
 
 /* Enhanced Action Buttons */
 .tw-actions {
-  gap: 16px;
-  margin-top: 32px;
+  gap: clamp(0.75rem, 1.5vw, 1rem);
+  margin-top: clamp(1.5rem, 3vw, 2rem);
 }
 
 .btn {
   border-radius: var(--radius-lg);
   border: 2px solid transparent;
-  min-width: 180px;
+  min-width: min(180px, 100%);
   font-weight: 700;
-  padding: 16px 28px;
+  padding: clamp(0.875rem, 1.5vw, 1rem) clamp(1.25rem, 2vw, 1.75rem);
   transition: all 0.3s ease;
-  font-size: 1rem;
+  font-size: clamp(0.875rem, 1.1vw, 1rem);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -407,6 +411,7 @@ body {
   cursor: pointer;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  min-height: 54px;
 }
 
 .btn::before {
@@ -493,11 +498,11 @@ body {
 .table thead th {
   color: var(--primary);
   font-weight: 800;
-  font-size: 0.9rem;
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   border-bottom: 3px solid var(--border);
-  padding: 20px 16px;
+  padding: clamp(1rem, 1.5vw, 1.25rem) clamp(1rem, 1.2vw, 1rem);
   background: var(--lighter);
   position: sticky;
   top: 0;
@@ -516,9 +521,9 @@ body {
 }
 
 .table tbody td {
-  padding: 20px 16px;
+  padding: clamp(1rem, 1.5vw, 1.25rem) clamp(1rem, 1.2vw, 1rem);
   border-bottom: 1px solid var(--light);
-  font-size: 0.95rem;
+  font-size: clamp(0.875rem, 1vw, 0.95rem);
   font-weight: 500;
 }
 
@@ -541,14 +546,14 @@ body {
   border: 0;
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-xl);
-  min-width: 320px;
+  min-width: min(320px, 90vw);
   border-left: 4px solid var(--accent);
 }
 
 .toast-body {
-  padding: 20px 24px;
+  padding: clamp(1rem, 1.5vw, 1.25rem) clamp(1.25rem, 2vw, 1.5rem);
   font-weight: 600;
-  font-size: 1rem;
+  font-size: clamp(0.875rem, 1.1vw, 1rem);
 }
 
 /* Enhanced Busy Overlay */
@@ -574,7 +579,7 @@ body {
   color: white;
   margin-top: 20px;
   font-weight: 600;
-  font-size: 1.1rem;
+  font-size: clamp(1rem, 1.2vw, 1.1rem);
 }
 
 /* Enhanced Modal */
@@ -589,7 +594,7 @@ body {
 
 .modal-header {
   border-bottom: 2px solid var(--border);
-  padding: 28px 32px;
+  padding: clamp(1.25rem, 2vw, 1.75rem) clamp(1.5rem, 2vw, 2rem);
   background: linear-gradient(135deg, var(--lighter) 0%, white 100%);
 }
 
@@ -599,24 +604,24 @@ body {
   display: flex;
   align-items: center;
   gap: 12px;
-  font-size: 1.4rem;
+  font-size: clamp(1.2rem, 1.5vw, 1.4rem);
 }
 
 .modal-body {
-  padding: 32px;
+  padding: clamp(1.5rem, 2vw, 2rem);
 }
 
 .modal-footer {
   border-top: 2px solid var(--border);
-  padding: 24px 32px;
+  padding: clamp(1rem, 1.5vw, 1.5rem) clamp(1.5rem, 2vw, 2rem);
   background: var(--lighter);
 }
 
 .form-select {
   border-radius: var(--radius-lg);
   border: 2px solid var(--border);
-  padding: 14px 20px;
-  font-size: 1rem;
+  padding: clamp(0.875rem, 1.2vw, 1rem) clamp(1.25rem, 1.5vw, 1.5rem);
+  font-size: clamp(0.875rem, 1.1vw, 1rem);
   transition: all 0.3s ease;
   background: white;
   font-weight: 500;
@@ -630,7 +635,7 @@ body {
 
 /* Status Detail */
 #statusDetail {
-  padding: 16px 24px;
+  padding: clamp(1rem, 1.2vw, 1.25rem) clamp(1.25rem, 1.5vw, 1.5rem);
   background: linear-gradient(135deg, rgba(181, 158, 95, 0.08) 0%, rgba(141, 119, 171, 0.08) 100%);
   border-radius: var(--radius-lg);
   border: 2px solid var(--border);
@@ -639,26 +644,28 @@ body {
   justify-content: center;
   gap: 12px;
   font-weight: 600;
-  margin-bottom: 24px;
+  margin-bottom: clamp(1rem, 2vw, 1.5rem);
+  font-size: clamp(0.875rem, 1.1vw, 1rem);
 }
 
 /* Total Hours Display */
 .total-hours-display {
   background: linear-gradient(135deg, var(--accent-light) 0%, var(--accent) 100%);
-  padding: 20px 28px;
+  padding: clamp(1rem, 1.5vw, 1.25rem) clamp(1.25rem, 2vw, 1.75rem);
   border-radius: var(--radius-lg);
   color: white;
   display: flex;
   align-items: center;
   gap: 16px;
-  font-size: 1.2rem;
+  font-size: clamp(1rem, 1.3vw, 1.2rem);
   box-shadow: 0 8px 32px rgba(181, 158, 95, 0.3);
-  margin-top: 24px;
+  margin-top: clamp(1rem, 2vw, 1.5rem);
+  flex-wrap: wrap;
 }
 
 .text-accent {
   font-weight: 800;
-  font-size: 1.5rem;
+  font-size: clamp(1.25rem, 1.8vw, 1.5rem);
 }
 
 /* Shift Status Indicators */
@@ -666,9 +673,9 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 16px;
+  padding: clamp(0.5rem, 0.8vw, 0.625rem) clamp(1rem, 1.2vw, 1.25rem);
   border-radius: 50px;
-  font-size: 0.85rem;
+  font-size: clamp(0.75rem, 0.9vw, 0.85rem);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -692,70 +699,236 @@ body {
   border: 1px solid var(--info);
 }
 
-/* Mobile Responsive */
-@media (max-width: 768px) {
-  .container {
-    padding: 20px 16px;
+/* ===== RESPONSIVE GRID LAYOUTS ===== */
+
+/* Desktop: Full width layout */
+.row {
+  display: grid;
+  gap: clamp(1.5rem, 3vw, 2rem);
+}
+
+.col-lg-10 {
+  grid-column: 1 / -1;
+}
+
+.col-xl-8 {
+  grid-column: 1 / -1;
+}
+
+/* Tablet: 2-column layout */
+@media (min-width: 768px) {
+  .row.g-4 {
+    grid-template-columns: repeat(2, 1fr);
+    gap: clamp(1rem, 2vw, 1.5rem);
+  }
+
+  .tw-actions {
+    flex-direction: row;
+    flex-wrap: wrap;
   }
 
   .btn {
-    min-width: calc(50% - 8px);
-    font-size: 0.95rem;
-    padding: 14px 20px;
+    min-width: min(180px, calc(50% - 0.5rem));
+    flex: 1;
   }
+}
 
-  .tw-card__title {
-    font-size: 1.6rem;
-  }
-
-  .tc-time {
-    font-size: 3.5rem;
-  }
-
-  .tw-card__body {
-    padding: 28px 24px;
-  }
-
-  .table thead th,
-  .table tbody td {
-    padding: 16px 12px;
-    font-size: 0.9rem;
-  }
-
-  .tw-mini {
-    padding: 24px;
-  }
-
-  .tc-clock {
-    padding: 24px;
+/* Mobile: Better organized layout */
+@media (max-width: 767px) {
+  .row.g-4 {
+    grid-template-columns: 1fr;
+    gap: 1rem;
   }
 
   .tw-actions {
     flex-direction: column;
+    gap: 0.75rem;
   }
 
   .btn {
     min-width: 100%;
-    margin-bottom: 12px;
-  }
-}
-
-@media (max-width: 480px) {
-  .tc-time {
-    font-size: 2.8rem;
-  }
-
-  .tc-badge--timer {
+    width: 100%;
+    padding: 1rem;
     font-size: 1rem;
-    padding: 12px 20px;
+  }
+
+  .table-responsive {
+    overflow-x: auto;
+  }
+
+  .table {
+    min-width: 600px;
+  }
+
+  .total-hours-display {
+    justify-content: center;
+    text-align: center;
+  }
+
+  .tc-badges {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+
+  .tc-badge {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .tc-clock {
+    padding: 1.5rem 1rem;
+    margin-bottom: 1.5rem !important;
+  }
+
+  #tcWorkDuration {
+    text-align: center;
+  }
+
+  #tcWorkDuration > div:first-child {
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    margin-bottom: 0.75rem;
   }
 
   .tw-card__header {
-    padding: 24px 20px;
+    padding: 1.5rem 1rem;
   }
 
   .tw-card__body {
-    padding: 24px 20px;
+    padding: 1.5rem 1rem;
+  }
+
+  .tw-mini {
+    padding: 1.25rem;
+  }
+
+  #statusDetail {
+    font-size: 0.875rem;
+    padding: 1rem;
+  }
+}
+
+/* Small Mobile Optimizations */
+@media (max-width: 480px) {
+  .container {
+    padding: 1rem 0.75rem;
+  }
+
+  .tw-card__header {
+    padding: 1.25rem 1rem;
+  }
+
+  .tw-card__body {
+    padding: 1.5rem 1rem;
+  }
+
+  .tc-clock {
+    padding: 1.5rem 1rem;
+  }
+
+  .tc-time {
+    font-size: 2.5rem;
+  }
+
+  .tw-mini {
+    padding: 1.25rem 1rem;
+  }
+
+  .modal-body {
+    padding: 1.25rem;
+  }
+
+  .modal-header {
+    padding: 1.25rem 1.5rem;
+  }
+
+  .modal-footer {
+    padding: 1rem 1.5rem;
+  }
+
+  .alert-note {
+    padding: 1rem;
+    flex-direction: column;
+    text-align: center;
+    gap: 0.5rem;
+  }
+
+  .tw-status {
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+  }
+}
+
+/* Extra Small Mobile */
+@media (max-width: 360px) {
+  .tw-card__title {
+    font-size: 1.25rem;
+  }
+
+  .tc-time {
+    font-size: 2rem;
+  }
+
+  .btn {
+    padding: 0.875rem 1rem;
+    font-size: 0.875rem;
+    min-height: 48px;
+  }
+
+  .table thead th,
+  .table tbody td {
+    padding: 0.875rem 0.75rem;
+    font-size: 0.8rem;
+  }
+}
+
+/* Touch Device Optimizations */
+@media (hover: none) and (pointer: coarse) {
+  .tw-card:hover {
+    transform: none;
+  }
+
+  .btn:hover:not(:disabled) {
+    transform: none;
+  }
+
+  .tw-mini:hover {
+    transform: none;
+  }
+
+  .table tbody tr:hover {
+    transform: none;
+  }
+}
+
+/* High Contrast Mode Support */
+@media (prefers-contrast: high) {
+  :root {
+    --light: #d1d5db;
+    --lighter: #f9fafb;
+    --border: var(--primary-dark);
+  }
+
+  .tw-card {
+    border: 2px solid var(--primary);
+  }
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .btn, .tw-card, .tw-mini {
+    transition: none;
+  }
+
+  .fade-in {
+    animation: none;
   }
 }
 
@@ -851,7 +1024,7 @@ body {
   color: var(--warning);
   border: 1px solid var(--warning);
   border-radius: 20px;
-  font-size: 0.8rem;
+  font-size: clamp(0.7rem, 0.8vw, 0.8rem);
   font-weight: 600;
   margin-left: 8px;
 }
@@ -910,6 +1083,20 @@ body {
   border-color: var(--accent);
   box-shadow: 0 8px 32px rgba(181, 158, 95, 0.2);
 }
+
+/* Utility Classes */
+.d-flex { display: flex; }
+.align-items-center { align-items: center; }
+.justify-content-between { justify-content: space-between; }
+.justify-content-end { justify-content: flex-end; }
+.justify-content-center { justify-content: center; }
+.mt-4 { margin-top: 1.5rem; }
+.mb-4 { margin-bottom: 1.5rem; }
+.mb-5 { margin-bottom: 3rem; }
+.text-center { text-align: center; }
+.text-primary { color: var(--primary); }
+.text-muted { color: var(--muted); }
+.h-100 { height: 100%; }
 </style>
 
 <div class="container">
@@ -930,13 +1117,17 @@ body {
         </div>
 
         <div class="tw-card__body">
-          <!-- Live Clock Display -->
+          <!-- Work Duration Timer -->
           <div class="tc-clock mb-5">
-            <div id="tcTime" class="tc-time">--:--:--</div> <br>
-            <div id="tcDate" class="tc-date">Loading date…</div>
+            <div class="tc-date" style="margin-bottom: 1rem;"><span id="tcDate">Loading date…</span></div>
+            <div id="tcTime" class="tc-time" style="display:none;">00:00:00</div>
+            <div id="tcWorkDuration" class="tc-time" style="display:none;">
+              <div style="font-size: 0.5em; opacity: 0.7; margin-bottom: 0.5rem;">HOURS WORKED TODAY</div>
+              <span id="workDurationTimer">00:00:00</span>
+            </div>
             <div class="tc-badges">
               <span id="tcDuration" class="tc-badge tc-badge--timer" style="display:none">
-                <i class="fas fa-stopwatch"></i> <span id="liveTimer">00:00:00</span>
+                <i class="fas fa-stopwatch"></i> Current Session: <span id="liveTimer">00:00:00</span>
               </span>
               <span id="tcBreakBadge" class="tc-badge tc-badge--break" style="display:none">
                 <i class="fas fa-coffee"></i> On Break • <span id="breakTimer">00:00</span>
@@ -949,7 +1140,7 @@ body {
             <i class="fas fa-sync fa-spin me-2"></i>Fetching your current shift state…
           </div>
 
-          <!-- Shift Information Cards -->
+          <!-- Shift Information Cards - 2 Column Layout -->
           <div class="row g-4 mb-5">
             <!-- Today's Shift Card -->
             <div class="col-md-6">
@@ -1269,14 +1460,42 @@ document.addEventListener('DOMContentLoaded', function() {
       const breakTime = Math.floor((now - new Date(state.breakStart))/1000);
       breakTimerEl.textContent = secToHm(breakTime);
     }
+
+    // Work Duration Timer (total for the day)
+    const workDurationEl = $('#tcWorkDuration');
+    const workDurationTimerEl = $('#workDurationTimer');
+    if (workDurationTimerEl) {
+      let totalSeconds = 0;
+      
+      // Add completed shift hours from state.todayHours
+      if (state.todayHours) {
+        totalSeconds += Math.floor(state.todayHours * 3600);
+      }
+      
+      // Add current session time if clocked in
+      if (state.status === 'in' && state.clockIn) {
+        const currentSession = Math.max(0, ((now - new Date(state.clockIn))/1000) - (state.breakSeconds||0));
+        totalSeconds += Math.floor(currentSession);
+      }
+      
+      // Show/hide work duration display
+      if (workDurationEl) {
+        if (totalSeconds > 0 || state.status === 'in') {
+          workDurationEl.style.display = 'block';
+          workDurationTimerEl.textContent = secToHms(totalSeconds);
+        } else {
+          workDurationEl.style.display = 'none';
+        }
+      }
+    }
   }
 
   function updateShiftProgress(){
     const progressBar = $('#shiftProgressBar');
     const progressContainer = $('#shiftProgress');
-    
+
     if (!progressBar || !progressContainer) return;
-    
+
     const { startISO, endISO } = scheduleWindowInfo(state.todaySchedule);
 
     if (!startISO || !endISO || state.status === 'out') {
@@ -1297,7 +1516,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Update status pill and details
     const statusDetailEl = $('#statusDetail');
     const breakBadgeEl = $('#tcBreakBadge');
-    
+
     if(state.status==='in'){
       pill('tw-status--in','<i class="fas fa-check-circle"></i> Clocked In'); 
       if (statusDetailEl) statusDetailEl.textContent='Active shift in progress. Your time is being tracked.';
@@ -1319,7 +1538,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const todayCard = $('#todayShiftCard');
     const todayShiftEl = $('#todayShift');
     const todayBadgeEl = $('#todayBadge');
-    
+
     if (todayCard) {
       if (shouldHideTodaysShiftCard()) {
         todayCard.style.display = 'none';
@@ -1336,7 +1555,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Update shift status badge (independent DOM element check)
     const statusBadge = $('#shiftStatusBadge');
-    
+
     if (statusBadge) {
       const gate = canClockInNow(state.todaySchedule);
 
@@ -1366,7 +1585,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const nextShiftEl = $('#nextShift');
     const nextShiftInfoEl = $('#nextShiftInfo');
     const nextShiftTimeEl = $('#nextShiftTime');
-    
+
     if (nextShiftEl) {
       if (state.status === 'out') {
         if (state.nextSchedule) {
@@ -1392,7 +1611,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const clockHintEl = $('#clockHint');
     const graceIndicatorEl = $('#graceIndicator');
     const graceTextEl = $('#graceText');
-    
+
     if (!btnIn || !btnOut || !bS || !bE) {
       console.error('Button elements not found');
       return;
@@ -1481,12 +1700,12 @@ document.addEventListener('DOMContentLoaded', function() {
   function renderToday(){
     const tb=$('#todayList');
     const totalHoursEl = $('#todayTotalHours');
-    
+
     if (!tb) {
       console.error('Today list element not found');
       return;
     }
-    
+
     tb.innerHTML='';
 
     if(!state.today.length){ 
@@ -1532,13 +1751,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
   async function api(action, extraData={}){
     const url = `/timeclock/api?a=${action}&_=${Date.now()}`;
-    
+
     try {
       // Prepare form data with timezone context
       const formData = new FormData();
       formData.append('tz', getTimezoneName());
       formData.append('client_time_iso', getClientTimeISO());
-      
+
       // Add any extra data (like satisfaction)
       Object.keys(extraData).forEach(key => {
         formData.append(key, extraData[key]);
@@ -1549,7 +1768,7 @@ document.addEventListener('DOMContentLoaded', function() {
         headers: {'Accept': 'application/json'},
         body: formData
       });
-      
+
       if(!res.ok) {
         const text = await res.text();
         try {
@@ -1562,7 +1781,7 @@ document.addEventListener('DOMContentLoaded', function() {
           throw new Error(`Request failed with status ${res.status}`);
         }
       }
-      
+
       const data = await res.json();
       return data;
     } catch (error) {
@@ -1576,19 +1795,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
   async function loadState(){
     const isInitialLoad = state.status === 'loading';
-    
+
     try{
       // Show loading indicator during initial load only
       if (isInitialLoad && typeof Spinner !== 'undefined') {
         Spinner.show('Loading time clock data...');
       }
-      
+
       const r = await api('status');
-      
+
       // Map backend response to frontend state
       // Backend returns: clocked_in, on_break, entry, entries_today, today_schedule, next_schedule
       const prevStatus = state.status;
-      
+
       if (r.clocked_in && r.on_break) {
         state.status = 'break';
         // If we just entered break state, record the start time
@@ -1602,20 +1821,20 @@ document.addEventListener('DOMContentLoaded', function() {
         state.status = 'out';
         state.breakStart = null;
       }
-      
+
       state.clockIn = r.entry?.clock_in || null;
       state.breakSeconds = r.entry?.total_break_minutes ? r.entry.total_break_minutes * 60 : 0;
-      
+
       // Store schedule information
       state.todaySchedule = r.today_schedule || null;
       state.nextSchedule = r.next_schedule || null;
-      
+
       // Process today's entries for the table
       state.today = (r.entries_today || []).map(entry => {
         const clockIn = entry.clock_in ? new Date(entry.clock_in + 'Z') : null;
         const clockOut = entry.clock_out ? new Date(entry.clock_out + 'Z') : null;
         const breakMins = entry.total_break_minutes || 0;
-        
+
         let hours = '—';
         let seconds = 0;
         if (clockIn && clockOut) {
@@ -1627,7 +1846,7 @@ document.addEventListener('DOMContentLoaded', function() {
           seconds = Math.floor((now - clockIn) / 1000) - (breakMins * 60);
           hours = (seconds / 3600).toFixed(2);
         }
-        
+
         // Determine if this entry was on-time or late based on schedule
         let late = false;
         let ontime = false;
@@ -1643,7 +1862,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
           }
         }
-        
+
         return {
           in: clockIn ? tf.format(clockIn) : '—',
           out: clockOut ? tf.format(clockOut) : '—',
@@ -1656,7 +1875,7 @@ document.addEventListener('DOMContentLoaded', function() {
           ontime
         };
       });
-      
+
       updateUI();
     }catch(e){
       console.error('Failed to load state:', e);
@@ -1696,7 +1915,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const btnClockOut = $('#btnClockOut');
   const btnBreakStart = $('#btnBreakStart');
   const btnBreakEnd = $('#btnBreakEnd');
-  
+
   // Bind event listeners only for buttons that exist
   if (btnClockIn) {
     btnClockIn.addEventListener('click', async ()=>{
@@ -1719,7 +1938,7 @@ document.addEventListener('DOMContentLoaded', function() {
         await doAction('clock.out', 'Clocking out');
         return;
       }
-      
+
       const modal = new bootstrap.Modal(modalEl);
       const submitFeedback = async (rating)=>{
         if (rating) {
@@ -1734,7 +1953,7 @@ document.addEventListener('DOMContentLoaded', function() {
       const btnSubmit = $('#btnSubmit');
       const btnSkip = $('#btnSkip');
       const satisfactionSelect = $('#satisfactionSelect');
-      
+
       if (btnSubmit && satisfactionSelect) {
         btnSubmit.onclick = ()=> {
           const rating = satisfactionSelect.value;
@@ -1765,7 +1984,7 @@ document.addEventListener('DOMContentLoaded', function() {
   } else {
     console.error('Break Start button not found');
   }
-  
+
   if (btnBreakEnd) {
     btnBreakEnd.addEventListener('click', ()=> doAction('break.end', 'Ending break'));
   } else {
@@ -1774,11 +1993,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Initialize and start timers
   setInterval(() => {
-    const tcTimeEl = $('#tcTime');
     const tcDateEl = $('#tcDate');
-    
+
     const now = new Date();
-    if (tcTimeEl) tcTimeEl.textContent = tf.format(now);
+    // Only update date, not time
     if (tcDateEl) tcDateEl.textContent = df.format(now);
     updateLiveTimers();
     updateShiftProgress();
