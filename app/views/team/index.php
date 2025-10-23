@@ -1029,7 +1029,7 @@ body::before {
     </div>
   </div>
 </div>
-<?php require 'app/views/templates/footer.php'; ?>
+<?php require  ?>
 <script>
 let DEPARTMENTS = [];
 let ROLES = [];
