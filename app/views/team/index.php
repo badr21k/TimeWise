@@ -630,7 +630,7 @@ body::before {
     width: 100%;
   }
 }
-/* Mobile Card View (Most Complex Refinements) */
+/* Mobile Card View - Clean Collapsible Design */
 @media (max-width: 640px) {
   .container-fluid {
     padding-left: 0.75rem;
@@ -649,138 +649,129 @@ body::before {
     padding: 2rem 1rem;
   }
   
-  /* Hide the main table header */
+  /* Hide table header */
   .table thead {
     display: none;
   }
   
-  /* Style for the member's card view (the table row) */
+  /* Employee card - collapsed by default */
   .table tbody tr:not(.department-header) {
-    display: flex; 
-    flex-direction: row; 
-    flex-wrap: wrap; 
-    margin-bottom: 1rem;
+    display: block;
+    margin-bottom: 0.75rem;
     border: 1px solid var(--border);
     border-radius: var(--radius);
     overflow: hidden;
-    box-shadow: var(--shadow-md);
+    box-shadow: var(--shadow);
     background: var(--card);
-    padding: 0; 
+    transition: all 0.3s ease;
   }
   
-  .table tbody tr:not(.department-header):hover {
-    transform: scale(1.01);
+  .table tbody tr:not(.department-header):active {
+    transform: scale(0.99);
   }
   
-  /* Reset padding/border for cells in mobile view */
-  .table td {
-    display: block;
-    text-align: left !important;
+  /* Card header - always visible */
+  .table td:nth-child(1) { /* Team Member */
+    display: flex !important;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem;
+    border-bottom: 1px solid var(--border);
+    background: rgba(244, 245, 240, 0.3);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  .table td:nth-child(1)::after {
+    content: '›';
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--neutral);
+    transition: transform 0.3s ease;
+    flex-shrink: 0;
+    margin-left: 1rem;
+  }
+  
+  .table tbody tr.expanded td:nth-child(1)::after {
+    transform: rotate(90deg);
+  }
+  
+  /* All other cells - hidden when collapsed */
+  .table td:not(:nth-child(1)) {
+    display: none !important;
+  }
+  
+  /* Show all cells when expanded */
+  .table tbody tr.expanded td:not(:nth-child(1)) {
+    display: block !important;
     padding: 0.75rem 1rem;
     border-bottom: 1px solid var(--border);
-    width: 100%; /* Default width */
+    background: white;
   }
   
-  .table td:last-child {
+  .table tbody tr.expanded td:last-child {
     border-bottom: none;
   }
-
-  /* --- Mobile Layout Structure for Density --- */
   
-  /* 1. Team Member & Contact: Header block */
-  .table tbody tr td:nth-child(1) { /* Team Member */
-    order: 1; 
-    padding-bottom: 0.5rem;
-  }
-
-  .table tbody tr td:nth-child(2) { /* Contact */
-    order: 2; 
-    border-bottom: 1px solid var(--border); /* Add separator below contact */
-    padding-top: 0;
-  }
-
-  /* 2. Department & Access: Grouped side-by-side (50/50 split) */
-  .table tbody tr td:nth-child(3), /* Department */
-  .table tbody tr td:nth-child(4)  /* Access */ {
-    order: 3; 
-    width: 50%;
-    border-bottom: 1px solid var(--border);
-    border-top: none; /* No top border, contact cell handles separation */
-    padding-top: 0.75rem;
-    padding-bottom: 0.75rem;
-  }
-  
-  .table tbody tr td:nth-child(3) { /* Department */
-    border-right: 1px solid var(--border); 
-  }
-  .table tbody tr td:nth-child(4) { /* Access */
-    border-right: none;
-  }
-  /* Ensure the Change button in Department TD is compact */
-  .table tbody tr td:nth-child(3) .btn-sm {
-    margin-top: 0.25rem !important;
-    margin-left: 0 !important;
-    line-height: 1;
-    font-size: 0.75rem;
-  }
-
-
-  /* 3. Role, Wage, Status, Actions: Grouped side-by-side (2x2 grid) */
-  .table tbody tr td:nth-child(5), /* Role */
-  .table tbody tr td:nth-child(6), /* Wage */
-  .table tbody tr td:nth-child(7), /* Status */
-  .table tbody tr td:nth-child(8) /* Actions */ {
-    order: 4; 
-    width: 50%;
-    padding: 0.6rem 1rem;
-    border-bottom: none; 
-    border-top: none; 
-  }
-
-  /* Add vertical separators */
-  .table tbody tr td:nth-child(5), /* Role */
-  .table tbody tr td:nth-child(7)  /* Status */ {
-    border-right: 1px solid var(--border); 
-  }
-  
-  /* Ensure actions button takes minimal space and looks clean */
-  .table tbody tr td:nth-child(8) .btn-sm {
-      width: 100%;
-  }
-
-  /* Re-add labels for compact fields and hide for header fields */
-  .table td::before {
+  /* Add labels for expanded fields */
+  .table tbody tr.expanded td::before {
+    content: attr(data-label);
     font-weight: 700;
-    color: var(--primary-dark);
+    color: var(--primary);
     display: block;
-    font-size: 0.625rem; 
+    font-size: 0.65rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.375rem;
     opacity: 0.8;
   }
   
-  /* Hide the data label for the main header fields */
-  .table td:nth-child(1)::before, 
-  .table td:nth-child(2)::before, 
-  .table td:nth-child(3)::before, 
-  .table td:nth-child(4)::before { 
-    content: none;
+  .table tbody tr.expanded td:nth-child(1)::before {
+    display: none;
   }
   
-  /* Department Header Styles */
+  /* Status badge in collapsed view */
+  .table tbody tr:not(.expanded) .team-member-cell::after {
+    content: attr(data-status);
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    margin-left: auto;
+  }
+  
+  .table tbody tr:not(.expanded) .team-member-cell[data-status="Active"]::after {
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+    color: var(--success);
+  }
+  
+  .table tbody tr:not(.expanded) .team-member-cell[data-status="Terminated"]::after {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    color: var(--danger);
+  }
+  
+  /* Department Header */
   .table tbody tr.department-header {
     border: none;
     box-shadow: none;
     background: transparent;
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
   }
   
   .table tbody tr.department-header td {
-    padding: 0.5rem 1rem;
-    font-size: 0.8125rem;
-    margin-top: 0.5rem;
-    border-bottom: 1px solid var(--border);
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+    border-bottom: 2px solid var(--border);
     border-radius: var(--radius-sm);
+  }
+  
+  /* Adjust button sizing in expanded view */
+  .table tbody tr.expanded .btn-sm {
+    width: 100%;
+    margin-top: 0.5rem;
   }
 }
 /* Utility Classes */
@@ -1296,7 +1287,7 @@ function render() {
       
       tr.innerHTML = `
         <td data-label="Team Member">
-          <div class="team-member-cell">
+          <div class="team-member-cell" data-status="${u.status==1 ? 'Active' : 'Terminated'}">
             <div class="avatar">${initials}</div>
             <div class="team-member-info">
               <span class="team-member-name">${escapeHtml(u.name || u.username)}</span>
@@ -1365,6 +1356,18 @@ function render() {
               : ''}
         </td>
       `;
+      
+      // Add click handler for mobile collapse/expand
+      const firstCell = tr.querySelector('td:first-child');
+      if (firstCell) {
+        firstCell.addEventListener('click', (e) => {
+          // Only toggle on mobile (screen width <= 640px)
+          if (window.innerWidth <= 640) {
+            tr.classList.toggle('expanded');
+          }
+        });
+      }
+      
       tbody.appendChild(tr);
     });
   });
