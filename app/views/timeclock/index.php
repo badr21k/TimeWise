@@ -1399,8 +1399,7 @@ body {
           <!-- Work Duration Timer -->
           <div class="tc-clock mb-5">
             <div class="tc-date" style="margin-bottom: 1rem;"><span id="tcDate">Loading date…</span></div>
-            <div id="tcTime" class="tc-time" style="display:none;">00:00:00</div>
-            <div id="tcWorkDuration" class="tc-time" style="display:none;">
+            <div id="tcWorkDuration" class="tc-time">
               <div style="font-size: 0.5em; opacity: 0.7; margin-bottom: 0.5rem;">HOURS WORKED TODAY</div>
               <span id="workDurationTimer">00:00:00</span>
             </div>
@@ -1740,8 +1739,7 @@ document.addEventListener('DOMContentLoaded', function() {
       breakTimerEl.textContent = secToHm(breakTime);
     }
 
-    // Work Duration Timer (total for the day)
-    const workDurationEl = $('#tcWorkDuration');
+    // Work Duration Timer (total for the day) - always visible
     const workDurationTimerEl = $('#workDurationTimer');
     if (workDurationTimerEl) {
       let totalSeconds = 0;
@@ -1757,15 +1755,8 @@ document.addEventListener('DOMContentLoaded', function() {
         totalSeconds += Math.floor(currentSession);
       }
       
-      // Show/hide work duration display
-      if (workDurationEl) {
-        if (totalSeconds > 0 || state.status === 'in') {
-          workDurationEl.style.display = 'block';
-          workDurationTimerEl.textContent = secToHms(totalSeconds);
-        } else {
-          workDurationEl.style.display = 'none';
-        }
-      }
+      // Always show the timer, updating it with current total
+      workDurationTimerEl.textContent = secToHms(totalSeconds);
     }
   }
 
