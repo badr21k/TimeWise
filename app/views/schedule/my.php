@@ -260,8 +260,8 @@ body {
 
 /* Day Cards - Compact Weekly Overview with Responsive Grid */
 .day-cards {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  display: flex;
+  flex-direction: column;
   gap: 0.5rem;
   margin-bottom: 1rem;
 }
@@ -651,10 +651,6 @@ body {
 
 /* Responsive Design */
 @media (min-width: 640px) {
-  .day-cards {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 0.65rem;
-  }
 }
 
 @media (min-width: 768px) {
@@ -668,11 +664,6 @@ body {
     grid-template-columns: repeat(4, 1fr);
   }
   
-  .day-cards {
-    grid-template-columns: repeat(4, 1fr);
-    gap: 0.75rem;
-  }
-  
   .team-members {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -683,11 +674,6 @@ body {
 @media (min-width: 1024px) {
   .mobile-container {
     max-width: 1024px;
-  }
-  
-  .day-cards {
-    grid-template-columns: repeat(4, 1fr);
-    gap: 1rem;
   }
   
   .team-members {
