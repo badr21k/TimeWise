@@ -258,10 +258,10 @@ body {
   padding: 0 1rem 2rem;
 }
 
-/* Day Cards - Compact Weekly Overview */
+/* Day Cards - Compact Weekly Overview with Responsive Grid */
 .day-cards {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
   gap: 0.5rem;
   margin-bottom: 1rem;
 }
@@ -650,6 +650,13 @@ body {
 }
 
 /* Responsive Design */
+@media (min-width: 640px) {
+  .day-cards {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.65rem;
+  }
+}
+
 @media (min-width: 768px) {
   .mobile-container {
     max-width: 768px;
@@ -662,9 +669,8 @@ body {
   }
   
   .day-cards {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.75rem;
   }
   
   .team-members {
@@ -680,7 +686,8 @@ body {
   }
   
   .day-cards {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
   }
   
   .team-members {
@@ -725,6 +732,160 @@ button:focus-visible,
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
+
+/* Month View Styles */
+.month-header {
+  background: white;
+  border-radius: var(--radius-lg);
+  padding: 1rem;
+  margin: 0 1rem 1rem;
+  box-shadow: var(--shadow-md);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid var(--light);
+}
+
+.month-display h2 {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--primary);
+  text-align: center;
+}
+
+.month-calendar {
+  padding: 0 1rem;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.25rem;
+  background: white;
+  padding: 0.5rem;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+}
+
+.calendar-day-header {
+  text-align: center;
+  font-weight: 700;
+  font-size: 0.7rem;
+  color: var(--neutral);
+  padding: 0.5rem 0.25rem;
+  text-transform: uppercase;
+}
+
+.calendar-day {
+  aspect-ratio: 1;
+  background: white;
+  border: 1px solid var(--light);
+  border-radius: var(--radius-sm);
+  padding: 0.25rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-height: 60px;
+}
+
+.calendar-day:hover {
+  background: var(--lighter);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+}
+
+.calendar-day.other-month {
+  opacity: 0.3;
+}
+
+.calendar-day.today {
+  border: 2px solid var(--accent);
+  background: linear-gradient(135deg, #fff 0%, #fffef8 100%);
+}
+
+.calendar-day.has-shift {
+  background: linear-gradient(135deg, var(--accent-light) 0%, var(--accent) 100%);
+  color: white;
+  border-color: var(--accent);
+}
+
+.calendar-day.has-shift .day-number {
+  color: white;
+}
+
+.calendar-day .day-number {
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--primary);
+  margin-bottom: 0.15rem;
+}
+
+.calendar-day .shift-count {
+  font-size: 0.65rem;
+  color: rgba(255, 255, 255, 0.95);
+  background: rgba(0, 0, 0, 0.2);
+  padding: 0.1rem 0.4rem;
+  border-radius: 0.75rem;
+  font-weight: 600;
+}
+
+.calendar-day .shift-hours {
+  font-size: 0.6rem;
+  color: rgba(255, 255, 255, 0.9);
+  margin-top: auto;
+}
+
+/* Team By Day View */
+.team-day-card {
+  background: white;
+  border-radius: var(--radius-lg);
+  padding: 1rem;
+  margin-bottom: 1rem;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--light);
+}
+
+.team-day-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid var(--light);
+}
+
+.team-day-title {
+  font-weight: 700;
+  color: var(--primary);
+  font-size: 1.1rem;
+}
+
+.team-day-date {
+  color: var(--neutral);
+  font-size: 0.85rem;
+}
+
+.team-members-list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.5rem;
+}
+
+@media (min-width: 640px) {
+  .team-members-list {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .team-members-list {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
 </style>
 
 <div class="mobile-container">
@@ -768,12 +929,16 @@ button:focus-visible,
     <!-- View Toggle -->
     <div class="view-toggle">
       <button class="toggle-btn active" id="viewMyShifts">
-        <i class="fas fa-user"></i>
-        My Shifts
+        <i class="fas fa-calendar-week"></i>
+        Week
       </button>
       <button class="toggle-btn" id="viewTeam">
         <i class="fas fa-users"></i>
-        Team View
+        Team
+      </button>
+      <button class="toggle-btn" id="viewMonth">
+        <i class="fas fa-calendar-alt"></i>
+        Month
       </button>
     </div>
   </header>
@@ -804,27 +969,38 @@ button:focus-visible,
       </div>
     </div>
 
-    <!-- Team View -->
+    <!-- Team View - Who's working with you each day -->
     <div id="teamView" style="display: none;">
-      <div class="team-section">
-        <div class="section-header">
-          <div class="section-title">
-            <i class="fas fa-users text-accent"></i>
-            Team Schedule
-          </div>
+      <div id="teamByDay">
+        <!-- Days with teammates will be populated by JavaScript -->
+        <div class="loading-shift"></div>
+        <div class="loading-shift"></div>
+      </div>
+    </div>
+
+    <!-- Month View -->
+    <div id="monthView" style="display: none;">
+      <div class="month-header">
+        <button class="nav-btn" id="prevMonth">
+          <i class="fas fa-chevron-left"></i>
+        </button>
+        <div class="month-display">
+          <h2 id="monthTitle">Loading...</h2>
         </div>
-        <div class="team-members" id="teamMembers">
-          <!-- Team members will be populated by JavaScript -->
-          <div class="loading-shift"></div>
-          <div class="loading-shift"></div>
-        </div>
+        <button class="nav-btn" id="nextMonth">
+          <i class="fas fa-chevron-right"></i>
+        </button>
+      </div>
+      <div class="month-calendar" id="monthCalendar">
+        <!-- Calendar will be populated by JavaScript -->
+        <div class="loading-shift"></div>
       </div>
     </div>
   </main>
 
 
 
-<?php require 'app/views/templates/footer.php'; ?>
+<?php ?>
 
 <script>
 // Enhanced mobile-friendly functionality with cohesive colors
@@ -836,6 +1012,8 @@ class MobileShifts {
     this.currentView = 'myShifts';
     this.allWeekShifts = [];
     this.touchStartX = 0;
+    this.currentMonth = new Date();
+    this.monthShifts = [];
     
     this.init();
   }
@@ -931,9 +1109,14 @@ class MobileShifts {
     document.getElementById('prevWeek').addEventListener('click', () => this.changeWeek(-7));
     document.getElementById('nextWeek').addEventListener('click', () => this.changeWeek(7));
 
+    // Month navigation
+    document.getElementById('prevMonth').addEventListener('click', () => this.changeMonth(-1));
+    document.getElementById('nextMonth').addEventListener('click', () => this.changeMonth(1));
+
     // View toggles
     document.getElementById('viewMyShifts').addEventListener('click', () => this.switchView('myShifts'));
     document.getElementById('viewTeam').addEventListener('click', () => this.switchView('team'));
+    document.getElementById('viewMonth').addEventListener('click', () => this.switchView('month'));
 
     // Touch events for better mobile experience
     this.setupTouchEvents();
@@ -1115,34 +1298,73 @@ class MobileShifts {
   }
 
   renderTeamView() {
-    const membersContainer = document.getElementById('teamMembers');
-    const shiftsByEmployee = this.groupShiftsByEmployee();
+    // Group shifts by day and show who's working with the user each day
+    const container = document.getElementById('teamByDay');
+    const myShifts = this.allWeekShifts.filter(s => s.employee_id === this.me.employee_id);
+    const today = new Date().toISOString().slice(0, 10);
     
-    let membersHTML = '';
+    let teamHTML = '';
     
-    Object.entries(shiftsByEmployee).forEach(([empId, shifts]) => {
-      const employee = this.employees.find(e => e.id == empId) || { name: 'Unknown' };
-      const totalHours = this.calculateTotalHours(shifts);
-      const avatar = this.generateAvatar(employee.name);
-      const isMe = empId == this.me.employee_id;
+    // For each day of the week
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(this.weekStart);
+      date.setDate(date.getDate() + i);
+      const dateStr = date.toISOString().slice(0, 10);
       
-      membersHTML += `
-        <div class="member-card ${isMe ? 'gradient-accent text-white' : ''}">
-          <div class="member-avatar" style="${isMe ? 'background: rgba(255,255,255,0.2); color: white;' : ''}">
-            ${avatar}
+      // Check if user has shifts this day
+      const myDayShifts = myShifts.filter(s => s.start_dt.slice(0, 10) === dateStr);
+      
+      if (myDayShifts.length > 0) {
+        // Get all shifts for this day
+        const dayShifts = this.allWeekShifts.filter(s => s.start_dt.slice(0, 10) === dateStr);
+        const teammates = dayShifts.filter(s => s.employee_id !== this.me.employee_id);
+        
+        const dayName = date.toLocaleDateString('en-US', { weekday: 'long' });
+        const dateDisplay = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        const isToday = dateStr === today;
+        
+        teamHTML += `
+          <div class="team-day-card ${isToday ? 'today' : ''}">
+            <div class="team-day-header">
+              <div class="team-day-title">${dayName}</div>
+              <div class="team-day-date">${dateDisplay}</div>
+            </div>
+            <div class="team-members-list">
+        `;
+        
+        if (teammates.length > 0) {
+          teammates.forEach(shift => {
+            const employee = this.employees.find(e => e.id == shift.employee_id) || { name: 'Unknown' };
+            const avatar = this.generateAvatar(employee.name);
+            const startTime = shift.start_dt.slice(11, 16);
+            const endTime = shift.end_dt.slice(11, 16);
+            const duration = this.calculateShiftDuration(shift);
+            const role = shift.notes || shift.employee_role || 'Shift';
+            
+            teamHTML += `
+              <div class="member-card">
+                <div class="member-avatar">${avatar}</div>
+                <div class="member-info">
+                  <div class="member-name">${this.escapeHtml(employee.name)}</div>
+                  <div class="member-shifts">${startTime} - ${endTime}</div>
+                  <div class="member-shifts text-neutral" style="font-size: 0.75rem;">${this.escapeHtml(role)}</div>
+                </div>
+                <div class="member-hours">${duration}h</div>
+              </div>
+            `;
+          });
+        } else {
+          teamHTML += `<div class="empty-shift">Working alone this day</div>`;
+        }
+        
+        teamHTML += `
+            </div>
           </div>
-          <div class="member-info">
-            <div class="member-name ${isMe ? 'text-white' : ''}">${this.escapeHtml(employee.name)}${isMe ? ' (You)' : ''}</div>
-            <div class="member-shifts ${isMe ? 'text-white' : 'text-neutral'}">${shifts.length} shift${shifts.length !== 1 ? 's' : ''}</div>
-          </div>
-          <div class="member-hours" style="${isMe ? 'background: rgba(255,255,255,0.3); color: white;' : ''}">
-            ${totalHours.toFixed(1)}h
-          </div>
-        </div>
-      `;
-    });
-
-    membersContainer.innerHTML = membersHTML || '<div class="empty-shift">No team members scheduled this week</div>';
+        `;
+      }
+    }
+    
+    container.innerHTML = teamHTML || '<div class="empty-shift" style="padding: 2rem; text-align: center;">No shifts scheduled this week</div>';
   }
 
   groupShiftsByEmployee() {
@@ -1162,10 +1384,123 @@ class MobileShifts {
     // Update toggle buttons
     document.getElementById('viewMyShifts').classList.toggle('active', view === 'myShifts');
     document.getElementById('viewTeam').classList.toggle('active', view === 'team');
+    document.getElementById('viewMonth').classList.toggle('active', view === 'month');
     
     // Show/hide views
     document.getElementById('myShiftsView').style.display = view === 'myShifts' ? 'block' : 'none';
     document.getElementById('teamView').style.display = view === 'team' ? 'block' : 'none';
+    document.getElementById('monthView').style.display = view === 'month' ? 'block' : 'none';
+    
+    // Show/hide navigation
+    document.querySelector('.week-navigation').style.display = (view === 'myShifts' || view === 'team') ? 'flex' : 'none';
+    
+    // Load month view if switching to it
+    if (view === 'month') {
+      this.loadMonthData();
+    }
+  }
+
+  async changeMonth(delta) {
+    this.currentMonth = new Date(this.currentMonth.getFullYear(), this.currentMonth.getMonth() + delta, 1);
+    await this.loadMonthData();
+  }
+
+  async loadMonthData() {
+    const year = this.currentMonth.getFullYear();
+    const month = this.currentMonth.getMonth() + 1;
+    const firstDay = `${year}-${String(month).padStart(2, '0')}-01`;
+    const lastDay = new Date(year, month, 0);
+    const lastDayStr = `${year}-${String(month).padStart(2, '0')}-${String(lastDay.getDate()).padStart(2, '0')}`;
+    
+    try {
+      // Get all shifts for the month
+      const promises = [];
+      let currentWeek = this.getMonday(firstDay);
+      const endDate = new Date(lastDayStr);
+      
+      while (new Date(currentWeek) <= endDate) {
+        promises.push(this.fetchJSON(`/schedule/api?a=shifts.week&week=${currentWeek}`));
+        const nextWeek = new Date(currentWeek);
+        nextWeek.setDate(nextWeek.getDate() + 7);
+        currentWeek = nextWeek.toISOString().slice(0, 10);
+      }
+      
+      const results = await Promise.all(promises);
+      this.monthShifts = results.flatMap(r => r.shifts || []).filter(s => 
+        s.employee_id === this.me.employee_id
+      );
+      
+      this.renderMonthView();
+    } catch (error) {
+      console.error('Failed to load month data:', error);
+    }
+  }
+
+  renderMonthView() {
+    // Update month title
+    const monthName = this.currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    document.getElementById('monthTitle').textContent = monthName;
+    
+    // Get calendar days
+    const year = this.currentMonth.getFullYear();
+    const month = this.currentMonth.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const startDay = firstDay.getDay(); // 0 = Sunday
+    const daysInMonth = lastDay.getDate();
+    const today = new Date().toISOString().slice(0, 10);
+    
+    // Build calendar grid
+    let calendarHTML = '<div class="calendar-grid">';
+    
+    // Day headers
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    dayNames.forEach(day => {
+      calendarHTML += `<div class="calendar-day-header">${day}</div>`;
+    });
+    
+    // Empty cells for days before month starts
+    for (let i = 0; i < startDay; i++) {
+      calendarHTML += '<div class="calendar-day other-month"></div>';
+    }
+    
+    // Days of the month
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const dayShifts = this.monthShifts.filter(s => s.start_dt.slice(0, 10) === dateStr);
+      const isToday = dateStr === today;
+      const hasShift = dayShifts.length > 0;
+      
+      let dayClasses = 'calendar-day';
+      if (isToday) dayClasses += ' today';
+      if (hasShift) dayClasses += ' has-shift';
+      
+      let dayContent = `<div class="day-number">${day}</div>`;
+      
+      if (hasShift) {
+        const totalHours = dayShifts.reduce((sum, s) => {
+          const start = new Date(s.start_dt);
+          const end = new Date(s.end_dt);
+          return sum + (end - start) / (1000 * 60 * 60);
+        }, 0);
+        
+        dayContent += `<div class="shift-count">${dayShifts.length} shift${dayShifts.length > 1 ? 's' : ''}</div>`;
+        dayContent += `<div class="shift-hours">${totalHours.toFixed(1)}h</div>`;
+      }
+      
+      calendarHTML += `<div class="${dayClasses}">${dayContent}</div>`;
+    }
+    
+    // Fill remaining cells
+    const totalCells = startDay + daysInMonth;
+    const remainingCells = totalCells % 7 === 0 ? 0 : 7 - (totalCells % 7);
+    for (let i = 0; i < remainingCells; i++) {
+      calendarHTML += '<div class="calendar-day other-month"></div>';
+    }
+    
+    calendarHTML += '</div>';
+    
+    document.getElementById('monthCalendar').innerHTML = calendarHTML;
   }
 
   showError(message) {
