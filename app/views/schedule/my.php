@@ -730,8 +730,19 @@ class MobileShifts {
         ...options
       });
       const text = await response.text();
-      if (!response.ok) throw new Error(text);
-      return JSON.parse(text);
+      if (!response.ok) {
+        console.error(`[fetchJSON] HTTP ${response.status} from ${url}:`, text.slice(0, 200));
+        throw new Error(`HTTP ${response.status}: ${text}`);
+      }
+      try {
+        return JSON.parse(text);
+      } catch (parseError) {
+        console.error(`[fetchJSON] JSON parse error from ${url}:`, text.slice(0, 200));
+        throw new Error(`Invalid JSON response: ${parseError.message}`);
+      }
+    } catch (error) {
+      console.error(`[fetchJSON] Request failed for ${url}:`, error.message);
+      throw error;
     } finally {
       Spinner?.hide();
     }
@@ -842,8 +853,8 @@ class MobileShifts {
       this.renderMyShifts();
       this.renderTeamView();
     } catch (error) {
-      console.error('Failed to load week data:', error);
-      this.showError('Failed to load schedule data');
+      console.error('Failed to load week data:', error.message || error);
+      this.showError(`Failed to load schedule data: ${error.message || 'Unknown error'}`);
     }
   }
 
