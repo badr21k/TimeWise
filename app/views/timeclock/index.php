@@ -751,64 +751,65 @@ body {
       max-width: 100%;
     }
 
-    /* Cards - cleaner appearance */
+    /* Cards - compact appearance */
     .tw-card {
       max-width: 100%;
-      margin: 0 auto 1rem;
-      border-radius: 20px;
-      box-shadow: 0 4px 20px rgba(9, 25, 77, 0.08);
+      margin: 0 auto 0.875rem;
+      border-radius: 18px;
+      box-shadow: 0 3px 16px rgba(9, 25, 77, 0.08);
     }
 
     .tw-card__header {
-      padding: 1.25rem 1rem;
-      border-radius: 20px 20px 0 0;
+      padding: 1rem 0.875rem;
+      border-radius: 18px 18px 0 0;
     }
 
     .tw-card__body {
-      padding: 1.25rem 1rem;
+      padding: 1rem 0.875rem;
     }
 
     .tw-card__title {
-      font-size: 1.5rem;
-      gap: 8px;
+      font-size: 1.35rem;
+      gap: 6px;
     }
 
-    /* Clock display - prominent and clean */
+    /* Clock display - compact and clean */
     .tc-clock {
-      padding: 1.5rem 1rem;
-      margin-bottom: 1.25rem;
-      border-radius: 18px;
+      padding: 1rem 0.875rem;
+      margin-bottom: 1rem;
+      border-radius: 16px;
       max-width: 100%;
       background: linear-gradient(135deg, rgba(181, 158, 95, 0.06) 0%, rgba(141, 119, 171, 0.06) 100%);
       border: 1px solid rgba(181, 158, 95, 0.15);
     }
 
     .tc-date {
-      font-size: 0.875rem;
-      opacity: 0.85;
+      font-size: 0.8rem;
+      opacity: 0.8;
       font-weight: 500;
+      margin-bottom: 0.5rem !important;
     }
 
-    /* Work duration timer - large and readable */
+    /* Work duration timer - balanced size */
     #tcWorkDuration {
       text-align: center;
       max-width: 100%;
-      margin-top: 0.5rem;
+      margin-top: 0.25rem;
     }
 
     #tcWorkDuration > div:first-child {
-      font-size: 0.7rem;
-      letter-spacing: 0.12em;
-      margin-bottom: 0.75rem;
-      opacity: 0.7;
-      font-weight: 700;
+      font-size: 0.65rem;
+      letter-spacing: 0.1em;
+      margin-bottom: 0.35rem;
+      opacity: 0.75;
+      font-weight: 600;
       color: var(--primary);
     }
 
     #workDurationTimer {
-      font-size: 2.75rem !important;
-      font-weight: 800;
-      line-height: 1.1;
+      font-size: 1.75rem !important;
+      font-weight: 700;
+      line-height: 1.2;
       background: linear-gradient(135deg, var(--accent) 0%, var(--accent-secondary) 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
@@ -816,33 +817,33 @@ body {
       display: block;
     }
 
-    /* Badges - stacked and centered */
+    /* Badges - compact and centered */
     .tc-badges {
       flex-direction: column;
       align-items: center;
-      gap: 0.625rem;
+      gap: 0.5rem;
       max-width: 100%;
-      margin-top: 1rem;
+      margin-top: 0.75rem;
     }
 
     .tc-badge {
       width: auto;
-      min-width: 220px;
-      max-width: 300px;
+      min-width: 200px;
+      max-width: 280px;
       justify-content: center;
       text-align: center;
-      padding: 0.875rem 1.25rem;
-      font-size: 0.9rem;
-      border-radius: 14px;
+      padding: 0.625rem 1rem;
+      font-size: 0.8rem;
+      border-radius: 12px;
     }
 
-    /* Action buttons - full width and prominent */
+    /* Action buttons - compact and clean */
     .tw-actions {
       flex-direction: column;
-      gap: 0.625rem;
+      gap: 0.5rem;
       max-width: 100%;
       width: 100%;
-      margin-top: 1.25rem;
+      margin-top: 1rem;
     }
 
     .btn {
@@ -850,43 +851,43 @@ body {
       width: 100%;
       max-width: 100%;
       margin: 0;
-      padding: 1rem 1.25rem;
-      font-size: 1rem;
+      padding: 0.75rem 1rem;
+      font-size: 0.9rem;
       font-weight: 600;
-      min-height: 54px;
-      border-radius: 16px;
-      box-shadow: 0 2px 12px rgba(9, 25, 77, 0.1);
+      min-height: 48px;
+      border-radius: 14px;
+      box-shadow: 0 2px 8px rgba(9, 25, 77, 0.08);
     }
 
     .btn i {
-      font-size: 1.1rem;
+      font-size: 1rem;
       margin-right: 0.25rem;
     }
 
     /* Mini cards - compact */
     .tw-mini {
-      padding: 1.125rem;
-      border-radius: 16px;
+      padding: 0.875rem;
+      border-radius: 14px;
       max-width: 100%;
-      margin-bottom: 1rem;
+      margin-bottom: 0.875rem;
     }
 
     /* Status detail - centered and readable */
     #statusDetail {
-      font-size: 0.875rem;
-      padding: 1rem;
+      font-size: 0.8rem;
+      padding: 0.75rem;
       text-align: center;
-      border-radius: 14px;
+      border-radius: 12px;
       max-width: 100%;
       margin: 0 auto;
-      line-height: 1.6;
+      line-height: 1.5;
     }
 
     /* Status pill - centered */
     .tw-status {
-      margin: 0.75rem auto 0;
-      padding: 0.75rem 1.25rem;
-      font-size: 0.8rem;
+      margin: 0.5rem auto 0;
+      padding: 0.625rem 1rem;
+      font-size: 0.75rem;
       max-width: fit-content;
     }
 
@@ -939,17 +940,21 @@ body {
       line-height: 1.6;
     }
 
-    /* Spacing adjustments */
+    /* Spacing adjustments - tighter */
     .mb-5 {
-      margin-bottom: 1.25rem !important;
-    }
-
-    .mb-4 {
       margin-bottom: 1rem !important;
     }
 
-    .mb-3 {
+    .mb-4 {
       margin-bottom: 0.875rem !important;
+    }
+
+    .mb-3 {
+      margin-bottom: 0.75rem !important;
+    }
+    
+    .mb-2 {
+      margin-bottom: 0.5rem !important;
     }
   }
 
@@ -1398,15 +1403,16 @@ body {
         <div class="tw-card__body">
           <!-- Work Duration Timer -->
           <div class="tc-clock mb-5">
-            <div class="tc-date" style="margin-bottom: 1rem;"><span id="tcDate">Loading date…</span></div>
-            <div id="tcWorkDuration" class="tc-time">
-              <div style="font-size: 0.5em; opacity: 0.7; margin-bottom: 0.5rem;">HOURS WORKED TODAY</div>
+
+            <div id="todayTotalHours" class="tc-time">
+              <div style="font-size: 0.5em; opacity: 0.7; margin-bottom: 0.5rem;">Total Today:</div>
+
+
+              
               <span id="workDurationTimer">00:00:00</span>
             </div>
             <div class="tc-badges">
-              <span id="tcDuration" class="tc-badge tc-badge--timer" style="display:none">
-                <i class="fas fa-stopwatch"></i> Current Session: <span id="liveTimer">00:00:00</span>
-              </span>
+              
               <span id="tcBreakBadge" class="tc-badge tc-badge--break" style="display:none">
                 <i class="fas fa-coffee"></i> On Break • <span id="breakTimer">00:00</span>
               </span>
@@ -1749,16 +1755,7 @@ document.addEventListener('DOMContentLoaded', function() {
         totalSeconds += Math.floor(state.todayHours * 3600);
       }
       
-      // Add current session time if clocked in
-      if (state.status === 'in' && state.clockIn) {
-        const currentSession = Math.max(0, ((now - new Date(state.clockIn))/1000) - (state.breakSeconds||0));
-        totalSeconds += Math.floor(currentSession);
-      }
-      
-      // Always show the timer, updating it with current total
-      workDurationTimerEl.textContent = secToHms(totalSeconds);
-    }
-  }
+
 
   function updateShiftProgress(){
     const progressBar = $('#shiftProgressBar');
